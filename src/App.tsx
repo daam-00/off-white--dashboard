@@ -63,26 +63,22 @@ export default function App() {
 
   return (
     <div 
-      className="app-shell h-screen flex flex-col overflow-hidden md:flex-row"
+      className="h-screen bg-white flex flex-col md:flex-row overflow-hidden"
       style={{ '--color-offwhite-orange': themeColor } as React.CSSProperties}
     >
-      <div className="nature-orb nature-orb--sage left-[-6rem] top-10 h-72 w-72" />
-      <div className="nature-orb nature-orb--sand right-[-4rem] top-24 h-64 w-64" />
-      <div className="nature-orb nature-orb--sage bottom-[-4rem] right-[18%] h-80 w-80 opacity-55" />
-
       {/* DESKTOP SIDEBAR */}
       <motion.aside 
         initial={false}
         animate={{ width: isSidebarOpen ? 280 : 80 }}
-        className="hidden md:flex h-full flex-shrink-0 flex-col border-r border-black/10 bg-[#f7f2e8]/80 relative z-50 backdrop-blur-xl"
+        className="hidden md:flex bg-white border-r-2 border-black h-full flex-shrink-0 flex-col relative z-50"
       >
         <div className="p-6 mb-8 flex items-center justify-between">
-          <div className={`text-2xl tracking-tight transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
+          <div className={`font-black text-2xl tracking-tighter transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
             OFF-WHITE™
           </div>
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="text-[#536153] hover:text-offwhite-orange transition-colors"
+            className="text-black hover:text-offwhite-orange transition-colors"
           >
             {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -94,9 +90,7 @@ export default function App() {
               key={item.id}
               onClick={() => setActiveTab(item.id as Tab)}
               className={`w-full flex items-center p-3 transition-all group relative ${
-                activeTab === item.id
-                  ? 'nature-panel-dark text-white rounded-2xl'
-                  : 'text-[#4f5f4f] hover:bg-white/70 rounded-2xl'
+                activeTab === item.id ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
               }`}
             >
               <item.icon size={20} />
@@ -116,7 +110,7 @@ export default function App() {
           ))}
         </nav>
 
-        <div className="p-6 border-t border-black/10">
+        <div className="p-6 border-t-2 border-black">
           <div className="font-mono text-[8px] text-gray-400 uppercase leading-tight">
             © 2026 OFF_WHITE_DASHBOARD<br />
             SISTEMA_PERSONALE
@@ -125,8 +119,8 @@ export default function App() {
       </motion.aside>
 
       {/* MOBILE HEADER */}
-      <header className="md:hidden bg-[#f7f2e8]/90 border-b border-black/10 p-4 flex justify-between items-center z-50 shrink-0 backdrop-blur-xl">
-        <div className="text-xl tracking-tight">OFF-WHITE™</div>
+      <header className="md:hidden bg-white border-b-2 border-black p-4 flex justify-between items-center z-50 shrink-0">
+        <div className="font-black text-xl tracking-tighter">OFF-WHITE™</div>
         <div className="flex items-center gap-3">
           <div className="font-mono text-[10px] font-black text-offwhite-orange">{stats.points} PTS</div>
           <div className="font-mono text-[10px] uppercase tracking-widest opacity-50">
@@ -136,26 +130,15 @@ export default function App() {
       </header>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-8 relative pb-24 md:pb-8">
+      <main className="flex-1 overflow-y-auto bg-white p-4 md:p-8 relative pb-24 md:pb-8">
         <div className="absolute top-0 right-0 p-4 flex items-center gap-4 pointer-events-none select-none hidden sm:flex">
           <div className="font-mono text-[10px] font-black text-offwhite-orange">{stats.points} OFF-CREDITS</div>
-          <div className="font-mono text-[8px] md:text-[10px] text-[#8a9484]">
+          <div className="font-mono text-[8px] md:text-[10px] text-gray-300">
             "IL_PROGRESSO_E_UN_PERCORSO" // V1.0
           </div>
         </div>
         
-        <div className="max-w-7xl mx-auto pt-6">
-          <div className="mb-6 rounded-[28px] border border-[#b8af9f]/40 bg-white/45 px-5 py-4 backdrop-blur-xl">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#7f8c78]">Ambiente</div>
-                <div className="text-2xl tracking-tight text-[#39453a]">Minimal naturale, luce soffusa, focus pulito.</div>
-              </div>
-              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8c7f6f]">
-                texture calde • verdi salvia • materiali chiari
-              </div>
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto">
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && (
               <motion.div 
@@ -166,9 +149,9 @@ export default function App() {
                 className="space-y-6"
               >
                 {/* DAILY CHECK-IN BAR */}
-                <div className="offwhite-border nature-panel-dark text-white p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="offwhite-border bg-black text-white p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                   <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <div className="offwhite-label shrink-0">DAILY_STATUS</div>
+                    <div className="offwhite-label bg-white text-black shrink-0">DAILY_STATUS</div>
                     <div className="font-black text-xl uppercase tracking-tighter truncate">
                       {hasCheckedInToday ? '"CHECK-IN_COMPLETATO"' : '"CHECK-IN_IN_ATTESA"'}
                     </div>
@@ -179,7 +162,7 @@ export default function App() {
                     className={`px-8 py-3 font-mono text-xs uppercase tracking-widest transition-all ${
                       hasCheckedInToday 
                       ? 'bg-white/20 text-white/40 cursor-not-allowed' 
-                      : 'bg-[#edf2e8] text-[#334133] hover:bg-white hover:text-black'
+                      : 'bg-offwhite-orange text-white hover:bg-white hover:text-black'
                     }`}
                   >
                     {hasCheckedInToday ? 'COMPLETATO' : 'FAI CHECK-IN'}
@@ -243,7 +226,7 @@ export default function App() {
       </main>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#495748]/95 text-white flex justify-around items-center p-2 border-t border-white/10 z-50 backdrop-blur-xl">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black text-white flex justify-around items-center p-2 border-t-2 border-white/10 z-50">
         {navItems.map((item) => (
           <button
             key={item.id}
