@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { SectionHeader } from './SectionHeader';
-import { ShoppingItem, Recipe } from '../types';
-import { Plus, ShoppingCart, Trash2, RefreshCw, CheckSquare, Square } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Check, Circle, Plus, RefreshCw, ShoppingCart, Sparkles, Trash2 } from 'lucide-react';
+import { SectionHeader } from './SectionHeader';
+import { Recipe, ShoppingItem } from '../types';
 
-const CATEGORIES = ['PRODUCE', 'PROTEIN', 'DAIRY', 'PANTRY', 'HOUSEHOLD', 'OTHER'];
+const CATEGORIES = ['PRODUCE', 'PROTEIN', 'DAIRY', 'PANTRY', 'HOUSEHOLD', 'OTHER'] as const;
+const QUICK_SUGGESTIONS = ['UOVA', 'LATTE', 'POLLO', 'RISO', 'BANANE', 'INSALATA'];
 
 function sanitizeShoppingItems(items: ShoppingItem[]) {
   return items.filter((item) => !item.isMarketplaceItem && item.category !== 'MARKETPLACE');
@@ -15,22 +16,19 @@ export const Shopping: React.FC = () => {
     const saved = localStorage.getItem('offwhite_shopping');
     return saved ? sanitizeShoppingItems(JSON.parse(saved)) : [];
   });
-
   const [newItem, setNewItem] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
+  const [selectedCategory, setSelectedCategory] = useState<(typeof CATEGORIES)[number]>('PRODUCE');
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'BOUGHT'>('ALL');
 
   useEffect(() => {
     const handleUpdate = () => {
       const saved = localStorage.getItem('offwhite_shopping');
-      if (saved) {
-        setItems(sanitizeShoppingItems(JSON.parse(saved)));
-      } else {
-        setItems([]);
-      }
+      setItems(saved ? sanitizeShoppingItems(JSON.parse(saved)) : []);
     };
+
     window.addEventListener('shopping-update', handleUpdate);
     window.addEventListener('storage', handleUpdate);
+
     return () => {
       window.removeEventListener('shopping-update', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
@@ -41,32 +39,47 @@ export const Shopping: React.FC = () => {
     localStorage.setItem('offwhite_shopping', JSON.stringify(items));
   }, [items]);
 
-  const addItem = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!newItem) return;
-    setItems([...items, { 
-      id: crypto.randomUUID(), 
-      name: newItem.toUpperCase(), 
-      bought: false,
-      category: selectedCategory 
-    }]);
-    setNewItem('');
+  const boughtCount = items.filter((item) => item.bought).length;
+  const pendingCount = items.length - boughtCount;
+  const progress = items.length > 0 ? (boughtCount / items.length) * 100 : 0;
+
+  const addItem = (event?: React.FormEvent, explicitName?: string, explicitCategory?: string) => {
+    if (event) event.preventDefault();
+    const rawName = explicitName ?? newItem;
+    const normalizedName = rawName.trim().toUpperCase();
+    if (!normalizedName) return;
+    if (items.some((item) => item.name === normalizedName)) {
+      setNewItem('');
+      return;
+    }
+
+    setItems((prev) => [
+      {
+        id: crypto.randomUUID(),
+        name: normalizedName,
+        bought: false,
+        category: explicitCategory ?? selectedCategory,
+      },
+      ...prev,
+    ]);
+
+    if (!explicitName) setNewItem('');
   };
 
   const toggleItem = (id: string) => {
-    setItems(items.map(i => i.id === id ? { ...i, bought: !i.bought } : i));
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, bought: !item.bought } : item)));
   };
 
   const deleteItem = (id: string) => {
-    setItems(items.filter(i => i.id !== id));
+    setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const clearBought = () => {
-    setItems(items.filter(i => !i.bought));
+    setItems((prev) => prev.filter((item) => !item.bought));
   };
 
   const clearAll = () => {
-    if (window.confirm('CLEAR ALL ITEMS?')) {
+    if (window.confirm('VUOI DAVVERO SVUOTARE LA LISTA SPESA?')) {
       setItems([]);
     }
   };
@@ -74,157 +87,185 @@ export const Shopping: React.FC = () => {
   const importFromRecipes = () => {
     const recipes: Recipe[] = JSON.parse(localStorage.getItem('offwhite_recipes') || '[]');
     if (recipes.length === 0) return;
-    
-    const newItems: ShoppingItem[] = [];
-    recipes.forEach(recipe => {
-      recipe.ingredients.forEach(ing => {
-        if (!items.some(i => i.name === ing.toUpperCase())) {
-          newItems.push({
-            id: crypto.randomUUID(),
-            name: ing.toUpperCase(),
-            bought: false,
-            category: 'PANTRY'
-          });
-        }
+
+    const existingNames = new Set(items.map((item) => item.name));
+    const importedItems: ShoppingItem[] = [];
+
+    recipes.forEach((recipe) => {
+      recipe.ingredients.forEach((ingredient) => {
+        const normalizedName = ingredient.trim().toUpperCase();
+        if (!normalizedName || existingNames.has(normalizedName)) return;
+        existingNames.add(normalizedName);
+        importedItems.push({
+          id: crypto.randomUUID(),
+          name: normalizedName,
+          bought: false,
+          category: 'PANTRY',
+        });
       });
     });
-    
-    if (newItems.length > 0) {
-      setItems([...items, ...newItems]);
+
+    if (importedItems.length > 0) {
+      setItems((prev) => [...importedItems, ...prev]);
     }
   };
 
-  const filteredItems = items.filter(item => {
-    if (filter === 'PENDING') return !item.bought;
-    if (filter === 'BOUGHT') return item.bought;
-    return true;
-  });
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        if (filter === 'PENDING') return !item.bought;
+        if (filter === 'BOUGHT') return item.bought;
+        return true;
+      }),
+    [filter, items],
+  );
 
-  const progress = items.length > 0 
-    ? (items.filter(i => i.bought).length / items.length) * 100 
-    : 0;
+  const categorySections = CATEGORIES.map((category) => ({
+    category,
+    items: filteredItems.filter((item) => (item.category || 'OTHER') === category),
+  })).filter((section) => section.items.length > 0);
 
   return (
-    <div className="offwhite-border h-full flex flex-col">
-      <div className="flex justify-between items-start mb-6">
-        <SectionHeader title="SPESA" label="LISTA_SPESA_V2.0" className="mb-0" />
-        <div className="flex gap-2">
-          <button 
-            onClick={importFromRecipes}
-            className="p-2 border-2 border-black hover:bg-black hover:text-white transition-all group"
-            title="Importa da alimentazione"
-          >
-            <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+    <div className="shopping-screen offwhite-border min-h-full">
+      <div className="shopping-toolbar">
+        <SectionHeader title="SPESA" label="LISTA_SPESA_V3.0" className="mb-0" />
+        <div className="shopping-toolbar-actions">
+          <button type="button" onClick={importFromRecipes} className="shopping-icon-button" title="Importa ingredienti">
+            <RefreshCw size={16} />
           </button>
-          <button 
-            onClick={clearBought}
-            className="p-2 border-2 border-black hover:bg-offwhite-orange hover:text-white transition-all"
-            title="Rimuovi acquistati"
-          >
-            <CheckSquare size={16} />
+          <button type="button" onClick={clearBought} className="shopping-icon-button is-accent" title="Rimuovi comprati">
+            <Check size={16} />
           </button>
         </div>
       </div>
 
-      {/* PROGRESS BAR */}
-      <div className="mb-8 p-4 bg-black text-white border-2 border-black relative overflow-hidden">
-        <div className="relative z-10 flex justify-between items-end mb-2">
-          <div>
-            <div className="font-mono text-[8px] uppercase text-gray-400 mb-1">Stato lista</div>
-            <div className="text-2xl font-black tracking-tighter">
-              {items.filter(i => i.bought).length}/{items.length} <span className="text-offwhite-orange">ARTICOLI PRESI</span>
-            </div>
+      <div className="shopping-summary-card">
+        <div className="shopping-summary-copy">
+          <div className="shopping-summary-kicker">Shopping focus</div>
+          <div className="shopping-summary-title">
+            {pendingCount} da prendere
           </div>
-          <div className="text-right">
-            <div className="text-xl font-black tracking-tighter text-offwhite-orange">{Math.round(progress)}%</div>
+          <div className="shopping-summary-meta">
+            {boughtCount} presi su {items.length} articoli
           </div>
         </div>
-        <div className="w-full h-1 bg-white/10">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            className="h-full bg-offwhite-orange"
-          />
+        <div className="shopping-summary-progress">
+          <div className="shopping-summary-percentage">{Math.round(progress)}%</div>
+          <div className="shopping-summary-track">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              className="shopping-summary-fill"
+            />
+          </div>
         </div>
       </div>
-      
-      <form onSubmit={addItem} className="space-y-3 mb-8 p-4 border-2 border-black bg-gray-50">
-        <div className="text-[10px] font-mono uppercase mb-2 text-black font-bold">Aggiungi articolo</div>
-        <div className="flex gap-2">
-          <input 
-            type="text" 
-            placeholder="NOME ARTICOLO..."
+
+      <form onSubmit={addItem} className="shopping-quick-add">
+        <div className="shopping-quick-add-head">
+          <div>
+            <div className="shopping-panel-kicker">Quick add</div>
+            <div className="shopping-panel-title">Aggiungi in un tap</div>
+          </div>
+          <div className="shopping-category-pill">{selectedCategory}</div>
+        </div>
+
+        <div className="shopping-add-row">
+          <input
+            type="text"
+            placeholder="COSA TI SERVE?"
             value={newItem}
-            onChange={(e) => setNewItem(e.target.value)}
-            className="flex-1 border-2 border-black p-2 font-mono text-xs uppercase focus:outline-none focus:bg-black focus:text-white transition-all"
+            onChange={(event) => setNewItem(event.target.value)}
+            className="shopping-input"
           />
-          <select 
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-32 border-2 border-black p-2 font-mono text-[10px] uppercase focus:outline-none focus:bg-black focus:text-white transition-all"
-          >
-            {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-          </select>
-          <button type="submit" className="bg-black text-white p-2 px-6 hover:bg-offwhite-orange transition-colors">
-            <Plus size={20} />
+          <button type="submit" className="shopping-primary-button" aria-label="Aggiungi articolo">
+            <Plus size={18} />
+            <span>Aggiungi</span>
           </button>
+        </div>
+
+        <div className="shopping-category-row">
+          {CATEGORIES.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setSelectedCategory(category)}
+              className={`shopping-chip ${selectedCategory === category ? 'is-active' : ''}`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
+        <div className="shopping-suggestion-row">
+          <div className="shopping-suggestion-label">
+            <Sparkles size={14} />
+            <span>Rapidi</span>
+          </div>
+          <div className="shopping-suggestion-chips">
+            {QUICK_SUGGESTIONS.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => addItem(undefined, suggestion, selectedCategory)}
+                className="shopping-suggestion-chip"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
         </div>
       </form>
 
-      {/* FILTERS */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">
-        {(['ALL', 'PENDING', 'BOUGHT'] as const).map(f => (
+      <div className="shopping-filter-row">
+        {([
+          { id: 'ALL', label: 'Tutto' },
+          { id: 'PENDING', label: 'Da prendere' },
+          { id: 'BOUGHT', label: 'Presi' },
+        ] as const).map((item) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1 font-mono text-[8px] font-bold uppercase transition-all whitespace-nowrap ${filter === f ? 'bg-black text-white' : 'border border-black/10 text-gray-400 hover:border-black hover:text-black'}`}
+            key={item.id}
+            type="button"
+            onClick={() => setFilter(item.id)}
+            className={`shopping-filter-pill ${filter === item.id ? 'is-active' : ''}`}
           >
-            {f === 'ALL' ? 'TUTTO' : f === 'PENDING' ? 'DA PRENDERE' : 'PRESI'}
+            {item.label}
           </button>
         ))}
       </div>
 
-      <div className="flex-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
-        {CATEGORIES.map(cat => {
-          const catItems = filteredItems.filter(i => (i.category || 'OTHER') === cat);
-          if (catItems.length === 0) return null;
-
-          return (
-            <div key={cat} className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="h-[2px] bg-black flex-1" />
-                <span className="font-mono text-[8px] font-black tracking-widest text-black">{cat}</span>
-                <div className="h-[2px] bg-black flex-1" />
+      <div className="shopping-list-shell">
+        {categorySections.length > 0 ? (
+          categorySections.map((section) => (
+            <div key={section.category} className="shopping-section">
+              <div className="shopping-section-head">
+                <span>{section.category}</span>
+                <span>{section.items.length}</span>
               </div>
-              <div className="grid grid-cols-1 gap-2">
-                <AnimatePresence mode="popLayout">
-                  {catItems.map(item => (
-                    <motion.div 
-                      layout
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      key={item.id} 
-                      className={`flex items-center justify-between p-3 border-2 transition-all group ${item.bought ? 'border-gray-100 bg-gray-50/50 opacity-50' : 'border-black bg-white'}`}
-                    >
-                      <div className="flex items-center gap-4 overflow-hidden">
-                        <button 
-                          onClick={() => toggleItem(item.id)}
-                          className={`transition-colors ${item.bought ? 'text-gray-300' : 'text-black hover:text-offwhite-orange'}`}
-                        >
-                          {item.bought ? <CheckSquare size={18} /> : <Square size={18} />}
-                        </button>
 
-                        <div className="overflow-hidden">
-                          <div className={`font-black text-sm uppercase tracking-tighter truncate ${item.bought ? 'line-through text-gray-400' : 'text-black'}`}>
-                            {item.name}
-                          </div>
-                          {item.category && (
-                            <div className="font-mono text-[8px] text-gray-400 font-bold uppercase">{item.category}</div>
-                          )}
+              <div className="shopping-list">
+                <AnimatePresence initial={false}>
+                  {section.items.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96 }}
+                      className={`shopping-item-row ${item.bought ? 'is-bought' : ''}`}
+                    >
+                      <button type="button" onClick={() => toggleItem(item.id)} className="shopping-item-toggle">
+                        {item.bought ? <Check size={16} /> : <Circle size={16} />}
+                      </button>
+
+                      <div className="shopping-item-copy">
+                        <div className="shopping-item-name">{item.name}</div>
+                        <div className="shopping-item-meta">
+                          {item.bought ? 'Preso' : 'Da comprare'}
                         </div>
                       </div>
-                      <button onClick={() => deleteItem(item.id)} className="text-gray-200 hover:text-offwhite-orange transition-colors shrink-0">
+
+                      <button type="button" onClick={() => deleteItem(item.id)} className="shopping-item-delete">
                         <Trash2 size={16} />
                       </button>
                     </motion.div>
@@ -232,25 +273,23 @@ export const Shopping: React.FC = () => {
                 </AnimatePresence>
               </div>
             </div>
-          );
-        })}
-
-        {filteredItems.length === 0 && (
-          <div className="text-center py-12 border-2 border-dashed border-black/10">
-            <ShoppingCart className="mx-auto mb-2 text-gray-200" size={32} />
-            <div className="font-mono text-[10px] text-gray-300 uppercase font-bold">Lista spesa vuota</div>
+          ))
+        ) : (
+          <div className="shopping-empty-state">
+            <ShoppingCart size={34} />
+            <div className="shopping-empty-title">Lista vuota</div>
+            <div className="shopping-empty-copy">
+              Aggiungi i primi articoli o importa ingredienti dalle ricette.
+            </div>
           </div>
         )}
       </div>
 
-      {items.length > 0 && (
-        <button 
-          onClick={clearAll}
-          className="mt-6 w-full p-3 border-2 border-black font-mono text-[10px] font-black uppercase tracking-widest hover:bg-offwhite-orange hover:text-white transition-all"
-        >
-          RESET LISTA
+      {items.length > 0 ? (
+        <button type="button" onClick={clearAll} className="shopping-reset-button">
+          Svuota lista
         </button>
-      )}
+      ) : null}
     </div>
   );
 };

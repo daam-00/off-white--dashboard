@@ -309,6 +309,7 @@ const AnimatedValue: React.FC<{
 export const Finance: React.FC = () => {
   const [activeTab, setActiveTab] = useState<FinanceTab>('portfolio');
   const [showSubscriptionSheet, setShowSubscriptionSheet] = useState(false);
+  const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null);
   const [subscriptionMobileView, setSubscriptionMobileView] = useState<SubscriptionMobileView>('subscriptions');
   const [calendarMonthDate, setCalendarMonthDate] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() =>
@@ -330,6 +331,33 @@ export const Finance: React.FC = () => {
   const [subscriptionAmount, setSubscriptionAmount] = useState('');
   const [subscriptionDay, setSubscriptionDay] = useState('1');
   const [subscriptionIconName, setSubscriptionIconName] = useState<SubscriptionIconName>('film');
+
+  const resetSubscriptionForm = () => {
+    setEditingSubscriptionId(null);
+    setSubscriptionName('');
+    setSubscriptionAmount('');
+    setSubscriptionDay('1');
+    setSubscriptionIconName('film');
+  };
+
+  const openNewSubscriptionSheet = () => {
+    resetSubscriptionForm();
+    setShowSubscriptionSheet(true);
+  };
+
+  const openEditSubscriptionSheet = (subscription: SubscriptionItem) => {
+    setEditingSubscriptionId(subscription.id);
+    setSubscriptionName(subscription.name);
+    setSubscriptionAmount(String(subscription.amount));
+    setSubscriptionDay(String(subscription.dayOfMonth));
+    setSubscriptionIconName(subscription.iconName);
+    setShowSubscriptionSheet(true);
+  };
+
+  const closeSubscriptionSheet = () => {
+    setShowSubscriptionSheet(false);
+    resetSubscriptionForm();
+  };
 
   useEffect(() => {
     localStorage.setItem('offwhite_accounts', JSON.stringify(accounts));
@@ -446,37 +474,48 @@ export const Finance: React.FC = () => {
     setDescription('');
   };
 
-  const addSubscription = (event: React.FormEvent) => {
+  const saveSubscription = (event: React.FormEvent) => {
     event.preventDefault();
     const parsedAmount = parseFloat(subscriptionAmount);
     const parsedDay = parseInt(subscriptionDay, 10);
     if (!subscriptionName.trim() || Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
     if (Number.isNaN(parsedDay) || parsedDay < 1 || parsedDay > 31) return;
 
-    setSubscriptions((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        name: subscriptionName.trim(),
-        amount: parsedAmount,
-        dayOfMonth: parsedDay,
-        active: true,
-        iconName: subscriptionIconName,
-      },
-    ]);
+    setSubscriptions((prev) => {
+      if (editingSubscriptionId) {
+        return prev.map((subscription) =>
+          subscription.id === editingSubscriptionId
+            ? {
+                ...subscription,
+                name: subscriptionName.trim(),
+                amount: parsedAmount,
+                dayOfMonth: parsedDay,
+                iconName: subscriptionIconName,
+              }
+            : subscription,
+        );
+      }
 
-    setSubscriptionName('');
-    setSubscriptionAmount('');
-    setSubscriptionDay('1');
-    setSubscriptionIconName('film');
+      return [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          name: subscriptionName.trim(),
+          amount: parsedAmount,
+          dayOfMonth: parsedDay,
+          active: true,
+          iconName: subscriptionIconName,
+        },
+      ];
+    });
+
+    closeSubscriptionSheet();
   };
 
-  const toggleSubscription = (id: string) => {
-    setSubscriptions((prev) =>
-      prev.map((subscription) =>
-        subscription.id === id ? { ...subscription, active: !subscription.active } : subscription,
-      ),
-    );
+  const deleteSubscription = () => {
+    if (!editingSubscriptionId) return;
+    setSubscriptions((prev) => prev.filter((subscription) => subscription.id !== editingSubscriptionId));
+    closeSubscriptionSheet();
   };
 
   const sortedSubscriptions = [...activeSubscriptions].sort((a, b) => a.dayOfMonth - b.dayOfMonth);
@@ -530,7 +569,7 @@ export const Finance: React.FC = () => {
   };
 
   return (
-    <div className={activeTab === 'subscriptions' ? 'h-full md:border-2 md:border-black md:p-6' : 'offwhite-border h-full'}>
+    <div className={activeTab === 'subscriptions' ? 'min-h-full md:border-2 md:border-black md:p-6' : 'offwhite-border min-h-full'}>
       <div className={activeTab === 'subscriptions' ? 'hidden md:block' : ''}>
         <SectionHeader title="PORTAFOGLIO" label="GESTIONE_DENARO_V5.0" />
       </div>
@@ -821,13 +860,30 @@ export const Finance: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="orbit-mobile-screen md:hidden">
+          <div className={`orbit-mobile-screen md:hidden ${subscriptionMobileView === 'calendar' ? 'is-calendar-view' : ''}`}>
             <div className="orbit-mobile-topbar">
               <div className="orbit-mobile-title">
-                <div className="orbit-mobile-title-kicker">Abbonamenti</div>
-                <div className="orbit-mobile-title-main">Hub Servizi</div>
+                <div className="orbit-mobile-title-main">
+                  {subscriptionMobileView === 'calendar' ? 'Calendario' : 'Hub Servizi'}
+                </div>
               </div>
+              <button
+                type="button"
+                className="orbit-top-action-button"
+                onClick={() => setActiveTab('portfolio')}
+                aria-label="Torna al portafoglio"
+              >
+                <ArrowLeft size={20} />
+              </button>
               <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className={`orbit-top-action-button ${subscriptionMobileView === 'calendar' ? 'is-active' : ''}`}
+                  onClick={() => setSubscriptionMobileView((view) => (view === 'calendar' ? 'subscriptions' : 'calendar'))}
+                  aria-label={subscriptionMobileView === 'calendar' ? 'Mostra lista abbonamenti' : 'Mostra calendario'}
+                >
+                  <CalendarDays size={20} />
+                </button>
                 <button
                   type="button"
                   className={`orbit-notification-button ${notificationPermission === 'granted' ? 'is-active' : ''}`}
@@ -835,7 +891,7 @@ export const Finance: React.FC = () => {
                 >
                   <BellRing size={20} />
                 </button>
-                <button type="button" className="orbit-plus-button" onClick={() => setShowSubscriptionSheet(true)}>
+                <button type="button" className="orbit-plus-button" onClick={openNewSubscriptionSheet}>
                   <Plus size={28} />
                 </button>
               </div>
@@ -852,7 +908,8 @@ export const Finance: React.FC = () => {
                         {
                           width: `${layer.radius * 2}px`,
                           height: `${layer.radius * 2}px`,
-                          '--orbit-duration': `${18 + layerIndex * 6}s`,
+                          '--orbit-duration': `${12 + layerIndex * 4}s`,
+                          '--orbit-direction': layerIndex % 2 === 0 ? 'normal' : 'reverse',
                         } as React.CSSProperties
                       }
                     >
@@ -887,12 +944,12 @@ export const Finance: React.FC = () => {
                 </div>
 
                 <div className="orbit-mobile-stats">
-                  <div>
+                  <div className="min-w-0">
                     <div className="orbit-mobile-stat-value">{activeSubscriptions.length}</div>
                     <div className="orbit-mobile-stat-label">Personal</div>
                   </div>
-                  <div className="text-right">
-                    <div className="orbit-mobile-stat-value">€{formatCurrency(annualSubscriptionsTotal)}</div>
+                  <div className="orbit-mobile-stat-card is-right">
+                    <div className="orbit-mobile-stat-value orbit-mobile-stat-value-amount">€{formatCurrency(annualSubscriptionsTotal)}</div>
                     <div className="orbit-mobile-stat-label">Totale annuale</div>
                   </div>
                 </div>
@@ -912,10 +969,10 @@ export const Finance: React.FC = () => {
                       const Icon = iconOption.Icon;
                       return (
                         <button
-                          key={subscription.id}
                           type="button"
-                          onClick={() => toggleSubscription(subscription.id)}
+                          key={subscription.id}
                           className="orbit-subscription-row"
+                          onClick={() => openEditSubscriptionSheet(subscription)}
                         >
                           <div className="orbit-subscription-row-left">
                             <div className="orbit-subscription-icon">
@@ -1026,63 +1083,34 @@ export const Finance: React.FC = () => {
               </div>
             )}
 
-            <div className="orbit-bottom-nav">
-              <button
-                type="button"
-                className={`orbit-bottom-nav-item ${subscriptionMobileView === 'subscriptions' ? 'is-active' : ''}`}
-                onClick={() => setSubscriptionMobileView('subscriptions')}
-              >
-                <span className="orbit-bottom-nav-icon">◐</span>
-                <span>Abbonamenti</span>
-              </button>
-              <button
-                type="button"
-                className={`orbit-bottom-nav-item ${subscriptionMobileView === 'calendar' ? 'is-active' : ''}`}
-                onClick={() => setSubscriptionMobileView('calendar')}
-              >
-                <CalendarDays size={26} />
-                <span>Calendario</span>
-              </button>
-              <button
-                type="button"
-                className="orbit-bottom-nav-item"
-                onClick={() => setActiveTab('portfolio')}
-              >
-                <ArrowLeft size={26} />
-                <span>Portafoglio</span>
-              </button>
-            </div>
-
             {showSubscriptionSheet && (
-              <div className="orbit-sheet-backdrop" onClick={() => setShowSubscriptionSheet(false)}>
+              <div className="orbit-sheet-backdrop" onClick={closeSubscriptionSheet}>
                 <div className="orbit-sheet" onClick={(event) => event.stopPropagation()}>
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
-                      <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">Nuovo abbonamento</div>
-                      <div className="text-2xl font-black tracking-tight">Aggiungi servizio</div>
-                      <div className="mt-2 text-sm text-gray-500">
+                      <div className="orbit-sheet-kicker">
+                        {editingSubscriptionId ? 'Gestione abbonamento' : 'Nuovo abbonamento'}
+                      </div>
+                      <div className="orbit-sheet-title">
+                        {editingSubscriptionId ? 'Modifica servizio' : 'Aggiungi servizio'}
+                      </div>
+                      <div className="orbit-sheet-body">
                         Il rinnovo e mensile: scegli il giorno del mese in cui verra addebitato.
                       </div>
                     </div>
-                    <button type="button" className="orbit-sheet-close" onClick={() => setShowSubscriptionSheet(false)}>
+                    <button type="button" className="orbit-sheet-close" onClick={closeSubscriptionSheet}>
                       ×
                     </button>
                   </div>
 
-                  <form
-                    onSubmit={(event) => {
-                      addSubscription(event);
-                      setShowSubscriptionSheet(false);
-                    }}
-                    className="space-y-3"
-                  >
+                  <form onSubmit={saveSubscription} className="space-y-3">
                     <input
                       id="subscription-name-input"
                       type="text"
                       placeholder="NOME ABBONAMENTO"
                       value={subscriptionName}
                       onChange={(event) => setSubscriptionName(event.target.value)}
-                      className="w-full border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                      className="orbit-sheet-input w-full"
                     />
 
                     <div className="grid grid-cols-2 gap-3">
@@ -1092,7 +1120,7 @@ export const Finance: React.FC = () => {
                         placeholder="IMPORTO"
                         value={subscriptionAmount}
                         onChange={(event) => setSubscriptionAmount(event.target.value)}
-                        className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                        className="orbit-sheet-input"
                       />
                       <input
                         type="number"
@@ -1101,11 +1129,11 @@ export const Finance: React.FC = () => {
                         placeholder="GIORNO RINNOVO"
                         value={subscriptionDay}
                         onChange={(event) => setSubscriptionDay(event.target.value)}
-                        className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                        className="orbit-sheet-input"
                       />
                     </div>
 
-                    <div className="rounded-2xl border border-black/10 bg-black/5 px-4 py-3 text-sm text-gray-600">
+                    <div className="orbit-sheet-note">
                       Si rinnova ogni mese il giorno <strong>{subscriptionDay || '1'}</strong>.
                     </div>
 
@@ -1117,7 +1145,7 @@ export const Finance: React.FC = () => {
                             key={option.id}
                             type="button"
                             onClick={() => setSubscriptionIconName(option.id)}
-                            className={`subscription-icon-picker ${active ? 'is-active' : ''}`}
+                            className={`subscription-icon-picker orbit-sheet-icon-picker ${active ? 'is-active' : ''}`}
                           >
                             <option.Icon size={18} />
                             <span>{option.label}</span>
@@ -1128,10 +1156,20 @@ export const Finance: React.FC = () => {
 
                     <button
                       type="submit"
-                      className="w-full border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
+                      className="orbit-sheet-action orbit-sheet-action-primary w-full"
                     >
-                      Salva abbonamento
+                      {editingSubscriptionId ? 'Salva modifiche' : 'Salva abbonamento'}
                     </button>
+
+                    {editingSubscriptionId ? (
+                      <button
+                        type="button"
+                        onClick={deleteSubscription}
+                        className="orbit-sheet-action orbit-sheet-action-secondary w-full"
+                      >
+                        Elimina abbonamento
+                      </button>
+                    ) : null}
                   </form>
                 </div>
               </div>
@@ -1156,6 +1194,7 @@ export const Finance: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
+                  openNewSubscriptionSheet();
                   const nameInput = document.getElementById('subscription-name-input');
                   if (nameInput instanceof HTMLInputElement) nameInput.focus();
                 }}
@@ -1222,7 +1261,7 @@ export const Finance: React.FC = () => {
                   </div>
                 </div>
 
-                <form onSubmit={addSubscription} className="space-y-3">
+                <form onSubmit={saveSubscription} className="space-y-3">
                   <input
                     id="subscription-name-input"
                     type="text"
@@ -1273,7 +1312,7 @@ export const Finance: React.FC = () => {
                     type="submit"
                     className="w-full border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
                   >
-                    Salva abbonamento
+                    {editingSubscriptionId ? 'Salva modifiche' : 'Salva abbonamento'}
                   </button>
                 </form>
               </div>
@@ -1286,10 +1325,10 @@ export const Finance: React.FC = () => {
 
                     return (
                       <button
-                        key={subscription.id}
                         type="button"
-                        onClick={() => toggleSubscription(subscription.id)}
+                        key={subscription.id}
                         className={`subscription-app-row w-full ${subscription.active ? '' : 'is-muted'}`}
+                        onClick={() => openEditSubscriptionSheet(subscription)}
                       >
                         <div className="subscription-app-row-left">
                           <div className="subscription-app-row-icon">
