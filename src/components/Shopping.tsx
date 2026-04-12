@@ -1,46 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { SectionHeader } from './SectionHeader';
 import { ShoppingItem, Recipe } from '../types';
-import { Plus, ShoppingCart, Trash2, RefreshCw, CheckSquare, Square, Filter, Award } from 'lucide-react';
+import { Plus, ShoppingCart, Trash2, RefreshCw, CheckSquare, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-const CATEGORIES = ['PRODUCE', 'PROTEIN', 'DAIRY', 'PANTRY', 'HOUSEHOLD', 'MARKETPLACE', 'OTHER'];
+const CATEGORIES = ['PRODUCE', 'PROTEIN', 'DAIRY', 'PANTRY', 'HOUSEHOLD', 'OTHER'];
 
-const MARKETPLACE_ITEMS: ShoppingItem[] = [
-  { id: 'theme-orange', name: 'VIBRANT_ORANGE_THEME', bought: false, category: 'MARKETPLACE', cost: 500, isMarketplaceItem: true },
-  { id: 'theme-blue', name: 'INDUSTRIAL_BLUE_THEME', bought: false, category: 'MARKETPLACE', cost: 750, isMarketplaceItem: true },
-  { id: 'avatar-1', name: 'AVATAR_PACK_01', bought: false, category: 'MARKETPLACE', cost: 300, isMarketplaceItem: true },
-  { id: 'avatar-2', name: 'AVATAR_PACK_02', bought: false, category: 'MARKETPLACE', cost: 300, isMarketplaceItem: true },
-  { id: 'premium-badge', name: 'ELITE_USER_BADGE', bought: false, category: 'MARKETPLACE', cost: 1000, isMarketplaceItem: true },
-];
+function sanitizeShoppingItems(items: ShoppingItem[]) {
+  return items.filter((item) => !item.isMarketplaceItem && item.category !== 'MARKETPLACE');
+}
 
 export const Shopping: React.FC = () => {
   const [items, setItems] = useState<ShoppingItem[]>(() => {
     const saved = localStorage.getItem('offwhite_shopping');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [stats, setStats] = useState(() => {
-    const saved = localStorage.getItem('offwhite_user_stats');
-    return saved ? JSON.parse(saved) : { points: 0, activeTheme: 'standard' };
+    return saved ? sanitizeShoppingItems(JSON.parse(saved)) : [];
   });
 
   const [newItem, setNewItem] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
-  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'BOUGHT' | 'MARKETPLACE'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'BOUGHT'>('ALL');
 
   useEffect(() => {
     const handleUpdate = () => {
       const saved = localStorage.getItem('offwhite_shopping');
-      if (saved) setItems(JSON.parse(saved));
-      const savedStats = localStorage.getItem('offwhite_user_stats');
-      if (savedStats) setStats(JSON.parse(savedStats));
+      if (saved) {
+        setItems(sanitizeShoppingItems(JSON.parse(saved)));
+      } else {
+        setItems([]);
+      }
     };
     window.addEventListener('shopping-update', handleUpdate);
-    window.addEventListener('stats-update', handleUpdate);
     window.addEventListener('storage', handleUpdate);
     return () => {
       window.removeEventListener('shopping-update', handleUpdate);
-      window.removeEventListener('stats-update', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
     };
   }, []);
@@ -61,32 +53,7 @@ export const Shopping: React.FC = () => {
     setNewItem('');
   };
 
-  const buyItem = (item: ShoppingItem) => {
-    if (!item.cost) return;
-    if (stats.points < item.cost) {
-      alert('INSUFFICIENT OFF-CREDITS');
-      return;
-    }
-
-    const isTheme = item.id.startsWith('theme-');
-    const newStats = { 
-      ...stats, 
-      points: stats.points - item.cost,
-      activeTheme: isTheme ? item.id : stats.activeTheme
-    };
-    localStorage.setItem('offwhite_user_stats', JSON.stringify(newStats));
-    setStats(newStats);
-    
-    setItems(items.map(i => i.id === item.id ? { ...i, bought: true, owned: true } : i));
-    window.dispatchEvent(new CustomEvent('stats-update'));
-  };
-
   const toggleItem = (id: string) => {
-    const item = items.find(i => i.id === id);
-    if (item?.isMarketplaceItem && !item.owned) {
-      buyItem(item);
-      return;
-    }
     setItems(items.map(i => i.id === id ? { ...i, bought: !i.bought } : i));
   };
 
@@ -95,12 +62,12 @@ export const Shopping: React.FC = () => {
   };
 
   const clearBought = () => {
-    setItems(items.filter(i => !i.bought || i.isMarketplaceItem));
+    setItems(items.filter(i => !i.bought));
   };
 
   const clearAll = () => {
     if (window.confirm('CLEAR ALL ITEMS?')) {
-      setItems(items.filter(i => i.isMarketplaceItem));
+      setItems([]);
     }
   };
 
@@ -127,51 +94,35 @@ export const Shopping: React.FC = () => {
     }
   };
 
-  const initializeMarketplace = () => {
-    const existingIds = items.map(i => i.id);
-    const missingItems = MARKETPLACE_ITEMS.filter(mi => !existingIds.includes(mi.id));
-    if (missingItems.length > 0) {
-      setItems([...items, ...missingItems]);
-    }
-  };
-
-  useEffect(() => {
-    initializeMarketplace();
-  }, []);
-
   const filteredItems = items.filter(item => {
-    if (filter === 'PENDING') return !item.bought && !item.isMarketplaceItem;
-    if (filter === 'BOUGHT') return item.bought && !item.isMarketplaceItem;
-    if (filter === 'MARKETPLACE') return item.isMarketplaceItem;
+    if (filter === 'PENDING') return !item.bought;
+    if (filter === 'BOUGHT') return item.bought;
     return true;
   });
 
-  const progress = items.filter(i => !i.isMarketplaceItem).length > 0 
-    ? (items.filter(i => i.bought && !i.isMarketplaceItem).length / items.filter(i => !i.isMarketplaceItem).length) * 100 
+  const progress = items.length > 0 
+    ? (items.filter(i => i.bought).length / items.length) * 100 
     : 0;
 
   return (
     <div className="offwhite-border h-full flex flex-col">
       <div className="flex justify-between items-start mb-6">
         <SectionHeader title="SPESA" label="LISTA_SPESA_V2.0" className="mb-0" />
-        <div className="flex flex-col items-end">
-          <div className="font-mono text-[10px] font-black text-offwhite-orange mb-1">{stats.points} PTS</div>
-          <div className="flex gap-2">
-            <button 
-              onClick={importFromRecipes}
-              className="p-2 border-2 border-black hover:bg-black hover:text-white transition-all group"
-              title="Importa da alimentazione"
-            >
-              <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
-            </button>
-            <button 
-              onClick={clearBought}
-              className="p-2 border-2 border-black hover:bg-offwhite-orange hover:text-white transition-all"
-              title="Rimuovi acquistati"
-            >
-              <CheckSquare size={16} />
-            </button>
-          </div>
+        <div className="flex gap-2">
+          <button 
+            onClick={importFromRecipes}
+            className="p-2 border-2 border-black hover:bg-black hover:text-white transition-all group"
+            title="Importa da alimentazione"
+          >
+            <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+          </button>
+          <button 
+            onClick={clearBought}
+            className="p-2 border-2 border-black hover:bg-offwhite-orange hover:text-white transition-all"
+            title="Rimuovi acquistati"
+          >
+            <CheckSquare size={16} />
+          </button>
         </div>
       </div>
 
@@ -181,7 +132,7 @@ export const Shopping: React.FC = () => {
           <div>
             <div className="font-mono text-[8px] uppercase text-gray-400 mb-1">Stato lista</div>
             <div className="text-2xl font-black tracking-tighter">
-              {items.filter(i => i.bought && !i.isMarketplaceItem).length}/{items.filter(i => !i.isMarketplaceItem).length} <span className="text-offwhite-orange">ARTICOLI PRESI</span>
+              {items.filter(i => i.bought).length}/{items.length} <span className="text-offwhite-orange">ARTICOLI PRESI</span>
             </div>
           </div>
           <div className="text-right">
@@ -212,7 +163,7 @@ export const Shopping: React.FC = () => {
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="w-32 border-2 border-black p-2 font-mono text-[10px] uppercase focus:outline-none focus:bg-black focus:text-white transition-all"
           >
-            {CATEGORIES.filter(c => c !== 'MARKETPLACE').map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
           </select>
           <button type="submit" className="bg-black text-white p-2 px-6 hover:bg-offwhite-orange transition-colors">
             <Plus size={20} />
@@ -222,13 +173,13 @@ export const Shopping: React.FC = () => {
 
       {/* FILTERS */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-2 custom-scrollbar">
-        {(['ALL', 'PENDING', 'BOUGHT', 'MARKETPLACE'] as const).map(f => (
+        {(['ALL', 'PENDING', 'BOUGHT'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className={`px-3 py-1 font-mono text-[8px] font-bold uppercase transition-all whitespace-nowrap ${filter === f ? 'bg-black text-white' : 'border border-black/10 text-gray-400 hover:border-black hover:text-black'}`}
           >
-            {f === 'ALL' ? 'TUTTO' : f === 'PENDING' ? 'DA PRENDERE' : f === 'BOUGHT' ? 'PRESI' : 'MARKETPLACE'}
+            {f === 'ALL' ? 'TUTTO' : f === 'PENDING' ? 'DA PRENDERE' : 'PRESI'}
           </button>
         ))}
       </div>
@@ -261,47 +212,21 @@ export const Shopping: React.FC = () => {
                           onClick={() => toggleItem(item.id)}
                           className={`transition-colors ${item.bought ? 'text-gray-300' : 'text-black hover:text-offwhite-orange'}`}
                         >
-                          {item.isMarketplaceItem ? (
-                            item.owned ? <CheckSquare size={18} /> : <ShoppingCart size={18} />
-                          ) : (
-                            item.bought ? <CheckSquare size={18} /> : <Square size={18} />
-                          )}
+                          {item.bought ? <CheckSquare size={18} /> : <Square size={18} />}
                         </button>
-                        
-                        {/* PREVIEW BOX */}
-                        {item.isMarketplaceItem && (
-                          <div className="w-10 h-10 shrink-0 border border-black/10 flex items-center justify-center bg-gray-50 overflow-hidden">
-                            {item.id === 'theme-orange' && <div className="w-6 h-6 bg-[#FF5C00]" />}
-                            {item.id === 'theme-blue' && <div className="w-6 h-6 bg-[#0055FF]" />}
-                            {item.id.startsWith('avatar') && (
-                              <img 
-                                src={`https://picsum.photos/seed/${item.id}/40/40`} 
-                                alt="preview" 
-                                className="w-full h-full object-cover"
-                                referrerPolicy="no-referrer"
-                              />
-                            )}
-                            {item.id === 'premium-badge' && <Award size={20} className="text-offwhite-orange" />}
-                          </div>
-                        )}
 
                         <div className="overflow-hidden">
                           <div className={`font-black text-sm uppercase tracking-tighter truncate ${item.bought ? 'line-through text-gray-400' : 'text-black'}`}>
                             {item.name}
                           </div>
-                          {item.isMarketplaceItem && !item.owned && (
-                            <div className="font-mono text-[8px] text-offwhite-orange font-bold uppercase">{item.cost} PTS</div>
-                          )}
-                          {item.isMarketplaceItem && item.owned && (
-                            <div className="font-mono text-[8px] text-black font-bold uppercase">POSSEDUTO</div>
+                          {item.category && (
+                            <div className="font-mono text-[8px] text-gray-400 font-bold uppercase">{item.category}</div>
                           )}
                         </div>
                       </div>
-                      {!item.isMarketplaceItem && (
-                        <button onClick={() => deleteItem(item.id)} className="text-gray-200 hover:text-offwhite-orange transition-colors shrink-0">
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+                      <button onClick={() => deleteItem(item.id)} className="text-gray-200 hover:text-offwhite-orange transition-colors shrink-0">
+                        <Trash2 size={16} />
+                      </button>
                     </motion.div>
                   ))}
                 </AnimatePresence>

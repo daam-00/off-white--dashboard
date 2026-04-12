@@ -1,17 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { SectionHeader } from './SectionHeader';
 import { Account, Transaction } from '../types';
 import {
   ArrowDownRight,
+  ArrowUpDown,
   ArrowUpRight,
-  CalendarRange,
-  ChevronLeft,
+  ArrowLeft,
+  BellRing,
+  CalendarDays,
   ChevronRight,
-  Landmark,
+  Cloud,
+  Film,
+  Gamepad2,
+  GraduationCap,
+  HeartPulse,
   Minus,
+  Music4,
+  Phone,
   Plus,
-  Sparkles,
-  Tags,
+  Scissors,
+  Tv,
   WalletCards,
 } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -33,13 +41,44 @@ const DEFAULT_EXPENSE_CATEGORIES = [
   'ALTRO',
 ];
 
+type FinanceTab = 'portfolio' | 'subscriptions';
+type MovementType = 'income' | 'expense';
+type SubscriptionMobileView = 'subscriptions' | 'calendar';
+type SubscriptionIconName =
+  | 'film'
+  | 'tv'
+  | 'music'
+  | 'phone'
+  | 'cloud'
+  | 'scissors'
+  | 'health'
+  | 'study'
+  | 'gaming';
+
 interface SubscriptionItem {
   id: string;
   name: string;
   amount: number;
   dayOfMonth: number;
   active: boolean;
+  iconName: SubscriptionIconName;
 }
+
+const SUBSCRIPTION_ICON_OPTIONS: Array<{
+  id: SubscriptionIconName;
+  label: string;
+  Icon: React.ComponentType<{ size?: number; className?: string }>;
+}> = [
+  { id: 'film', label: 'VIDEO', Icon: Film },
+  { id: 'tv', label: 'TV', Icon: Tv },
+  { id: 'music', label: 'MUSICA', Icon: Music4 },
+  { id: 'phone', label: 'TEL', Icon: Phone },
+  { id: 'cloud', label: 'CLOUD', Icon: Cloud },
+  { id: 'scissors', label: 'BEAUTY', Icon: Scissors },
+  { id: 'health', label: 'SALUTE', Icon: HeartPulse },
+  { id: 'study', label: 'STUDIO', Icon: GraduationCap },
+  { id: 'gaming', label: 'GAME', Icon: Gamepad2 },
+];
 
 function getMonthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -60,8 +99,112 @@ function formatCurrency(value: number) {
   });
 }
 
+function normalizeSubscription(raw: Partial<SubscriptionItem>): SubscriptionItem | null {
+  if (!raw.id || !raw.name || typeof raw.amount !== 'number' || typeof raw.dayOfMonth !== 'number') {
+    return null;
+  }
+
+  const iconName = SUBSCRIPTION_ICON_OPTIONS.some((option) => option.id === raw.iconName)
+    ? raw.iconName
+    : 'film';
+
+  return {
+    id: raw.id,
+    name: raw.name,
+    amount: raw.amount,
+    dayOfMonth: raw.dayOfMonth,
+    active: raw.active ?? true,
+    iconName,
+  };
+}
+
+function getSubscriptionDueLabel(dayOfMonth: number) {
+  const now = new Date();
+  const nextDate = getNextSubscriptionDate(dayOfMonth, now);
+
+  const diffMs = nextDate.getTime() - now.getTime();
+  const diffDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+  if (diffDays === 0) return 'OGGI';
+  if (diffDays === 1) return 'DOMANI';
+  return `TRA ${diffDays} GIORNI`;
+}
+
+function getSubscriptionDateLabel(dayOfMonth: number) {
+  const nextDate = getNextSubscriptionDate(dayOfMonth, new Date());
+
+  return nextDate.toLocaleDateString('it-IT', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function getClampedDayOfMonth(year: number, monthIndex: number, dayOfMonth: number) {
+  return Math.min(dayOfMonth, new Date(year, monthIndex + 1, 0).getDate());
+}
+
+function getNextSubscriptionDate(dayOfMonth: number, fromDate: Date) {
+  const candidate = new Date(
+    fromDate.getFullYear(),
+    fromDate.getMonth(),
+    getClampedDayOfMonth(fromDate.getFullYear(), fromDate.getMonth(), dayOfMonth),
+  );
+
+  candidate.setHours(0, 0, 0, 0);
+  const compareDate = new Date(fromDate);
+  compareDate.setHours(0, 0, 0, 0);
+
+  if (candidate < compareDate) {
+    const nextMonth = new Date(fromDate.getFullYear(), fromDate.getMonth() + 1, 1);
+    return new Date(
+      nextMonth.getFullYear(),
+      nextMonth.getMonth(),
+      getClampedDayOfMonth(nextMonth.getFullYear(), nextMonth.getMonth(), dayOfMonth),
+    );
+  }
+
+  return candidate;
+}
+
+function buildSubscriptionCalendar(subscriptions: SubscriptionItem[], monthDate: Date) {
+  const year = monthDate.getFullYear();
+  const monthIndex = monthDate.getMonth();
+  const firstWeekday = (new Date(year, monthIndex, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const cells: Array<
+    | { type: 'empty'; key: string }
+    | { type: 'day'; key: string; day: number; items: SubscriptionItem[]; isToday: boolean }
+  > = [];
+
+  for (let index = 0; index < firstWeekday; index += 1) {
+    cells.push({ type: 'empty', key: `empty-${index}` });
+  }
+
+  const now = new Date();
+  const todayYear = now.getFullYear();
+  const todayMonth = now.getMonth();
+  const todayDate = now.getDate();
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const items = subscriptions.filter(
+      (subscription) => getClampedDayOfMonth(year, monthIndex, subscription.dayOfMonth) === day,
+    );
+
+    cells.push({
+      type: 'day',
+      key: `day-${day}`,
+      day,
+      items,
+      isToday: year === todayYear && monthIndex === todayMonth && day === todayDate,
+    });
+  }
+
+  return cells;
+}
+
 function polarStyle(index: number, total: number, radius: number) {
-  const angleOffset = total === 1 ? 0 : total === 2 ? -Math.PI / 2 : -Math.PI / 2;
+  const angleOffset = -Math.PI / 2;
   const angle = ((Math.PI * 2) / Math.max(total, 1)) * index + angleOffset;
   const x = Math.cos(angle) * radius;
   const y = Math.sin(angle) * radius;
@@ -72,16 +215,67 @@ function polarStyle(index: number, total: number, radius: number) {
 }
 
 function getOrbitRadius(index: number, total: number) {
-  if (total <= 1) return 122;
-  if (total === 2) return 128;
-  if (total <= 4) return index < 2 ? 104 : 138;
-  return index < 2 ? 92 : index < 4 ? 130 : 156;
+  if (total <= 2) return 112;
+  if (total <= 4) return index % 2 === 0 ? 106 : 124;
+  return index % 3 === 0 ? 98 : index % 3 === 1 ? 122 : 142;
 }
 
-function isTodayLastDayOfMonth(date = new Date()) {
-  const tomorrow = new Date(date);
-  tomorrow.setDate(date.getDate() + 1);
-  return tomorrow.getMonth() !== date.getMonth();
+function getMobileOrbitLayers(subscriptions: SubscriptionItem[]) {
+  return Array.from({ length: Math.ceil(subscriptions.length / 4) }, (_, layerIndex) => {
+    const items = subscriptions.slice(layerIndex * 4, layerIndex * 4 + 4);
+    return {
+      radius: 116 + layerIndex * 34,
+      items,
+    };
+  });
+}
+
+function parseAccounts() {
+  const saved = localStorage.getItem('offwhite_accounts');
+  if (!saved) return [DEFAULT_ACCOUNT];
+
+  try {
+    const parsed = JSON.parse(saved) as Account[];
+    return parsed.length > 0 ? parsed : [DEFAULT_ACCOUNT];
+  } catch {
+    return [DEFAULT_ACCOUNT];
+  }
+}
+
+function parseTransactions() {
+  const saved = localStorage.getItem('offwhite_transactions');
+  if (!saved) return [];
+
+  try {
+    return JSON.parse(saved) as Transaction[];
+  } catch {
+    return [];
+  }
+}
+
+function parseExpenseCategories() {
+  const saved = localStorage.getItem('offwhite_expense_categories');
+  if (!saved) return DEFAULT_EXPENSE_CATEGORIES;
+
+  try {
+    const parsed = JSON.parse(saved) as string[];
+    return parsed.length > 0 ? parsed : DEFAULT_EXPENSE_CATEGORIES;
+  } catch {
+    return DEFAULT_EXPENSE_CATEGORIES;
+  }
+}
+
+function parseSubscriptions() {
+  const saved = localStorage.getItem('offwhite_subscriptions');
+  if (!saved) return [];
+
+  try {
+    return (JSON.parse(saved) as Partial<SubscriptionItem>[])
+      .map(normalizeSubscription)
+      .filter((item): item is SubscriptionItem => item !== null);
+  } catch {
+    return [];
+  }
 }
 
 const AnimatedValue: React.FC<{
@@ -95,16 +289,14 @@ const AnimatedValue: React.FC<{
     let frame = 0;
     let startTime: number | null = null;
     const startValue = displayValue;
-    const duration = 800;
+    const duration = 700;
 
     const tick = (timestamp: number) => {
       if (startTime === null) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setDisplayValue(startValue + (value - startValue) * eased);
-      if (progress < 1) {
-        frame = window.requestAnimationFrame(tick);
-      }
+      if (progress < 1) frame = window.requestAnimationFrame(tick);
     };
 
     frame = window.requestAnimationFrame(tick);
@@ -115,64 +307,29 @@ const AnimatedValue: React.FC<{
 };
 
 export const Finance: React.FC = () => {
-  const [accounts, setAccounts] = useState<Account[]>(() => {
-    const saved = localStorage.getItem('offwhite_accounts');
-    if (!saved) return [DEFAULT_ACCOUNT];
-
-    try {
-      const parsed = JSON.parse(saved) as Account[];
-      return parsed.length > 0 ? parsed : [DEFAULT_ACCOUNT];
-    } catch {
-      return [DEFAULT_ACCOUNT];
-    }
-  });
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('offwhite_transactions');
-    if (!saved) return [];
-
-    try {
-      return JSON.parse(saved) as Transaction[];
-    } catch {
-      return [];
-    }
-  });
-  const [stats, setStats] = useState(() => {
-    const saved = localStorage.getItem('offwhite_user_stats');
-    return saved ? JSON.parse(saved) : { points: 0, activeTheme: 'standard' };
-  });
-  const [expenseCategories, setExpenseCategories] = useState<string[]>(() => {
-    const saved = localStorage.getItem('offwhite_expense_categories');
-    if (!saved) return DEFAULT_EXPENSE_CATEGORIES;
-
-    try {
-      const parsed = JSON.parse(saved) as string[];
-      return parsed.length > 0 ? parsed : DEFAULT_EXPENSE_CATEGORIES;
-    } catch {
-      return DEFAULT_EXPENSE_CATEGORIES;
-    }
-  });
-  const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>(() => {
-    const saved = localStorage.getItem('offwhite_subscriptions');
-    if (!saved) return [];
-
-    try {
-      return JSON.parse(saved) as SubscriptionItem[];
-    } catch {
-      return [];
-    }
-  });
+  const [activeTab, setActiveTab] = useState<FinanceTab>('portfolio');
+  const [showSubscriptionSheet, setShowSubscriptionSheet] = useState(false);
+  const [subscriptionMobileView, setSubscriptionMobileView] = useState<SubscriptionMobileView>('subscriptions');
+  const [calendarMonthDate, setCalendarMonthDate] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() =>
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default',
+  );
+  const [accounts, setAccounts] = useState<Account[]>(() => parseAccounts());
+  const [transactions, setTransactions] = useState<Transaction[]>(() => parseTransactions());
+  const [expenseCategories] = useState<string[]>(() => parseExpenseCategories());
+  const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>(() => parseSubscriptions());
 
   const [totalAmount, setTotalAmount] = useState('');
   const [movementAmount, setMovementAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [movementType, setMovementType] = useState<'income' | 'expense'>('expense');
+  const [movementType, setMovementType] = useState<MovementType>('expense');
   const [selectedCategory, setSelectedCategory] = useState(DEFAULT_EXPENSE_CATEGORIES[0]);
-  const [newCategory, setNewCategory] = useState('');
-  const [salaryAmount, setSalaryAmount] = useState('');
   const [selectedMonthKey, setSelectedMonthKey] = useState(getMonthKey());
+
   const [subscriptionName, setSubscriptionName] = useState('');
   const [subscriptionAmount, setSubscriptionAmount] = useState('');
   const [subscriptionDay, setSubscriptionDay] = useState('1');
+  const [subscriptionIconName, setSubscriptionIconName] = useState<SubscriptionIconName>('film');
 
   useEffect(() => {
     localStorage.setItem('offwhite_accounts', JSON.stringify(accounts));
@@ -183,58 +340,40 @@ export const Finance: React.FC = () => {
   }, [transactions]);
 
   useEffect(() => {
-    localStorage.setItem('offwhite_expense_categories', JSON.stringify(expenseCategories));
-  }, [expenseCategories]);
-
-  useEffect(() => {
     localStorage.setItem('offwhite_subscriptions', JSON.stringify(subscriptions));
   }, [subscriptions]);
-
-  useEffect(() => {
-    const handleStatsUpdate = () => {
-      const saved = localStorage.getItem('offwhite_user_stats');
-      if (saved) setStats(JSON.parse(saved));
-    };
-    window.addEventListener('stats-update', handleStatsUpdate);
-    return () => window.removeEventListener('stats-update', handleStatsUpdate);
-  }, []);
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const currentMonthKey = getMonthKey();
   const monthKeys = Array.from(
     new Set([currentMonthKey, ...transactions.map((transaction) => transaction.date.slice(0, 7))]),
   ).sort((a, b) => b.localeCompare(a));
-  const visibleMonthKeys = monthKeys.slice(0, 6);
-  const selectedMonthIndex = monthKeys.indexOf(selectedMonthKey);
 
   useEffect(() => {
-    if (!monthKeys.includes(selectedMonthKey)) {
-      setSelectedMonthKey(currentMonthKey);
-    }
+    if (!monthKeys.includes(selectedMonthKey)) setSelectedMonthKey(currentMonthKey);
   }, [monthKeys, selectedMonthKey, currentMonthKey]);
 
-  const selectedMonthTransactions = transactions.filter((transaction) => transaction.date.startsWith(selectedMonthKey));
+  const selectedMonthTransactions = transactions.filter((transaction) =>
+    transaction.date.startsWith(selectedMonthKey),
+  );
   const selectedMonthLabel = formatMonthLabel(selectedMonthKey);
-  const currentMonthTransactions = transactions.filter((transaction) => transaction.date.startsWith(currentMonthKey));
-
   const selectedMonthExpenses = selectedMonthTransactions
     .filter((transaction) => transaction.type === 'expense')
     .reduce((sum, transaction) => sum + transaction.amount, 0);
   const selectedMonthIncome = selectedMonthTransactions
     .filter((transaction) => transaction.type === 'income')
     .reduce((sum, transaction) => sum + transaction.amount, 0);
-  const selectedMonthSalary = selectedMonthTransactions
-    .filter((transaction) => transaction.type === 'income' && transaction.category === 'STIPENDIO')
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
   const selectedMonthSaved = selectedMonthIncome - selectedMonthExpenses;
-  const activeSubscriptions = subscriptions.filter((subscription) => subscription.active);
-  const selectedMonthSubscriptions = activeSubscriptions.reduce((sum, subscription) => sum + subscription.amount, 0);
 
-  const currentMonthSalary = currentMonthTransactions
-    .filter((transaction) => transaction.type === 'income' && transaction.category === 'STIPENDIO')
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
-  const isLastDay = isTodayLastDayOfMonth();
-  const hasSalaryForCurrentMonth = currentMonthSalary > 0;
+  const activeSubscriptions = subscriptions.filter((subscription) => subscription.active);
+  const monthlySubscriptionsTotal = activeSubscriptions.reduce((sum, subscription) => sum + subscription.amount, 0);
+  const annualSubscriptionsTotal = monthlySubscriptionsTotal * 12;
+  const calendarCells = buildSubscriptionCalendar(activeSubscriptions, calendarMonthDate);
+  const calendarList = [...activeSubscriptions].sort(
+    (a, b) => getClampedDayOfMonth(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth(), a.dayOfMonth)
+      - getClampedDayOfMonth(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth(), b.dayOfMonth),
+  );
+
   const spendingTrendData = Array.from(
     new Map(
       selectedMonthTransactions
@@ -259,12 +398,23 @@ export const Finance: React.FC = () => {
     ).values(),
   );
 
-  const updateTotalBalance = (event: React.FormEvent) => {
-    event.preventDefault();
-    const parsedAmount = parseFloat(totalAmount);
-    if (Number.isNaN(parsedAmount)) return;
+  const recentTransactions = [...selectedMonthTransactions]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 6);
 
-    setAccounts([{ ...DEFAULT_ACCOUNT, balance: parsedAmount }]);
+  const adjustTotalBalance = (direction: 'increase' | 'decrease') => {
+    const parsedAmount = parseFloat(totalAmount);
+    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
+
+    setAccounts((prev) => {
+      const current = prev[0] ?? DEFAULT_ACCOUNT;
+      const nextBalance = direction === 'increase'
+        ? current.balance + parsedAmount
+        : current.balance - parsedAmount;
+
+      return [{ ...current, balance: nextBalance }];
+    });
+
     setTotalAmount('');
   };
 
@@ -277,7 +427,7 @@ export const Finance: React.FC = () => {
       id: crypto.randomUUID(),
       accountId: DEFAULT_ACCOUNT.id,
       amount: parsedAmount,
-      description: description.trim() ? description.toUpperCase() : movementType === 'income' ? 'ENTRATA' : 'USCITA',
+      description: description.trim() ? description.trim().toUpperCase() : movementType === 'income' ? 'ENTRATA' : 'USCITA',
       date: new Date().toISOString(),
       type: movementType,
       category: movementType === 'expense' ? selectedCategory : 'ENTRATA',
@@ -289,44 +439,11 @@ export const Finance: React.FC = () => {
       const balance = movementType === 'income'
         ? current.balance + parsedAmount
         : current.balance - parsedAmount;
-      return [{ ...current, id: DEFAULT_ACCOUNT.id, name: DEFAULT_ACCOUNT.name, balance }];
+      return [{ ...current, balance }];
     });
 
     setMovementAmount('');
     setDescription('');
-  };
-
-  const addExpenseCategory = (event: React.FormEvent) => {
-    event.preventDefault();
-    const normalized = newCategory.trim().toUpperCase();
-    if (!normalized || expenseCategories.includes(normalized)) return;
-
-    setExpenseCategories((prev) => [...prev, normalized]);
-    setSelectedCategory(normalized);
-    setNewCategory('');
-  };
-
-  const addSalaryForMonth = (event: React.FormEvent) => {
-    event.preventDefault();
-    const parsedAmount = parseFloat(salaryAmount);
-    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
-
-    const salaryTransaction: Transaction = {
-      id: crypto.randomUUID(),
-      accountId: DEFAULT_ACCOUNT.id,
-      amount: parsedAmount,
-      description: `STIPENDIO ${currentMonthKey}`,
-      date: new Date().toISOString(),
-      type: 'income',
-      category: 'STIPENDIO',
-    };
-
-    setTransactions((prev) => [salaryTransaction, ...prev]);
-    setAccounts((prev) => {
-      const current = prev[0] ?? DEFAULT_ACCOUNT;
-      return [{ ...current, id: DEFAULT_ACCOUNT.id, name: DEFAULT_ACCOUNT.name, balance: current.balance + parsedAmount }];
-    });
-    setSalaryAmount('');
   };
 
   const addSubscription = (event: React.FormEvent) => {
@@ -340,15 +457,18 @@ export const Finance: React.FC = () => {
       ...prev,
       {
         id: crypto.randomUUID(),
-        name: subscriptionName.trim().toUpperCase(),
+        name: subscriptionName.trim(),
         amount: parsedAmount,
         dayOfMonth: parsedDay,
         active: true,
+        iconName: subscriptionIconName,
       },
     ]);
+
     setSubscriptionName('');
     setSubscriptionAmount('');
     setSubscriptionDay('1');
+    setSubscriptionIconName('film');
   };
 
   const toggleSubscription = (id: string) => {
@@ -359,575 +479,853 @@ export const Finance: React.FC = () => {
     );
   };
 
+  const sortedSubscriptions = [...activeSubscriptions].sort((a, b) => a.dayOfMonth - b.dayOfMonth);
+  const mobileOrbitSubscriptions = sortedSubscriptions.slice(0, 12);
+  const mobileOrbitLayers = getMobileOrbitLayers(mobileOrbitSubscriptions);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    setNotificationPermission(Notification.permission);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted' || activeSubscriptions.length === 0) return;
+
+    const todayKey = getMonthKey(new Date());
+    const sentRaw = localStorage.getItem('offwhite_subscription_notifications_sent');
+    const sent = sentRaw ? (JSON.parse(sentRaw) as Record<string, true>) : {};
+
+    activeSubscriptions.forEach((subscription) => {
+      const nextDate = getNextSubscriptionDate(subscription.dayOfMonth, new Date());
+      const diffDays = Math.max(
+        0,
+        Math.ceil((nextDate.getTime() - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24)),
+      );
+
+      if (diffDays > 1) return;
+
+      const notificationKey = `${todayKey}-${subscription.id}-${diffDays}`;
+      if (sent[notificationKey]) return;
+
+      new Notification(`Rinnovo ${subscription.name}`, {
+        body:
+          diffDays === 0
+            ? `Oggi si rinnova a €${formatCurrency(subscription.amount)}.`
+            : `Domani si rinnova a €${formatCurrency(subscription.amount)}.`,
+        icon: '/better-me-logo.png',
+        badge: '/better-me-logo.png',
+      });
+
+      sent[notificationKey] = true;
+    });
+
+    localStorage.setItem('offwhite_subscription_notifications_sent', JSON.stringify(sent));
+  }, [activeSubscriptions]);
+
+  const requestNotificationPermission = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+  };
+
   return (
-    <div className="offwhite-border h-full">
-      <SectionHeader title="PORTAFOGLIO" label="GESTIONE_DENARO_V4.0" />
+    <div className={activeTab === 'subscriptions' ? 'h-full md:border-2 md:border-black md:p-6' : 'offwhite-border h-full'}>
+      <div className={activeTab === 'subscriptions' ? 'hidden md:block' : ''}>
+        <SectionHeader title="PORTAFOGLIO" label="GESTIONE_DENARO_V5.0" />
+      </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
-        <div>
-          <div className="mb-6 grid grid-cols-2 gap-4">
-            <div className="border-2 border-black bg-black p-4 text-white">
-              <div className="mb-1 font-mono text-[10px] uppercase text-gray-400">Saldo totale</div>
-              <div className="text-2xl font-black tracking-tighter md:text-3xl">
-                <AnimatedValue value={totalBalance} prefix="€" />
-              </div>
-            </div>
-            <div className="border-2 border-black bg-white p-4">
-              <div className="mb-1 font-mono text-[10px] uppercase text-gray-400">Punti</div>
-              <div className="text-2xl font-black tracking-tighter text-offwhite-orange md:text-3xl">
-                {stats.points} <span className="text-[10px] font-mono text-black">PTS</span>
-              </div>
-            </div>
-          </div>
+      <div className={`finance-tab-shell mb-6 grid grid-cols-2 gap-2 ${activeTab === 'subscriptions' ? 'hidden md:grid' : ''}`}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('portfolio')}
+          className={`finance-tab-button ${activeTab === 'portfolio' ? 'is-active' : ''}`}
+        >
+          <WalletCards size={16} />
+          <span>Portafoglio</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('subscriptions')}
+          className={`finance-tab-button ${activeTab === 'subscriptions' ? 'is-active' : ''}`}
+        >
+          <Tv size={16} />
+          <span>Abbonamenti</span>
+        </button>
+      </div>
 
-          <div className="mb-6 border-2 border-black bg-gray-50 p-4 md:p-5">
-            <div className="mb-4 flex items-center gap-3">
-              <WalletCards size={18} />
+      {activeTab === 'portfolio' ? (
+        <div className="space-y-6">
+          <div className="finance-hero border-2 border-black p-5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <div className="offwhite-label mb-1">SALDO_INIZIALE</div>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
-                  Inserisci il totale reale che hai adesso.
-                </p>
-              </div>
-            </div>
-            <form onSubmit={updateTotalBalance} className="flex flex-col gap-3 md:flex-row">
-              <input
-                type="number"
-                step="0.01"
-                placeholder="IMPORTO TOTALE"
-                value={totalAmount}
-                onChange={(event) => setTotalAmount(event.target.value)}
-                className="min-w-0 flex-1 border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
-              >
-                Salva totale
-              </button>
-            </form>
-          </div>
-
-          <form onSubmit={addMovement} className="mb-6 space-y-4 border-2 border-black bg-white p-4 md:p-5">
-            <div className="flex items-center gap-3">
-              <Landmark size={18} />
-              <div>
-                <div className="offwhite-label mb-1">MOVIMENTI</div>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
-                  Usa il meno per le uscite e il più per le entrate.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setMovementType('expense')}
-                className={`flex items-center justify-center gap-2 border-2 px-4 py-3 font-mono text-xs uppercase tracking-widest transition-all ${
-                  movementType === 'expense' ? 'border-black bg-black text-white' : 'border-black bg-white text-black hover:bg-gray-100'
-                }`}
-              >
-                <Minus size={16} />
-                Uscita
-              </button>
-              <button
-                type="button"
-                onClick={() => setMovementType('income')}
-                className={`flex items-center justify-center gap-2 border-2 px-4 py-3 font-mono text-xs uppercase tracking-widest transition-all ${
-                  movementType === 'income' ? 'border-black bg-offwhite-orange text-white' : 'border-black bg-white text-black hover:bg-gray-100'
-                }`}
-              >
-                <Plus size={16} />
-                Entrata
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_170px]">
-              <input
-                type="text"
-                placeholder="DESCRIZIONE"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="IMPORTO"
-                value={movementAmount}
-                onChange={(event) => setMovementAmount(event.target.value)}
-                className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-              />
-            </div>
-
-            {movementType === 'expense' && (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_220px]">
-                <select
-                  value={selectedCategory}
-                  onChange={(event) => setSelectedCategory(event.target.value)}
-                  className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-                >
-                  {expenseCategories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="submit"
-                  className="border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
-                >
-                  Registra uscita
-                </button>
-              </div>
-            )}
-
-            {movementType === 'income' && (
-              <button
-                type="submit"
-                className="w-full border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
-              >
-                Registra entrata
-              </button>
-            )}
-          </form>
-
-          <div className="mb-6 border-2 border-black bg-gray-50 p-4 md:p-5">
-            <div className="mb-4 flex items-center gap-3">
-              <Tags size={18} />
-              <div>
-                <div className="offwhite-label mb-1">CATEGORIE_USCITE</div>
-                <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
-                  Categorie iniziali ispirate ai tracker spese piu comuni.
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={addExpenseCategory} className="mb-4 flex flex-col gap-3 md:flex-row">
-              <input
-                type="text"
-                placeholder="NUOVA CATEGORIA"
-                value={newCategory}
-                onChange={(event) => setNewCategory(event.target.value)}
-                className="min-w-0 flex-1 border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="border-2 border-black bg-white px-5 py-3 font-mono text-xs uppercase tracking-widest text-black transition-all hover:bg-black hover:text-white"
-              >
-                Aggiungi categoria
-              </button>
-            </form>
-
-            <div className="flex flex-wrap gap-2">
-              {expenseCategories.map((category) => (
-                <span key={category} className="border-2 border-black bg-white px-3 py-2 font-mono text-[10px] uppercase tracking-widest">
-                  {category}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {(isLastDay || hasSalaryForCurrentMonth) && (
-            <div className={`mb-6 border-2 border-black p-4 md:p-5 ${isLastDay && !hasSalaryForCurrentMonth ? 'bg-offwhite-orange text-white' : 'bg-white text-black'}`}>
-              <div className="mb-4">
-                <div className={`font-mono text-[10px] uppercase tracking-widest ${isLastDay && !hasSalaryForCurrentMonth ? 'text-white/70' : 'text-gray-500'}`}>
-                  Stipendio fine mese
+                <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-gray-500">Saldo totale</div>
+                <div className="mt-2 text-4xl font-black tracking-tighter md:text-5xl">
+                  <AnimatedValue value={totalBalance} prefix="€" />
                 </div>
-                <div className="text-xl font-black tracking-tighter uppercase">
-                  {hasSalaryForCurrentMonth ? `STIPENDIO GIÀ REGISTRATO PER ${currentMonthKey}` : 'OGGI È L ULTIMO GIORNO DEL MESE'}
+                <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">
+                  flusso mensile sincronizzato
                 </div>
-              </div>
-
-              {!hasSalaryForCurrentMonth ? (
-                <form onSubmit={addSalaryForMonth} className="flex flex-col gap-3 md:flex-row">
+                <div className="mt-5 flex flex-col gap-3 sm:max-w-[340px]">
                   <input
                     type="number"
                     step="0.01"
-                    placeholder="IMPORTO STIPENDIO"
-                    value={salaryAmount}
-                    onChange={(event) => setSalaryAmount(event.target.value)}
-                    className="min-w-0 flex-1 border-2 border-black bg-white p-3 font-mono text-xs uppercase text-black focus:outline-none"
+                    placeholder="MODIFICA TOTALE"
+                    value={totalAmount}
+                    onChange={(event) => setTotalAmount(event.target.value)}
+                    className="w-full border-2 border-black bg-white/80 p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
                   />
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => adjustTotalBalance('decrease')}
+                      className="finance-total-adjust-button"
+                    >
+                      <Minus size={16} />
+                      <span>Scala</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => adjustTotalBalance('increase')}
+                      className="finance-total-adjust-button is-positive"
+                    >
+                      <Plus size={16} />
+                      <span>Aggiungi</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 md:min-w-[360px]">
+                <div className="finance-stat-card border-2 border-black p-3">
+                  <div className="font-mono text-[8px] uppercase tracking-[0.24em] text-gray-500">Entrate</div>
+                  <div className="mt-2 text-xl font-black">€{formatCurrency(selectedMonthIncome)}</div>
+                </div>
+                <div className="finance-stat-card border-2 border-black p-3">
+                  <div className="font-mono text-[8px] uppercase tracking-[0.24em] text-gray-500">Uscite</div>
+                  <div className="mt-2 text-xl font-black text-offwhite-orange">€{formatCurrency(selectedMonthExpenses)}</div>
+                </div>
+                <div className="finance-stat-card border-2 border-black p-3">
+                  <div className="font-mono text-[8px] uppercase tracking-[0.24em] text-gray-500">Netto</div>
+                  <div className={`mt-2 text-xl font-black tabular-nums ${selectedMonthSaved >= 0 ? '' : 'text-offwhite-orange'}`}>
+                    <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+                      <span>{selectedMonthSaved >= 0 ? '+' : '-'}</span>
+                      <span>€{formatCurrency(Math.abs(selectedMonthSaved))}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="space-y-6">
+              <div className="finance-panel border-2 border-black p-4 md:p-5">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="finance-panel-icon">
+                    {movementType === 'expense' ? <Minus size={16} /> : <Plus size={16} />}
+                  </div>
+                  <div>
+                    <div className="offwhite-label mb-1">NUOVO_MOVIMENTO</div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">
+                      Registra entrate e uscite in modo rapido.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={addMovement} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMovementType('expense')}
+                      className={`finance-toggle-button ${movementType === 'expense' ? 'is-active' : ''}`}
+                    >
+                      <Minus size={16} />
+                      <span>Uscita</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMovementType('income')}
+                      className={`finance-toggle-button ${movementType === 'income' ? 'is-income-active' : ''}`}
+                    >
+                      <Plus size={16} />
+                      <span>Entrata</span>
+                    </button>
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="DESCRIZIONE"
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    className="w-full border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                  />
+
+                  <div className="grid grid-cols-[1fr_140px] gap-3">
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="IMPORTO"
+                      value={movementAmount}
+                      onChange={(event) => setMovementAmount(event.target.value)}
+                      className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                    />
+                    {movementType === 'expense' ? (
+                      <select
+                        value={selectedCategory}
+                        onChange={(event) => setSelectedCategory(event.target.value)}
+                        className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                      >
+                        {expenseCategories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="flex items-center border-2 border-black px-3 font-mono text-xs uppercase tracking-widest text-gray-400">
+                        ENTRATA
+                      </div>
+                    )}
+                  </div>
+
                   <button
                     type="submit"
-                    className="border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-white hover:text-black"
+                    className="w-full border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
                   >
-                    Salva stipendio
+                    Registra movimento
                   </button>
                 </form>
-              ) : (
-                <div className="font-mono text-[11px] uppercase tracking-widest">
-                  Stipendio registrato: €{formatCurrency(currentMonthSalary)}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col">
-          <div className="mb-6 overflow-hidden border-2 border-black bg-white">
-            <div className="border-b-2 border-black bg-black px-4 py-3 text-white">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-white/60">Riepilogo mensile</div>
-                  <div className="text-xl font-black tracking-tighter">{selectedMonthLabel}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (selectedMonthIndex < monthKeys.length - 1) {
-                        setSelectedMonthKey(monthKeys[selectedMonthIndex + 1]);
-                      }
-                    }}
-                    disabled={selectedMonthIndex === monthKeys.length - 1}
-                    className="border border-white/20 p-2 text-white transition-all hover:border-offwhite-orange hover:text-offwhite-orange disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (selectedMonthIndex > 0) {
-                        setSelectedMonthKey(monthKeys[selectedMonthIndex - 1]);
-                      }
-                    }}
-                    disabled={selectedMonthIndex <= 0}
-                    className="border border-white/20 p-2 text-white transition-all hover:border-offwhite-orange hover:text-offwhite-orange disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                  <Sparkles size={18} className="text-offwhite-orange" />
-                </div>
               </div>
             </div>
 
-            <div className="border-b-2 border-black bg-gray-50 p-4">
-              <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-gray-500">
-                <CalendarRange size={14} />
-                Storico mesi
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {visibleMonthKeys.map((monthKey) => (
-                  <button
-                    key={monthKey}
-                    type="button"
-                    onClick={() => setSelectedMonthKey(monthKey)}
-                    className={`border-2 px-3 py-2 font-mono text-[10px] uppercase tracking-widest transition-all ${
-                      selectedMonthKey === monthKey
-                        ? 'border-black bg-black text-white'
-                        : 'border-black bg-white text-black hover:bg-black hover:text-white'
-                    }`}
-                  >
-                    {formatMonthLabel(monthKey)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
-              <motion.div layout className="border-2 border-black bg-gray-50 p-4">
-                <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-gray-500">
-                  <ArrowDownRight size={14} />
-                  Uscite
-                </div>
-                <div className="text-2xl font-black tracking-tighter text-offwhite-orange">
-                  <AnimatedValue value={selectedMonthExpenses} prefix="€" />
-                </div>
-              </motion.div>
-
-              <motion.div layout className="border-2 border-black bg-gray-50 p-4">
-                <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-gray-500">
-                  <Landmark size={14} />
-                  Stipendio
-                </div>
-                <div className="text-2xl font-black tracking-tighter text-black">
-                  <AnimatedValue value={selectedMonthSalary} prefix="€" />
-                </div>
-              </motion.div>
-
-              <motion.div layout className="border-2 border-black bg-black p-4 text-white">
-                <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-white/50">
-                  <ArrowUpRight size={14} />
-                  Risparmio
-                </div>
-                <div className={`text-2xl font-black tracking-tighter ${selectedMonthSaved >= 0 ? 'text-white' : 'text-offwhite-orange'}`}>
-                  <AnimatedValue value={selectedMonthSaved} prefix={selectedMonthSaved >= 0 ? '€' : '-€'} />
-                </div>
-              </motion.div>
-            </div>
-
-            <div className="border-t-2 border-black bg-gray-50 p-4 md:p-6">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-gray-500">Grafico orbits</div>
-                  <div className="text-lg font-black tracking-tighter uppercase">Abbonamenti mensili</div>
-                </div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-gray-400">
-                  {activeSubscriptions.length > 0 ? `${activeSubscriptions.length} orbite attive` : 'nessun abbonamento'}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr] lg:items-center">
-                <div className="relative mx-auto h-[360px] w-[360px] rounded-full border-2 border-black bg-white">
-                  <div className="absolute left-1/2 top-1/2 h-[280px] w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/15" />
-                  <div className="absolute left-1/2 top-1/2 h-[200px] w-[200px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/15" />
-                  <div className="absolute left-1/2 top-1/2 h-[112px] w-[112px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/15" />
-
-                  <motion.div
-                    layout
-                    className="absolute left-1/2 top-1/2 z-10 flex h-[122px] w-[122px] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 border-black bg-black p-3 text-center text-white"
-                  >
-                    <div className="font-mono text-[9px] uppercase tracking-widest text-white/60">Totale abbonamenti</div>
-                    <div className="text-2xl font-black tracking-tighter text-offwhite-orange">
-                      <AnimatedValue value={selectedMonthSubscriptions} prefix="€" />
+            <div className="space-y-6">
+              <div className="finance-panel overflow-hidden border-2 border-black">
+                <div className="border-b-2 border-black px-4 py-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">Trend mensile</div>
+                      <div className="text-2xl font-black tracking-tighter">{selectedMonthLabel}</div>
                     </div>
-                  </motion.div>
-
-                  {activeSubscriptions.length > 0 ? (
-                    activeSubscriptions.slice(0, 6).map((item, index) => {
-                      const radius = getOrbitRadius(index, activeSubscriptions.length);
-                      return (
-                        <motion.div
-                          key={item.id}
-                          layout
-                          initial={{ opacity: 0, scale: 0.7 }}
-                          animate={{ opacity: 1, scale: 1, rotate: 360 }}
-                          transition={{
-                            opacity: { duration: 0.4, delay: index * 0.06 },
-                            scale: { duration: 0.4, delay: index * 0.06 },
-                            rotate: { duration: 18 + index * 3, repeat: Infinity, ease: 'linear' },
-                          }}
-                          className="absolute left-1/2 top-1/2 z-20"
-                          style={polarStyle(index, activeSubscriptions.length, radius)}
+                    <div className="flex flex-wrap gap-2">
+                      {monthKeys.slice(0, 6).map((monthKey) => (
+                        <button
+                          key={monthKey}
+                          type="button"
+                          onClick={() => setSelectedMonthKey(monthKey)}
+                          className={`finance-chip ${selectedMonthKey === monthKey ? 'is-active' : ''}`}
                         >
-                          <div className="min-w-[96px] max-w-[118px] border-2 border-black bg-white px-3 py-2 text-center shadow-[4px_4px_0_0_#000]">
-                            <div className="truncate font-black text-[10px] uppercase tracking-widest">{item.name}</div>
-                            <div className="mt-1 font-mono text-[9px] uppercase text-offwhite-orange">
-                              €{formatCurrency(item.amount)}
-                            </div>
-                            <div className="font-mono text-[8px] uppercase text-gray-400">
-                              giorno {item.dayOfMonth}
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })
+                          {formatMonthLabel(monthKey)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="h-[280px] p-4">
+                  {spendingTrendData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={spendingTrendData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="4 8" stroke="rgba(15,23,42,0.15)" />
+                        <XAxis
+                          dataKey="label"
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fontSize: 10, fill: '#6b7280', fontFamily: 'JetBrains Mono, monospace' }}
+                        />
+                        <YAxis
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fontSize: 10, fill: '#6b7280', fontFamily: 'JetBrains Mono, monospace' }}
+                          tickFormatter={(value) => `${value > 0 ? '+' : ''}${Math.round(value)}`}
+                        />
+                        <Tooltip
+                          formatter={(value: number) => [`€${formatCurrency(value)}`, 'Valore']}
+                          labelFormatter={(label) => `Giorno ${label}`}
+                          contentStyle={{
+                            borderRadius: 0,
+                            border: '2px solid #111',
+                            backgroundColor: '#fff',
+                            fontFamily: 'JetBrains Mono, monospace',
+                            textTransform: 'uppercase',
+                            fontSize: '10px',
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="amount"
+                          stroke="var(--theme-accent)"
+                          strokeWidth={3}
+                          dot={{ r: 3, strokeWidth: 0, fill: 'var(--theme-accent)' }}
+                          activeDot={{ r: 5, stroke: 'var(--theme-border)', strokeWidth: 2, fill: 'var(--theme-accent)' }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
                   ) : (
-                    <div className="absolute left-1/2 top-1/2 w-[180px] -translate-x-1/2 translate-y-[84px] text-center">
-                      <div className="font-mono text-[10px] uppercase tracking-widest text-gray-300">
-                        Nessun abbonamento attivo da visualizzare
+                    <div className="flex h-full items-center justify-center border-2 border-dashed border-black/10">
+                      <div className="text-center">
+                        <div className="font-black uppercase tracking-tight text-gray-400">Nessun dato per il mese</div>
+                        <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.22em] text-gray-300">
+                          Registra entrate o uscite per vedere il trend
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  {activeSubscriptions.length > 0 ? (
-                    activeSubscriptions.map((item, index) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => toggleSubscription(item.id)}
-                        className={`flex w-full items-center justify-between border-2 p-3 text-left transition-all ${
-                          item.active ? 'border-black bg-white' : 'border-black/20 bg-gray-50 opacity-60'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center border-2 border-black bg-black font-mono text-[10px] font-bold text-white">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <div className="font-black text-sm uppercase tracking-tighter">{item.name}</div>
-                            <div className="font-mono text-[9px] uppercase tracking-widest text-gray-400">
-                              rinnovo il giorno {item.dayOfMonth}
+              <div className="finance-panel border-2 border-black p-4 md:p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">Movimenti recenti</div>
+                    <div className="text-2xl font-black tracking-tighter">Ultime voci</div>
+                  </div>
+                  <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-gray-500">
+                    {recentTransactions.length} elementi
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {recentTransactions.length > 0 ? (
+                    recentTransactions.map((transaction) => (
+                      <div key={transaction.id} className="finance-transaction-row border-2 border-black p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className={`finance-transaction-icon ${transaction.type === 'income' ? 'is-income' : ''}`}>
+                              {transaction.type === 'income' ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="truncate font-black text-sm uppercase tracking-tight">
+                                {transaction.description}
+                              </div>
+                              <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-gray-400">
+                                {transaction.category} · {new Date(transaction.date).toLocaleDateString('it-IT')}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-black text-base text-offwhite-orange">€{formatCurrency(item.amount)}</div>
-                          <div className="font-mono text-[8px] uppercase tracking-widest text-gray-400">
-                            {item.active ? 'attivo' : 'pausa'}
+                          <div className={`text-right font-black ${transaction.type === 'income' ? '' : 'text-offwhite-orange'}`}>
+                            {transaction.type === 'income' ? '+' : '-'}€{formatCurrency(transaction.amount)}
                           </div>
                         </div>
-                      </button>
+                      </div>
                     ))
                   ) : (
                     <div className="border-2 border-dashed border-black/10 py-10 text-center">
-                      <div className="font-mono text-[10px] uppercase tracking-widest text-gray-300">
-                        Aggiungi un abbonamento e comparira nel grafico orbitale
-                      </div>
+                      <div className="font-black uppercase tracking-tight text-gray-400">Nessun movimento registrato</div>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-
-            <div className="border-t-2 border-black bg-white p-4 md:p-6">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-gray-500">Andamento spese</div>
-                  <div className="text-lg font-black tracking-tighter uppercase">Grafico stile borsa</div>
-                </div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-gray-400">
-                  mese selezionato
-                </div>
-              </div>
-
-              <div className="h-72 border-2 border-black bg-gray-50 p-3">
-                {spendingTrendData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={spendingTrendData} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
-                      <CartesianGrid stroke="#d4d4d4" strokeDasharray="4 4" />
-                      <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="#000" />
-                      <YAxis
-                        tick={{ fontSize: 10 }}
-                        stroke="#000"
-                        tickFormatter={(value) => `€${Number(value).toFixed(0)}`}
-                      />
-                      <Tooltip
-                        formatter={(value: number) => [`€${formatCurrency(value)}`, 'Saldo giornaliero']}
-                        labelFormatter={(label) => `Giorno ${label}`}
-                        contentStyle={{
-                          border: '2px solid #000',
-                          borderRadius: '0',
-                          backgroundColor: '#fff',
-                          fontFamily: '"JetBrains Mono", monospace',
-                          textTransform: 'uppercase',
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="amount"
-                        stroke="#FF5C00"
-                        strokeWidth={3}
-                        dot={{ r: 3, fill: '#000' }}
-                        activeDot={{ r: 5, fill: '#FF5C00', stroke: '#000', strokeWidth: 2 }}
-                        animationDuration={900}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-center">
-                    <div className="font-mono text-[10px] uppercase tracking-widest text-gray-300">
-                      Registra entrate o uscite per vedere il movimento del mese
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="border-t-2 border-black bg-white p-4">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-                <div className="border border-black p-3">
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-gray-400">Movimenti</div>
-                  <div className="text-lg font-black tracking-tighter">{selectedMonthTransactions.length}</div>
-                </div>
-                <div className="border border-black p-3">
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-gray-400">Entrate</div>
-                  <div className="text-lg font-black tracking-tighter">€{formatCurrency(selectedMonthIncome)}</div>
-                </div>
-                <div className="border border-black p-3">
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-gray-400">Spese</div>
-                  <div className="text-lg font-black tracking-tighter text-offwhite-orange">€{formatCurrency(selectedMonthExpenses)}</div>
-                </div>
-                <div className="border border-black p-3">
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-gray-400">Stato</div>
-                  <div className={`text-lg font-black tracking-tighter ${selectedMonthSaved >= 0 ? 'text-black' : 'text-offwhite-orange'}`}>
-                    {selectedMonthSaved >= 0 ? 'POSITIVO' : 'NEGATIVO'}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
-
-          <div className="flex-1">
-            <div className="mb-4 flex items-center justify-between border-b-2 border-black pb-1">
-              <div className="text-[10px] font-mono font-bold uppercase text-black">Movimenti recenti</div>
-              <div className="text-[8px] font-mono uppercase text-gray-400">Scorri per vedere tutto</div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="orbit-mobile-screen md:hidden">
+            <div className="orbit-mobile-topbar">
+              <div className="orbit-mobile-title">
+                <div className="orbit-mobile-title-kicker">Abbonamenti</div>
+                <div className="orbit-mobile-title-main">Hub Servizi</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className={`orbit-notification-button ${notificationPermission === 'granted' ? 'is-active' : ''}`}
+                  onClick={requestNotificationPermission}
+                >
+                  <BellRing size={20} />
+                </button>
+                <button type="button" className="orbit-plus-button" onClick={() => setShowSubscriptionSheet(true)}>
+                  <Plus size={28} />
+                </button>
+              </div>
             </div>
 
-            <div className="max-h-96 space-y-2 overflow-y-auto pr-2 custom-scrollbar">
-              {transactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between border border-black/10 bg-white p-3 transition-all hover:border-black">
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className={`p-2 ${transaction.type === 'income' ? 'bg-black text-white' : 'bg-offwhite-orange text-white'}`}>
-                      {transaction.type === 'income' ? <Plus size={16} /> : <Minus size={16} />}
+            {subscriptionMobileView === 'subscriptions' ? (
+              <>
+                <div className="orbit-hero-stage">
+                  {mobileOrbitLayers.map((layer, layerIndex) => (
+                    <div
+                      key={`ring-${layerIndex}`}
+                      className="orbit-mobile-layer"
+                      style={
+                        {
+                          width: `${layer.radius * 2}px`,
+                          height: `${layer.radius * 2}px`,
+                          '--orbit-duration': `${18 + layerIndex * 6}s`,
+                        } as React.CSSProperties
+                      }
+                    >
+                      <div className={`orbit-hero-ring ${layerIndex === 0 ? 'orbit-hero-ring-primary' : 'orbit-hero-ring-secondary'}`} />
+                      {layer.items.map((subscription, itemIndex) => {
+                        const iconOption = SUBSCRIPTION_ICON_OPTIONS.find((option) => option.id === subscription.iconName) ?? SUBSCRIPTION_ICON_OPTIONS[0];
+                        const Icon = iconOption.Icon;
+                        const nodeSize = layerIndex === 0 ? 30 : 26;
+
+                        return (
+                          <div
+                            key={subscription.id}
+                            className="orbit-mobile-node-shell"
+                            style={{
+                              ...polarStyle(itemIndex, layer.items.length, layer.radius),
+                              '--orbit-node-size': `${nodeSize}px`,
+                            } as React.CSSProperties}
+                          >
+                            <div className="orbit-mobile-node">
+                              <Icon size={nodeSize > 28 ? 17 : 15} />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="overflow-hidden">
-                      <div className="truncate font-black text-sm uppercase tracking-tighter">{transaction.description}</div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[8px] uppercase text-gray-400">
-                          {new Date(transaction.date).toLocaleDateString('it-IT')}
-                        </span>
-                        <span className="h-1 w-1 rounded-full bg-gray-200" />
-                        <span className="font-mono text-[8px] font-bold uppercase text-offwhite-orange">
-                          {transaction.category}
-                        </span>
+                  ))}
+
+                  <div className="orbit-mobile-planet">
+                    <div className="orbit-mobile-planet-label">Totale annuo</div>
+                    <div className="orbit-mobile-planet-value">€{formatCurrency(annualSubscriptionsTotal)}</div>
+                  </div>
+                </div>
+
+                <div className="orbit-mobile-stats">
+                  <div>
+                    <div className="orbit-mobile-stat-value">{activeSubscriptions.length}</div>
+                    <div className="orbit-mobile-stat-label">Personal</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="orbit-mobile-stat-value">€{formatCurrency(annualSubscriptionsTotal)}</div>
+                    <div className="orbit-mobile-stat-label">Totale annuale</div>
+                  </div>
+                </div>
+
+                <div className="orbit-mobile-list-head">
+                  <div>Attivo</div>
+                  <div className="flex items-center gap-1">
+                    <span>Prossimo</span>
+                    <ArrowUpDown size={18} />
+                  </div>
+                </div>
+
+                <div className="orbit-mobile-list">
+                  {sortedSubscriptions.length > 0 ? (
+                    sortedSubscriptions.map((subscription) => {
+                      const iconOption = SUBSCRIPTION_ICON_OPTIONS.find((option) => option.id === subscription.iconName) ?? SUBSCRIPTION_ICON_OPTIONS[0];
+                      const Icon = iconOption.Icon;
+                      return (
+                        <button
+                          key={subscription.id}
+                          type="button"
+                          onClick={() => toggleSubscription(subscription.id)}
+                          className="orbit-subscription-row"
+                        >
+                          <div className="orbit-subscription-row-left">
+                            <div className="orbit-subscription-icon">
+                              <Icon size={20} />
+                            </div>
+                            <div className="min-w-0 text-left">
+                              <div className="truncate text-[1.1rem] font-semibold text-white">{subscription.name}</div>
+                              <div className="orbit-subscription-meta">
+                                {getSubscriptionDueLabel(subscription.dayOfMonth)} • {getSubscriptionDateLabel(subscription.dayOfMonth)}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="orbit-subscription-price">
+                              €{formatCurrency(subscription.amount)}
+                            </div>
+                            <ChevronRight size={24} className="text-white/45" />
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="subscription-empty-state">
+                      <div className="text-center">
+                        <div className="font-black uppercase tracking-tight text-white/80">Nessun abbonamento</div>
+                        <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/45">
+                          premi + per aggiungere il primo servizio
+                        </div>
                       </div>
                     </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="orbit-calendar-view">
+                <div className="orbit-calendar-toolbar">
+                  <button
+                    type="button"
+                    className="orbit-calendar-switch"
+                    onClick={() => setCalendarMonthDate(new Date(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth() - 1, 1))}
+                  >
+                    ‹
+                  </button>
+                  <div className="orbit-calendar-month">
+                    {calendarMonthDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
                   </div>
-                  <span className={`shrink-0 font-black text-sm md:text-base ${transaction.type === 'income' ? 'text-black' : 'text-offwhite-orange'}`}>
-                    {transaction.type === 'income' ? '+' : '-'}€{formatCurrency(transaction.amount)}
-                  </span>
+                  <button
+                    type="button"
+                    className="orbit-calendar-switch"
+                    onClick={() => setCalendarMonthDate(new Date(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth() + 1, 1))}
+                  >
+                    ›
+                  </button>
                 </div>
-              ))}
 
-              {transactions.length === 0 && (
-                <div className="border-2 border-dashed border-black/10 py-12 text-center">
-                  <div className="font-mono text-[10px] font-bold uppercase text-gray-300">Nessun movimento registrato</div>
+                <div className="orbit-calendar-grid">
+                  {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((label, index) => (
+                    <div key={`${label}-${index}`} className="orbit-calendar-weekday">{label}</div>
+                  ))}
+                  {calendarCells.map((cell) =>
+                    cell.type === 'empty' ? (
+                      <div key={cell.key} className="orbit-calendar-cell is-empty" />
+                    ) : (
+                      <div
+                        key={cell.key}
+                        className={`orbit-calendar-cell ${cell.isToday ? 'is-today' : ''} ${cell.items.length > 0 ? 'has-items' : ''}`}
+                      >
+                        <div className="orbit-calendar-day">{cell.day}</div>
+                        <div className="orbit-calendar-dots">
+                          {cell.items.slice(0, 3).map((item) => (
+                            <span key={item.id} className="orbit-calendar-dot" />
+                          ))}
+                        </div>
+                      </div>
+                    ),
+                  )}
                 </div>
-              )}
+
+                <div className="orbit-calendar-list">
+                  {calendarList.length > 0 ? (
+                    calendarList.map((subscription) => {
+                      const renewalDay = getClampedDayOfMonth(
+                        calendarMonthDate.getFullYear(),
+                        calendarMonthDate.getMonth(),
+                        subscription.dayOfMonth,
+                      );
+                      return (
+                        <div key={subscription.id} className="orbit-calendar-row">
+                          <div className="orbit-calendar-row-day">{renewalDay}</div>
+                          <div className="orbit-calendar-row-body">
+                            <div className="font-semibold text-white">{subscription.name}</div>
+                            <div className="orbit-subscription-meta">
+                              Si rinnova ogni mese il giorno {subscription.dayOfMonth}
+                            </div>
+                          </div>
+                          <div className="orbit-subscription-price">€{formatCurrency(subscription.amount)}</div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="subscription-empty-state">
+                      <div className="text-center">
+                        <div className="font-black uppercase tracking-tight text-white/80">Calendario vuoto</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="orbit-bottom-nav">
+              <button
+                type="button"
+                className={`orbit-bottom-nav-item ${subscriptionMobileView === 'subscriptions' ? 'is-active' : ''}`}
+                onClick={() => setSubscriptionMobileView('subscriptions')}
+              >
+                <span className="orbit-bottom-nav-icon">◐</span>
+                <span>Abbonamenti</span>
+              </button>
+              <button
+                type="button"
+                className={`orbit-bottom-nav-item ${subscriptionMobileView === 'calendar' ? 'is-active' : ''}`}
+                onClick={() => setSubscriptionMobileView('calendar')}
+              >
+                <CalendarDays size={26} />
+                <span>Calendario</span>
+              </button>
+              <button
+                type="button"
+                className="orbit-bottom-nav-item"
+                onClick={() => setActiveTab('portfolio')}
+              >
+                <ArrowLeft size={26} />
+                <span>Portafoglio</span>
+              </button>
             </div>
+
+            {showSubscriptionSheet && (
+              <div className="orbit-sheet-backdrop" onClick={() => setShowSubscriptionSheet(false)}>
+                <div className="orbit-sheet" onClick={(event) => event.stopPropagation()}>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">Nuovo abbonamento</div>
+                      <div className="text-2xl font-black tracking-tight">Aggiungi servizio</div>
+                      <div className="mt-2 text-sm text-gray-500">
+                        Il rinnovo e mensile: scegli il giorno del mese in cui verra addebitato.
+                      </div>
+                    </div>
+                    <button type="button" className="orbit-sheet-close" onClick={() => setShowSubscriptionSheet(false)}>
+                      ×
+                    </button>
+                  </div>
+
+                  <form
+                    onSubmit={(event) => {
+                      addSubscription(event);
+                      setShowSubscriptionSheet(false);
+                    }}
+                    className="space-y-3"
+                  >
+                    <input
+                      id="subscription-name-input"
+                      type="text"
+                      placeholder="NOME ABBONAMENTO"
+                      value={subscriptionName}
+                      onChange={(event) => setSubscriptionName(event.target.value)}
+                      className="w-full border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                    />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="IMPORTO"
+                        value={subscriptionAmount}
+                        onChange={(event) => setSubscriptionAmount(event.target.value)}
+                        className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                      />
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        placeholder="GIORNO RINNOVO"
+                        value={subscriptionDay}
+                        onChange={(event) => setSubscriptionDay(event.target.value)}
+                        className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="rounded-2xl border border-black/10 bg-black/5 px-4 py-3 text-sm text-gray-600">
+                      Si rinnova ogni mese il giorno <strong>{subscriptionDay || '1'}</strong>.
+                    </div>
+
+                    <div className="subscription-icon-grid">
+                      {SUBSCRIPTION_ICON_OPTIONS.map((option) => {
+                        const active = subscriptionIconName === option.id;
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => setSubscriptionIconName(option.id)}
+                            className={`subscription-icon-picker ${active ? 'is-active' : ''}`}
+                          >
+                            <option.Icon size={18} />
+                            <span>{option.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
+                    >
+                      Salva abbonamento
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="subscription-screen hidden p-4 md:block md:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-gray-500">Abbonamenti</div>
+                <div className="text-3xl font-black tracking-tight">Hub Servizi</div>
+              </div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-gray-500">
+                {activeSubscriptions.length} attivi
+              </div>
+            </div>
+
+            <div className="subscription-toolbar mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">
+                orbita personale dei tuoi servizi ricorrenti
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const nameInput = document.getElementById('subscription-name-input');
+                  if (nameInput instanceof HTMLInputElement) nameInput.focus();
+                }}
+                className="subscription-add-pill"
+              >
+                <Plus size={14} />
+                <span>Aggiungi</span>
+              </button>
+            </div>
+
+              <div className="subscription-orbit-space">
+                <div className="subscription-orbit-space-ring subscription-orbit-space-ring-outer" />
+                <div className="subscription-orbit-space-ring subscription-orbit-space-ring-mid" />
+                <div className="subscription-orbit-space-ring subscription-orbit-space-ring-inner" />
+                <motion.div layout className="subscription-orbit-planet">
+                  <div className="font-mono text-[8px] uppercase tracking-[0.22em] text-white/60">Totale annuo</div>
+                  <div className="mt-2 text-3xl font-black text-white">€{formatCurrency(annualSubscriptionsTotal)}</div>
+                </motion.div>
+
+                {activeSubscriptions.slice(0, 8).map((subscription, index) => {
+                  const iconOption = SUBSCRIPTION_ICON_OPTIONS.find((option) => option.id === subscription.iconName) ?? SUBSCRIPTION_ICON_OPTIONS[0];
+                  const Icon = iconOption.Icon;
+                  const radius = getOrbitRadius(index, activeSubscriptions.length || 1);
+                  const angle = (360 / Math.max(activeSubscriptions.length, 1)) * index;
+                  return (
+                    <motion.div
+                      key={subscription.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.75 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="subscription-orbit-track"
+                      style={
+                        {
+                          '--orbit-radius': `${radius}px`,
+                          '--orbit-angle': `${angle}deg`,
+                          '--orbit-duration': `${18 + index * 1.8}s`,
+                        } as React.CSSProperties
+                      }
+                    >
+                      <div className="subscription-orbit-badge">
+                        <Icon size={18} />
+                      </div>
+                    </motion.div>
+                    );
+                  })}
+              </div>
+
+              <div className="subscription-metrics-row">
+                <div>
+                  <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-white/50">Personal</div>
+                  <div className="mt-1 text-4xl font-black text-white">{activeSubscriptions.length}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-white/50">Totale annuale</div>
+                  <div className="mt-1 text-4xl font-black text-white">€{formatCurrency(annualSubscriptionsTotal)}</div>
+                </div>
+              </div>
+
+              <div className="subscription-form-block">
+                <div className="mb-4">
+                  <div className="offwhite-label mb-2">NUOVO_ABBONAMENTO</div>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/50">
+                    Scegli icona, importo e giorno di rinnovo.
+                  </div>
+                </div>
+
+                <form onSubmit={addSubscription} className="space-y-3">
+                  <input
+                    id="subscription-name-input"
+                    type="text"
+                    placeholder="NOME ABBONAMENTO"
+                    value={subscriptionName}
+                    onChange={(event) => setSubscriptionName(event.target.value)}
+                    className="w-full border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                  />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="IMPORTO"
+                      value={subscriptionAmount}
+                      onChange={(event) => setSubscriptionAmount(event.target.value)}
+                      className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      placeholder="GIORNO"
+                      value={subscriptionDay}
+                      onChange={(event) => setSubscriptionDay(event.target.value)}
+                      className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="subscription-icon-grid">
+                    {SUBSCRIPTION_ICON_OPTIONS.map((option) => {
+                      const active = subscriptionIconName === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setSubscriptionIconName(option.id)}
+                          className={`subscription-icon-picker ${active ? 'is-active' : ''}`}
+                        >
+                          <option.Icon size={18} />
+                          <span>{option.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
+                  >
+                    Salva abbonamento
+                  </button>
+                </form>
+              </div>
+
+              <div className="space-y-3 pt-5">
+                {subscriptions.length > 0 ? (
+                  subscriptions.map((subscription) => {
+                    const iconOption = SUBSCRIPTION_ICON_OPTIONS.find((option) => option.id === subscription.iconName) ?? SUBSCRIPTION_ICON_OPTIONS[0];
+                    const Icon = iconOption.Icon;
+
+                    return (
+                      <button
+                        key={subscription.id}
+                        type="button"
+                        onClick={() => toggleSubscription(subscription.id)}
+                        className={`subscription-app-row w-full ${subscription.active ? '' : 'is-muted'}`}
+                      >
+                        <div className="subscription-app-row-left">
+                          <div className="subscription-app-row-icon">
+                            <Icon size={18} />
+                          </div>
+                          <div className="min-w-0 text-left">
+                            <div className="truncate text-lg font-black text-white">{subscription.name}</div>
+                            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/50">
+                              {getSubscriptionDueLabel(subscription.dayOfMonth)} · {getSubscriptionDateLabel(subscription.dayOfMonth)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <div className="text-xl font-black text-white">€{formatCurrency(subscription.amount)}</div>
+                          <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/45">
+                            {subscription.active ? 'attivo' : 'pausa'}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="subscription-empty-state">
+                    <div className="text-center">
+                      <div className="font-black uppercase tracking-tight text-white/80">Nessun abbonamento</div>
+                      <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/45">
+                        aggiungi il primo servizio per vedere l orbita
+                      </div>
+                    </div>
+                    </div>
+                  )}
+              </div>
           </div>
         </div>
-      </div>
-
-      <div className="mt-6 border-2 border-black bg-gray-50 p-4 md:p-5">
-        <div className="mb-4 flex items-center gap-3">
-          <Sparkles size={18} />
-          <div>
-            <div className="offwhite-label mb-1">ABBONAMENTI_MENSILI</div>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
-              Gli abbonamenti attivi entrano nel grafico orbitale e ruotano continuamente.
-            </p>
-          </div>
-        </div>
-
-        <form onSubmit={addSubscription} className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_140px_110px_180px]">
-          <input
-            type="text"
-            placeholder="NOME ABBONAMENTO"
-            value={subscriptionName}
-            onChange={(event) => setSubscriptionName(event.target.value)}
-            className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-          />
-          <input
-            type="number"
-            step="0.01"
-            placeholder="IMPORTO"
-            value={subscriptionAmount}
-            onChange={(event) => setSubscriptionAmount(event.target.value)}
-            className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-          />
-          <input
-            type="number"
-            min="1"
-            max="31"
-            placeholder="GIORNO"
-            value={subscriptionDay}
-            onChange={(event) => setSubscriptionDay(event.target.value)}
-            className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
-          >
-            Aggiungi abbonamento
-          </button>
-        </form>
-      </div>
+      )}
     </div>
   );
 };

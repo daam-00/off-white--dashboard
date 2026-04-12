@@ -1,0 +1,17 @@
+{
+  "name": "better me",
+  "short_name": "better me",
+  "description": "better me app dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/better-me-logo.png",
+      "sizes": "768x768",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

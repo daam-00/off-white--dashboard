@@ -3,36 +3,83 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { Finance } from './components/Finance';
-import { Fitness } from './components/Fitness';
-import { Diet } from './components/Diet';
-import { Shopping } from './components/Shopping';
-import { Trophies } from './components/Trophies';
-import { DailyRoutine } from './components/DailyRoutine';
-import { LayoutDashboard, Wallet, Dumbbell, ShoppingBag, Trophy, Menu, X, Utensils, Calendar } from 'lucide-react';
+import React, { Suspense, lazy, useState } from 'react';
+import { LayoutDashboard, Wallet, Dumbbell, ShoppingBag, Trophy, Menu, X, Utensils, Calendar, SwatchBook } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { getThemeDefinition, normalizeThemeId } from './lib/themes';
 
-type Tab = 'dashboard' | 'finance' | 'fitness' | 'diet' | 'shopping' | 'trophies' | 'routine';
+const Finance = lazy(() => import('./components/Finance').then((module) => ({ default: module.Finance })));
+const Fitness = lazy(() => import('./components/Fitness').then((module) => ({ default: module.Fitness })));
+const Diet = lazy(() => import('./components/Diet').then((module) => ({ default: module.Diet })));
+const Shopping = lazy(() => import('./components/Shopping').then((module) => ({ default: module.Shopping })));
+const Trophies = lazy(() => import('./components/Trophies').then((module) => ({ default: module.Trophies })));
+const DailyRoutine = lazy(() => import('./components/DailyRoutine').then((module) => ({ default: module.DailyRoutine })));
+const ThemeStudio = lazy(() => import('./components/ThemeStudio').then((module) => ({ default: module.ThemeStudio })));
+
+type Tab = 'dashboard' | 'finance' | 'fitness' | 'diet' | 'shopping' | 'trophies' | 'routine' | 'themes';
+
+function getStoredStats() {
+  const fallback = { points: 0, activeTheme: 'theme-offwhite' };
+  const saved = localStorage.getItem('offwhite_user_stats');
+
+  if (!saved) return fallback;
+
+  try {
+    const parsed = JSON.parse(saved) as { points?: number; activeTheme?: string };
+    return {
+      points: typeof parsed.points === 'number' ? parsed.points : 0,
+      activeTheme: normalizeThemeId(parsed.activeTheme),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function SectionFallback() {
+  return (
+    <div className="offwhite-border min-h-[280px] animate-pulse">
+      <div className="mb-6 md:mb-8">
+        <div className="offwhite-label bg-gray-100 text-transparent">LOADING</div>
+        <div className="mt-3 h-10 bg-gray-100" />
+      </div>
+      <div className="space-y-4">
+        <div className="h-24 border-2 border-gray-100 bg-gray-50" />
+        <div className="h-24 border-2 border-gray-100 bg-gray-50" />
+        <div className="h-24 border-2 border-gray-100 bg-gray-50" />
+      </div>
+    </div>
+  );
+}
+
+function TabPanel({ children, panelKey }: { children: React.ReactNode; panelKey: string }) {
+  return (
+    <motion.div key={panelKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <Suspense fallback={<SectionFallback />}>{children}</Suspense>
+    </motion.div>
+  );
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [stats, setStats] = useState(() => {
-    const saved = localStorage.getItem('offwhite_user_stats');
-    return saved ? JSON.parse(saved) : { points: 0, activeTheme: 'standard' };
-  });
+  const [stats, setStats] = useState(() => getStoredStats());
+  const [showLaunchScreen, setShowLaunchScreen] = useState(true);
+  const isFinanceFullscreen = activeTab === 'finance';
 
   React.useEffect(() => {
     const handleStatsUpdate = () => {
-      const saved = localStorage.getItem('offwhite_user_stats');
-      if (saved) setStats(JSON.parse(saved));
+      setStats(getStoredStats());
     };
     window.addEventListener('stats-update', handleStatsUpdate);
     return () => window.removeEventListener('stats-update', handleStatsUpdate);
   }, []);
 
-  const themeColor = stats.activeTheme === 'theme-blue' ? '#0055FF' : '#FF5C00';
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setShowLaunchScreen(false), 1400);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const activeTheme = getThemeDefinition(stats.activeTheme);
 
   const navItems = [
     { id: 'dashboard', label: 'PANORAMICA', icon: LayoutDashboard },
@@ -42,6 +89,7 @@ export default function App() {
     { id: 'diet', label: 'ALIMENTAZIONE', icon: Utensils },
     { id: 'shopping', label: 'SPESA', icon: ShoppingBag },
     { id: 'trophies', label: 'OBIETTIVI', icon: Trophy },
+    { id: 'themes', label: 'TEMI', icon: SwatchBook },
   ];
 
   const [checkins, setCheckins] = useState<string[]>(() => {
@@ -63,18 +111,52 @@ export default function App() {
 
   return (
     <div 
-      className="h-screen bg-white flex flex-col md:flex-row overflow-hidden"
-      style={{ '--color-offwhite-orange': themeColor } as React.CSSProperties}
+      className={`dashboard-theme ${normalizeThemeId(stats.activeTheme)} flex h-dvh min-h-dvh flex-col overflow-hidden md:flex-row`}
+      style={{
+        '--color-offwhite-orange': activeTheme.accent,
+        '--theme-accent': activeTheme.accent,
+        '--theme-accent-soft': activeTheme.accentSoft,
+        '--theme-bg': activeTheme.background,
+        '--theme-panel': activeTheme.panel,
+        '--theme-panel-muted': activeTheme.panelMuted,
+        '--theme-ink': activeTheme.ink,
+        '--theme-ink-contrast': activeTheme.inkContrast,
+        '--theme-border': activeTheme.border,
+        '--theme-grid': activeTheme.grid,
+        '--theme-shadow': activeTheme.shadow,
+      } as React.CSSProperties}
     >
+      <AnimatePresence>
+        {showLaunchScreen && (
+          <motion.div
+            key="launch-screen"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.45, ease: 'easeOut' }}
+            className="launch-screen fixed inset-0 z-[120] flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="launch-screen-card"
+            >
+              <img src="/better-me-logo.png" alt="better me" className="launch-screen-logo" />
+              <div className="launch-screen-name">better me</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* DESKTOP SIDEBAR */}
       <motion.aside 
         initial={false}
         animate={{ width: isSidebarOpen ? 280 : 80 }}
-        className="hidden md:flex bg-white border-r-2 border-black h-full flex-shrink-0 flex-col relative z-50"
+        className="sidebar-shell hidden h-full flex-shrink-0 flex-col border-r-2 border-black relative z-50 md:flex"
       >
         <div className="p-6 mb-8 flex items-center justify-between">
-          <div className={`font-black text-2xl tracking-tighter transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
-            OFF-WHITE™
+          <div className={`dashboard-brand font-black text-2xl tracking-tighter transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
+            BETTER ME
           </div>
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -112,15 +194,15 @@ export default function App() {
 
         <div className="p-6 border-t-2 border-black">
           <div className="font-mono text-[8px] text-gray-400 uppercase leading-tight">
-            © 2026 OFF_WHITE_DASHBOARD<br />
-            SISTEMA_PERSONALE
+            © 2026 BETTER_ME_OS<br />
+            PERSONAL_SYSTEM
           </div>
         </div>
       </motion.aside>
 
       {/* MOBILE HEADER */}
-      <header className="md:hidden bg-white border-b-2 border-black p-4 flex justify-between items-center z-50 shrink-0">
-        <div className="font-black text-xl tracking-tighter">OFF-WHITE™</div>
+      <header className={`sidebar-shell md:hidden border-b-2 border-black p-4 justify-between items-center z-50 shrink-0 ${isFinanceFullscreen ? 'hidden' : 'flex'}`}>
+        <div className="dashboard-brand font-black text-xl tracking-tighter">BETTER ME</div>
         <div className="flex items-center gap-3">
           <div className="font-mono text-[10px] font-black text-offwhite-orange">{stats.points} PTS</div>
           <div className="font-mono text-[10px] uppercase tracking-widest opacity-50">
@@ -130,9 +212,9 @@ export default function App() {
       </header>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 overflow-y-auto bg-white p-4 md:p-8 relative pb-24 md:pb-8">
+      <main className={`main-shell relative flex-1 overflow-y-auto md:p-8 md:pb-8 ${isFinanceFullscreen ? 'p-0 pb-0' : 'p-4 pb-24'}`}>
         <div className="absolute top-0 right-0 p-4 flex items-center gap-4 pointer-events-none select-none hidden sm:flex">
-          <div className="font-mono text-[10px] font-black text-offwhite-orange">{stats.points} OFF-CREDITS</div>
+          <div className="font-mono text-[10px] font-black text-offwhite-orange">{stats.points} BETTER-CREDITS</div>
           <div className="font-mono text-[8px] md:text-[10px] text-gray-300">
             "IL_PROGRESSO_E_UN_PERCORSO" // V1.0
           </div>
@@ -187,56 +269,66 @@ export default function App() {
             )}
 
             {activeTab === 'routine' && (
-              <motion.div key="routine" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <TabPanel panelKey="routine">
                 <DailyRoutine />
-              </motion.div>
+              </TabPanel>
             )}
 
             {activeTab === 'finance' && (
-              <motion.div key="finance" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <TabPanel panelKey="finance">
                 <Finance />
-              </motion.div>
+              </TabPanel>
             )}
 
             {activeTab === 'fitness' && (
-              <motion.div key="fitness" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <TabPanel panelKey="fitness">
                 <Fitness />
-              </motion.div>
+              </TabPanel>
             )}
 
             {activeTab === 'diet' && (
-              <motion.div key="diet" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <TabPanel panelKey="diet">
                 <Diet />
-              </motion.div>
+              </TabPanel>
             )}
 
             {activeTab === 'shopping' && (
-              <motion.div key="shopping" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <TabPanel panelKey="shopping">
                 <Shopping />
-              </motion.div>
+              </TabPanel>
             )}
 
             {activeTab === 'trophies' && (
-              <motion.div key="trophies" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <TabPanel panelKey="trophies">
                 <Trophies />
-              </motion.div>
+              </TabPanel>
+            )}
+
+            {activeTab === 'themes' && (
+              <TabPanel panelKey="themes">
+                <ThemeStudio />
+              </TabPanel>
             )}
           </AnimatePresence>
         </div>
       </main>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black text-white flex justify-around items-center p-2 border-t-2 border-white/10 z-50">
+      <nav className="mobile-nav-shell mobile-safe-area mobile-nav-scroll md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center gap-2 overflow-x-auto border-t-2 border-white/10 px-3 py-2">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id as Tab)}
-            className={`flex flex-col items-center p-2 transition-all ${
-              activeTab === item.id ? 'text-offwhite-orange' : 'text-white/50'
+            className={`flex min-w-[72px] shrink-0 flex-col items-center justify-center gap-1 rounded-sm border px-2 py-2 transition-all ${
+              activeTab === item.id
+                ? 'border-current bg-black/5 text-offwhite-orange'
+                : 'border-black/15 text-black/70'
             }`}
           >
-            <item.icon size={20} />
-            <span className="font-mono text-[8px] uppercase mt-1 tracking-tighter">
+            <span className="flex h-5 items-center justify-center">
+              <item.icon size={18} strokeWidth={2.2} />
+            </span>
+            <span className="text-center font-mono text-[8px] uppercase leading-tight tracking-tighter">
               {item.label.split(' ')[0]}
             </span>
           </button>
