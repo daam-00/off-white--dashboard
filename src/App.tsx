@@ -1541,7 +1541,7 @@ export default function App() {
 
             {activeTab === 'themes' && enabledSections.includes('themes') && (
               <TabPanel panelKey="themes">
-                <ThemeStudio userEmail={authUser?.email ?? ''} />
+                <ThemeStudio canUseInvincible={authUser?.email?.toLowerCase().trim() === 'thsedici@gmail.com'} />
               </TabPanel>
             )}
 

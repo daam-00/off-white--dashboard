@@ -11,11 +11,8 @@ const THEME_COSTS: Record<string, number> = {
   'theme-blue': 500,
 };
 
-const INVINCIBLE_EMAIL = 'thsedici@gmail.com';
-
-export const ThemeStudio: React.FC<{ userEmail: string }> = ({ userEmail }) => {
+export const ThemeStudio: React.FC<{ canUseInvincible: boolean }> = ({ canUseInvincible }) => {
   const [stats, setStats] = React.useState<UserStats>(() => getStoredUserStats());
-  const canUseInvincible = userEmail === INVINCIBLE_EMAIL;
   const visibleThemes = useMemo(
     () => DASHBOARD_THEMES.filter((t) => t.id !== 'theme-invincible' || canUseInvincible),
     [canUseInvincible],
