@@ -29,8 +29,9 @@ export const ThemeStudio: React.FC<{ userEmail: string }> = ({ userEmail }) => {
   const applyTheme = (themeId: string) => {
     const normalizedThemeId = normalizeThemeId(themeId);
     const unlockedThemes = Array.from(new Set([...(stats.unlockedThemes ?? ['theme-offwhite']), activeThemeId]));
-    const isUnlocked = unlockedThemes.includes(normalizedThemeId);
-    const cost = THEME_COSTS[normalizedThemeId] ?? 0;
+    const isFreeForUser = canUseInvincible && normalizedThemeId === 'theme-invincible';
+    const isUnlocked = isFreeForUser || unlockedThemes.includes(normalizedThemeId);
+    const cost = isFreeForUser ? 0 : (THEME_COSTS[normalizedThemeId] ?? 0);
 
     if (!isUnlocked && stats.points < cost) return;
 
@@ -84,8 +85,9 @@ export const ThemeStudio: React.FC<{ userEmail: string }> = ({ userEmail }) => {
             {visibleThemes.map((theme) => {
               const isActive = theme.id === activeThemeId;
               const unlockedThemes = Array.from(new Set([...(stats.unlockedThemes ?? ['theme-offwhite']), activeThemeId]));
-              const isUnlocked = unlockedThemes.includes(theme.id);
-              const cost = THEME_COSTS[theme.id] ?? 0;
+              const isFreeForUser = canUseInvincible && theme.id === 'theme-invincible';
+              const isUnlocked = isFreeForUser || unlockedThemes.includes(theme.id);
+              const cost = isFreeForUser ? 0 : (THEME_COSTS[theme.id] ?? 0);
               const canUnlock = stats.points >= cost;
 
               return (
