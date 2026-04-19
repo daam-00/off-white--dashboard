@@ -5,7 +5,7 @@
 
 import React, { Suspense, lazy, useState } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, type User } from 'firebase/auth';
-import { addDoc, collection, deleteDoc, doc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, type Timestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, type Timestamp, updateDoc, where } from 'firebase/firestore';
 import { BookOpen, Calendar, Check, CircleHelp, Dumbbell, Flame, Heart, LayoutDashboard, LogOut, Mail, Menu, MessageCircle, PencilLine, Send, ShoppingBag, Sparkles, SwatchBook, Trophy, Utensils, UserRound, Wallet, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getThemeCssClass, getThemeDefinition, normalizeThemeId } from './lib/themes';
@@ -820,7 +820,6 @@ export default function App() {
     const commentsQuery = query(
       collection(db, 'dailyVerseComments', dailyVerseReactionId, 'comments'),
       orderBy('createdAt', 'desc'),
-      limit(12),
     );
     const likesQuery = query(collection(db, 'dailyVerseLikes'), where('verseId', '==', dailyVerseReactionId));
 
