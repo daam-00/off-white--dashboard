@@ -2,7 +2,7 @@
   "name": "better me",
   "short_name": "better me",
   "description": "better me app dashboard",
-  "start_url": "/",
+  "start_url": "/?v=4",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
