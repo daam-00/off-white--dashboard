@@ -7,26 +7,26 @@ import { getAccountLevelInfo, getStoredUserStats, saveUserStats } from '../lib/a
 
 const THEME_COSTS: Record<string, number> = {
   'theme-offwhite': 0,
-  'theme-invincible': 0,
+  'theme-invincible-hero': 0,
   'theme-blue': 500,
 };
 
 export const ThemeStudio: React.FC<{ canUseInvincible: boolean }> = ({ canUseInvincible }) => {
   const [stats, setStats] = React.useState<UserStats>(() => getStoredUserStats());
   const visibleThemes = useMemo(
-    () => DASHBOARD_THEMES.filter((t) => t.id !== 'theme-invincible' || canUseInvincible),
+    () => DASHBOARD_THEMES.filter((t) => t.id !== 'theme-invincible-hero' || canUseInvincible),
     [canUseInvincible],
   );
 
   const rawActiveThemeId = normalizeThemeId(stats.activeTheme);
-  const activeThemeId = !canUseInvincible && rawActiveThemeId === 'theme-invincible' ? 'theme-offwhite' : rawActiveThemeId;
+  const activeThemeId = !canUseInvincible && rawActiveThemeId === 'theme-invincible-hero' ? 'theme-offwhite' : rawActiveThemeId;
   const activeTheme = useMemo(() => getThemeDefinition(activeThemeId), [activeThemeId]);
   const accountLevel = useMemo(() => getAccountLevelInfo(stats.points), [stats.points]);
 
   const applyTheme = (themeId: string) => {
     const normalizedThemeId = normalizeThemeId(themeId);
     const unlockedThemes = Array.from(new Set([...(stats.unlockedThemes ?? ['theme-offwhite']), activeThemeId]));
-    const isFreeForUser = canUseInvincible && normalizedThemeId === 'theme-invincible';
+    const isFreeForUser = canUseInvincible && normalizedThemeId === 'theme-invincible-hero';
     const isUnlocked = isFreeForUser || unlockedThemes.includes(normalizedThemeId);
     const cost = isFreeForUser ? 0 : (THEME_COSTS[normalizedThemeId] ?? 0);
 
@@ -82,10 +82,11 @@ export const ThemeStudio: React.FC<{ canUseInvincible: boolean }> = ({ canUseInv
             {visibleThemes.map((theme) => {
               const isActive = theme.id === activeThemeId;
               const unlockedThemes = Array.from(new Set([...(stats.unlockedThemes ?? ['theme-offwhite']), activeThemeId]));
-              const isFreeForUser = canUseInvincible && theme.id === 'theme-invincible';
+              const isFreeForUser = canUseInvincible && theme.id === 'theme-invincible-hero';
               const isUnlocked = isFreeForUser || unlockedThemes.includes(theme.id);
               const cost = isFreeForUser ? 0 : (THEME_COSTS[theme.id] ?? 0);
               const canUnlock = stats.points >= cost;
+              const cardClass = theme.cssClass ?? theme.id;
 
               return (
                 <button
@@ -93,7 +94,7 @@ export const ThemeStudio: React.FC<{ canUseInvincible: boolean }> = ({ canUseInv
                   type="button"
                   onClick={() => applyTheme(theme.id)}
                   disabled={!isUnlocked && !canUnlock}
-                  className={`theme-card theme-card-${theme.id} border-2 p-4 text-left transition-all ${
+                  className={`theme-card theme-card-${cardClass} border-2 p-4 text-left transition-all ${
                     isActive ? 'border-black' : 'border-black/20 hover:-translate-y-1 hover:border-black'
                   } ${!isUnlocked && !canUnlock ? 'cursor-not-allowed opacity-45 grayscale' : ''}`}
                 >
@@ -145,9 +146,8 @@ export const ThemeStudio: React.FC<{ canUseInvincible: boolean }> = ({ canUseInv
           <div className="offwhite-border h-full">
             <SectionHeader title="SELEZIONE" label="LIVE_APPEARANCE" />
 
-            {activeThemeId === 'theme-invincible' ? (
+            {activeThemeId === 'theme-invincible-hero' ? (
               <div className="invincible-selection-panel space-y-0 overflow-hidden border-3 border-[#061426]">
-                {/* Logo strip */}
                 <div className="invincible-sel-logo-bar flex items-center justify-between px-4 py-2">
                   <img
                     src="/themes/invincible/invincible-comic-logo.png"
@@ -159,7 +159,6 @@ export const ThemeStudio: React.FC<{ canUseInvincible: boolean }> = ({ canUseInv
                   </div>
                 </div>
 
-                {/* Hero art */}
                 <div className="invincible-sel-hero-stage relative overflow-hidden">
                   <div className="invincible-sel-speed-bg" />
                   <img
@@ -173,11 +172,10 @@ export const ThemeStudio: React.FC<{ canUseInvincible: boolean }> = ({ canUseInv
                     className="invincible-sel-omni-img absolute bottom-0 right-0 z-10"
                   />
                   <div className="invincible-sel-impact absolute left-3 top-3 z-20 font-mono text-[8px] font-black uppercase tracking-widest text-[#FFD51F]">
-                    INVINCIBLE
+                    DEVELOPER EXCLUSIVE
                   </div>
                 </div>
 
-                {/* Stats panel */}
                 <div className="invincible-sel-stats grid grid-cols-3 border-t-3 border-[#061426]">
                   <div className="invincible-sel-stat border-r-2 border-[#061426] p-3 text-center">
                     <div className="font-mono text-[8px] uppercase tracking-[0.24em] opacity-70">Forza</div>
@@ -193,7 +191,6 @@ export const ThemeStudio: React.FC<{ canUseInvincible: boolean }> = ({ canUseInv
                   </div>
                 </div>
 
-                {/* Credits note */}
                 <div className="border-t-2 border-[#061426] bg-[#061426] px-4 py-2">
                   <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-[#FFD51F]">
                     {accountLevel.nextLevelAt

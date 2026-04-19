@@ -8,7 +8,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWith
 import { addDoc, collection, deleteDoc, doc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, type Timestamp, updateDoc, where } from 'firebase/firestore';
 import { BookOpen, Calendar, Check, CircleHelp, Dumbbell, Flame, Heart, LayoutDashboard, LogOut, Mail, Menu, MessageCircle, PencilLine, Send, ShoppingBag, Sparkles, SwatchBook, Trophy, Utensils, UserRound, Wallet, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getThemeDefinition, normalizeThemeId } from './lib/themes';
+import { getThemeCssClass, getThemeDefinition, normalizeThemeId } from './lib/themes';
 import { getDailyVerse } from './data/dailyVerses';
 import { auth, db } from './lib/firebase';
 import { initializeFirebaseSync, markDashboardStateChanged, resetFirebaseSync, syncDashboardStateNow } from './lib/firebaseSync';
@@ -1055,7 +1055,7 @@ export default function App() {
 
   return (
     <div 
-      className={`dashboard-theme ${normalizeThemeId(stats.activeTheme)} flex min-h-svh flex-col overflow-x-hidden md:h-dvh md:min-h-dvh md:overflow-hidden md:flex-row`}
+      className={`dashboard-theme ${getThemeCssClass(stats.activeTheme)} flex min-h-svh flex-col overflow-x-hidden md:h-dvh md:min-h-dvh md:overflow-hidden md:flex-row`}
       style={{
         '--color-offwhite-orange': activeTheme.accent,
         '--theme-accent': activeTheme.accent,

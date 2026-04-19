@@ -1,6 +1,6 @@
 export type DashboardThemeId =
   | 'theme-offwhite'
-  | 'theme-invincible'
+  | 'theme-invincible-hero'
   | 'theme-blue';
 
 export interface DashboardThemeDefinition {
@@ -18,6 +18,7 @@ export interface DashboardThemeDefinition {
   border: string;
   grid: string;
   shadow: string;
+  cssClass?: string; // override CSS class (defaults to id)
 }
 
 export const DASHBOARD_THEMES: DashboardThemeDefinition[] = [
@@ -38,20 +39,21 @@ export const DASHBOARD_THEMES: DashboardThemeDefinition[] = [
     shadow: '10px 10px 0 rgba(9, 9, 9, 0.06)',
   },
   {
-    id: 'theme-invincible',
+    id: 'theme-invincible-hero',
+    cssClass: 'theme-invincible',
     name: 'Invincible',
-    badge: 'HERO MODE',
-    description: 'Palette da cover fumetto: crema solare, rosso d impatto e blu elettrico.',
-    accent: '#EE2737',
-    accentSoft: '#FFD34F',
-    background: '#FFF6CC',
-    panel: '#FFFBE8',
-    panelMuted: '#FFE28A',
-    ink: '#111827',
-    inkContrast: '#FFF8DB',
-    border: '#111827',
-    grid: 'rgba(17, 24, 39, 0.12)',
-    shadow: '12px 12px 0 #2B59FF',
+    badge: 'HERO MODE · DEVELOPER',
+    description: 'Tema esclusivo: giallo tuta, azzurro cielo, nero inchiostro, rosso splash — con character art ufficiale.',
+    accent: '#0EA5E9',
+    accentSoft: '#FFD51F',
+    background: '#77C9F2',
+    panel: '#FFE35A',
+    panelMuted: '#FFF3A6',
+    ink: '#061426',
+    inkContrast: '#FFF7BF',
+    border: '#061426',
+    grid: 'rgba(6, 20, 38, 0.18)',
+    shadow: '12px 12px 0 #ED1C24',
   },
   {
     id: 'theme-blue',
@@ -71,11 +73,13 @@ export const DASHBOARD_THEMES: DashboardThemeDefinition[] = [
   },
 ];
 
+// Old theme-invincible → offwhite for everyone; new one is theme-invincible-hero
 const LEGACY_THEME_MAP: Record<string, DashboardThemeId> = {
   standard: 'theme-offwhite',
   'theme-orange': 'theme-offwhite',
   'theme-blue': 'theme-blue',
-  'theme-invincible': 'theme-invincible',
+  'theme-invincible': 'theme-offwhite',
+  'theme-invincible-hero': 'theme-invincible-hero',
   'theme-offwhite': 'theme-offwhite',
 };
 
@@ -87,4 +91,9 @@ export function normalizeThemeId(themeId?: string): DashboardThemeId {
 export function getThemeDefinition(themeId?: string): DashboardThemeDefinition {
   const normalizedId = normalizeThemeId(themeId);
   return DASHBOARD_THEMES.find((theme) => theme.id === normalizedId) ?? DASHBOARD_THEMES[0];
+}
+
+export function getThemeCssClass(themeId?: string): string {
+  const def = getThemeDefinition(themeId);
+  return def.cssClass ?? def.id;
 }
