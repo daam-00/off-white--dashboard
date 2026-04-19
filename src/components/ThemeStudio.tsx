@@ -11,9 +11,18 @@ const THEME_COSTS: Record<string, number> = {
   'theme-blue': 500,
 };
 
-export const ThemeStudio: React.FC = () => {
+const INVINCIBLE_EMAIL = 'thsedici@gmail.com';
+
+export const ThemeStudio: React.FC<{ userEmail: string }> = ({ userEmail }) => {
   const [stats, setStats] = React.useState<UserStats>(() => getStoredUserStats());
-  const activeThemeId = normalizeThemeId(stats.activeTheme);
+  const canUseInvincible = userEmail === INVINCIBLE_EMAIL;
+  const visibleThemes = useMemo(
+    () => DASHBOARD_THEMES.filter((t) => t.id !== 'theme-invincible' || canUseInvincible),
+    [canUseInvincible],
+  );
+
+  const rawActiveThemeId = normalizeThemeId(stats.activeTheme);
+  const activeThemeId = !canUseInvincible && rawActiveThemeId === 'theme-invincible' ? 'theme-offwhite' : rawActiveThemeId;
   const activeTheme = useMemo(() => getThemeDefinition(activeThemeId), [activeThemeId]);
   const accountLevel = useMemo(() => getAccountLevelInfo(stats.points), [stats.points]);
 
@@ -72,7 +81,7 @@ export const ThemeStudio: React.FC = () => {
           <SectionHeader title="TEMI" label="VISUAL_SYSTEM_SWITCHER" />
 
           <div className="grid gap-4 lg:grid-cols-3">
-            {DASHBOARD_THEMES.map((theme) => {
+            {visibleThemes.map((theme) => {
               const isActive = theme.id === activeThemeId;
               const unlockedThemes = Array.from(new Set([...(stats.unlockedThemes ?? ['theme-offwhite']), activeThemeId]));
               const isUnlocked = unlockedThemes.includes(theme.id);
