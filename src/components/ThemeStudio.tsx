@@ -7,7 +7,7 @@ import { getAccountLevelInfo, getStoredUserStats, saveUserStats } from '../lib/a
 
 const THEME_COSTS: Record<string, number> = {
   'theme-offwhite': 0,
-  'theme-invincible': 300,
+  'theme-invincible': 0,
   'theme-blue': 500,
 };
 
