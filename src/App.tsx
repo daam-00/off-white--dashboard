@@ -700,7 +700,6 @@ export default function App() {
   const [verseCommentDraft, setVerseCommentDraft] = useState('');
   const [sharedVerseComments, setSharedVerseComments] = useState<VerseComment[]>([]);
   const [verseCommentError, setVerseCommentError] = useState('');
-  const [showVerseChat, setShowVerseChat] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState('');
   const [levelUpCelebration, setLevelUpCelebration] = useState<{ level: number; title: string } | null>(null);
@@ -1413,10 +1412,10 @@ export default function App() {
                         <Heart size={16} fill={dailyVerseReaction.liked ? 'currentColor' : 'none'} />
                         <span>{dailyVerseReaction.likes}</span>
                       </button>
-                      <button type="button" className="home-verse-action" onClick={() => setShowVerseChat(true)}>
+                      <span className="home-verse-action" style={{ pointerEvents: 'none' }}>
                         <MessageCircle size={16} />
                         <span>{visibleVerseComments.length}</span>
-                      </button>
+                      </span>
                       {enabledSections.includes('bible') ? (
                         <button type="button" onClick={() => setActiveTab('bible')} className="home-verse-read-button">
                           Leggi Bibbia
@@ -1437,6 +1436,46 @@ export default function App() {
                     </form>
 
                     {verseCommentError ? <p className="home-verse-comment-error">{verseCommentError}</p> : null}
+
+                    {visibleVerseComments.length > 0 && (
+                      <div className="home-verse-comments">
+                        {visibleVerseComments.map((comment) => (
+                          editingCommentId === comment.id ? (
+                            <div key={comment.id} className="verse-chat-msg verse-chat-msg-editing">
+                              <textarea
+                                className="verse-chat-edit-input"
+                                value={editingCommentText}
+                                onChange={(e) => setEditingCommentText(e.target.value)}
+                                maxLength={180}
+                                autoFocus
+                              />
+                              <div className="verse-chat-edit-actions">
+                                <button type="button" className="verse-chat-btn-save" onClick={() => saveEditComment(comment.id)}>Salva</button>
+                                <button type="button" className="verse-chat-btn-cancel" onClick={() => setEditingCommentId(null)}>Annulla</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div key={comment.id} className="verse-chat-msg">
+                              <div className="verse-chat-msg-meta">
+                                <strong>{comment.authorName ?? 'Utente'}</strong>
+                                <span className="verse-chat-msg-time">{comment.createdAt ? new Date(comment.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                              </div>
+                              <p className="verse-chat-msg-text">{comment.text}</p>
+                              {comment.userId === authUser?.uid && (
+                                <div className="verse-chat-msg-actions">
+                                  <button type="button" onClick={() => { setEditingCommentId(comment.id); setEditingCommentText(comment.text); }} className="verse-chat-action-btn">
+                                    <PencilLine size={13} />
+                                  </button>
+                                  <button type="button" onClick={() => deleteVerseComment(comment.id)} className="verse-chat-action-btn verse-chat-action-delete">
+                                    <X size={13} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    )}
                   </article>
 
                   <div className="home-metric-grid">
@@ -1577,72 +1616,6 @@ export default function App() {
         </div>
       </nav>
 
-      {showVerseChat && (
-        <div className="verse-chat-overlay" onClick={() => { setShowVerseChat(false); setEditingCommentId(null); }}>
-          <div className="verse-chat-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="verse-chat-header">
-              <span className="font-mono text-[10px] uppercase tracking-widest">Riflessioni del giorno</span>
-              <button type="button" onClick={() => { setShowVerseChat(false); setEditingCommentId(null); }} className="verse-chat-close">
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="verse-chat-scroll">
-              {visibleVerseComments.length === 0 ? (
-                <p className="verse-chat-empty">Nessuna riflessione ancora. Scrivi la prima!</p>
-              ) : visibleVerseComments.map((comment) => (
-                editingCommentId === comment.id ? (
-                  <div key={comment.id} className="verse-chat-msg verse-chat-msg-editing">
-                    <textarea
-                      className="verse-chat-edit-input"
-                      value={editingCommentText}
-                      onChange={(e) => setEditingCommentText(e.target.value)}
-                      maxLength={180}
-                      autoFocus
-                    />
-                    <div className="verse-chat-edit-actions">
-                      <button type="button" className="verse-chat-btn-save" onClick={() => saveEditComment(comment.id)}>Salva</button>
-                      <button type="button" className="verse-chat-btn-cancel" onClick={() => setEditingCommentId(null)}>Annulla</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div key={comment.id} className="verse-chat-msg">
-                    <div className="verse-chat-msg-meta">
-                      <strong>{comment.authorName ?? 'Utente'}</strong>
-                      <span className="verse-chat-msg-time">{comment.createdAt ? new Date(comment.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
-                    </div>
-                    <p className="verse-chat-msg-text">{comment.text}</p>
-                    {comment.userId === authUser?.uid && (
-                      <div className="verse-chat-msg-actions">
-                        <button type="button" onClick={() => { setEditingCommentId(comment.id); setEditingCommentText(comment.text); }} className="verse-chat-action-btn">
-                          <PencilLine size={13} />
-                        </button>
-                        <button type="button" onClick={() => deleteVerseComment(comment.id)} className="verse-chat-action-btn verse-chat-action-delete">
-                          <X size={13} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )
-              ))}
-            </div>
-
-            <form onSubmit={addDailyVerseComment} className="verse-chat-form">
-              <input
-                value={verseCommentDraft}
-                onChange={(e) => setVerseCommentDraft(e.target.value)}
-                placeholder="Scrivi una riflessione…"
-                maxLength={180}
-                className="verse-chat-input"
-              />
-              <button type="submit" disabled={!verseCommentDraft.trim()} className="verse-chat-send">
-                <Send size={15} />
-              </button>
-            </form>
-            {verseCommentError ? <p className="verse-chat-error">{verseCommentError}</p> : null}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
