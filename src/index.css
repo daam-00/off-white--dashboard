@@ -4839,6 +4839,168 @@
   letter-spacing: 0.24em;
 }
 
+/* ─── Mascot Loader ───────────────────────────────────────── */
+
+.mascot-shell {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  background: var(--theme-bg, #ffffff);
+  color: var(--theme-ink, #000000);
+  padding: 2rem 1rem;
+}
+
+.mascot-scene-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.mascot-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mascot-hidden {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.mascot-svg {
+  width: 120px;
+  height: auto;
+  animation: mascot-bob 1.9s ease-in-out infinite;
+  filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--theme-accent, #ff5c00) 22%, transparent));
+}
+
+.mascot-body  { fill: var(--theme-accent, #ff5c00); }
+.mascot-panel { fill: var(--theme-panel, #ffffff); }
+.mascot-ink   { fill: var(--theme-ink, #000000); }
+
+.mascot-mouth {
+  stroke: var(--theme-panel, #ffffff);
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.mascot-steam {
+  stroke: var(--theme-accent, #ff5c00);
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.mascot-bag-handle {
+  stroke: var(--theme-panel, #ffffff);
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.mascot-book-spine {
+  stroke: var(--theme-panel, #ffffff);
+  stroke-width: 1.5;
+  opacity: 0.5;
+}
+
+.mascot-book-line {
+  stroke: var(--theme-panel, #ffffff);
+  stroke-width: 1.5;
+  opacity: 0.38;
+}
+
+.mascot-panel-text {
+  fill: var(--theme-panel, #ffffff);
+}
+
+/* Bob animation */
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0px); }
+  48%       { transform: translateY(-10px); }
+}
+
+/* Exercise: arms pump up/down */
+.mascot-arm-l {
+  transform-origin: 30px 59px;
+  animation: arm-pump-l 0.72s ease-in-out infinite alternate;
+}
+.mascot-arm-r {
+  transform-origin: 70px 59px;
+  animation: arm-pump-r 0.72s ease-in-out infinite alternate;
+}
+@keyframes arm-pump-l {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-14deg); }
+}
+@keyframes arm-pump-r {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(14deg); }
+}
+
+/* Cook: steam rises */
+.mascot-steam-1 { animation: steam-rise 1.4s ease-in infinite 0s; }
+.mascot-steam-2 { animation: steam-rise 1.4s ease-in infinite 0.35s; }
+.mascot-steam-3 { animation: steam-rise 1.4s ease-in infinite 0.7s; }
+@keyframes steam-rise {
+  0%   { opacity: 0;    transform: translateY(0px)   scaleX(1); }
+  35%  { opacity: 0.6;  transform: translateY(-7px)  scaleX(1.15); }
+  100% { opacity: 0;    transform: translateY(-18px) scaleX(0.75); }
+}
+
+/* Finance: coins float */
+.mascot-coin-1 { animation: coin-float 1.6s ease-in-out infinite 0s; }
+.mascot-coin-2 { animation: coin-float 1.6s ease-in-out infinite 0.45s; }
+.mascot-coin-3 { animation: coin-float 1.6s ease-in-out infinite 0.9s; }
+@keyframes coin-float {
+  0%, 100% { transform: translateY(0px);  opacity: 1; }
+  50%       { transform: translateY(-9px); opacity: 0.65; }
+}
+
+/* Labels */
+.mascot-activity-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--theme-accent, #ff5c00);
+  text-align: center;
+  min-height: 1.3em;
+}
+
+.mascot-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mascot-main-label {
+  font-size: 1rem;
+  font-weight: 900;
+  text-transform: lowercase;
+  letter-spacing: 0.2em;
+  text-align: center;
+  margin: 0;
+}
+
+.mascot-detail-label {
+  font-size: 0.72rem;
+  color: color-mix(in srgb, var(--theme-ink, #000) 45%, transparent);
+  text-align: center;
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────── */
+
 @keyframes orbit-spin {
   from {
     transform: rotate(var(--orbit-angle, 0deg));

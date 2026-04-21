@@ -259,6 +259,121 @@ function SectionFallback() {
   );
 }
 
+const MASCOT_SCENES = [
+  { label: 'Ci alleniamo…' },
+  { label: 'Cuciniamo qualcosa…' },
+  { label: 'Spendiamo bene…' },
+  { label: 'Facciamo la spesa…' },
+  { label: 'Leggiamo la Bibbia…' },
+];
+const MASCOT_SCENE_KEYS = ['exercise', 'cook', 'finance', 'shop', 'bible'] as const;
+type MascotSceneKey = typeof MASCOT_SCENE_KEYS[number];
+
+function MascotCharacter({ scene }: { scene: MascotSceneKey }) {
+  return (
+    <svg viewBox="0 0 100 162" className="mascot-svg" aria-hidden="true">
+      {/* Legs */}
+      <rect x="34" y="97" width="13" height="32" rx="6" className="mascot-body" opacity="0.78" />
+      <rect x="53" y="97" width="13" height="32" rx="6" className="mascot-body" opacity="0.78" />
+
+      {/* Body */}
+      <rect x="28" y="58" width="44" height="46" rx="12" className="mascot-body" />
+
+      {/* Arms — activity specific */}
+      {scene === 'exercise' && (
+        <>
+          <rect x="2" y="54" width="28" height="11" rx="5.5" className="mascot-body mascot-arm-l" />
+          <rect x="70" y="54" width="28" height="11" rx="5.5" className="mascot-body mascot-arm-r" />
+          <circle cx="4" cy="59" r="9" className="mascot-body" opacity="0.7" />
+          <circle cx="4" cy="59" r="5" className="mascot-panel" />
+          <circle cx="96" cy="59" r="9" className="mascot-body" opacity="0.7" />
+          <circle cx="96" cy="59" r="5" className="mascot-panel" />
+        </>
+      )}
+      {scene === 'cook' && (
+        <>
+          <rect x="2" y="72" width="28" height="11" rx="5.5" className="mascot-body" />
+          <rect x="70" y="69" width="28" height="11" rx="5.5" className="mascot-body" />
+          <ellipse cx="85" cy="66" rx="13" ry="8" className="mascot-body" opacity="0.82" />
+          <path d="M78 55 Q80 47 78 40" className="mascot-steam mascot-steam-1" />
+          <path d="M85 53 Q87 45 85 38" className="mascot-steam mascot-steam-2" />
+          <path d="M92 55 Q94 47 92 40" className="mascot-steam mascot-steam-3" />
+        </>
+      )}
+      {scene === 'finance' && (
+        <>
+          <rect x="2" y="72" width="28" height="11" rx="5.5" className="mascot-body" />
+          <rect x="70" y="72" width="28" height="11" rx="5.5" className="mascot-body" />
+          <circle cx="20" cy="62" r="9" className="mascot-body mascot-coin-1" />
+          <circle cx="80" cy="56" r="7" className="mascot-body mascot-coin-2" />
+          <circle cx="74" cy="44" r="5" className="mascot-body mascot-coin-3" />
+          <text x="20" y="66" fontSize="8" className="mascot-panel-text" textAnchor="middle" fontWeight="900">€</text>
+          <text x="80" y="60" fontSize="6" className="mascot-panel-text" textAnchor="middle" fontWeight="900">€</text>
+        </>
+      )}
+      {scene === 'shop' && (
+        <>
+          <rect x="2" y="72" width="28" height="11" rx="5.5" className="mascot-body" />
+          <rect x="72" y="74" width="11" height="28" rx="5.5" className="mascot-body" />
+          <rect x="62" y="98" width="26" height="24" rx="5" className="mascot-body" opacity="0.82" />
+          <path d="M67 98 Q67 90 75 90 Q83 90 83 98" className="mascot-bag-handle" />
+        </>
+      )}
+      {scene === 'bible' && (
+        <>
+          <rect x="2" y="72" width="28" height="11" rx="5.5" className="mascot-body" />
+          <rect x="70" y="72" width="28" height="11" rx="5.5" className="mascot-body" />
+          <rect x="14" y="82" width="72" height="46" rx="6" className="mascot-body" opacity="0.82" />
+          <line x1="50" y1="84" x2="50" y2="126" className="mascot-book-spine" />
+          <line x1="22" y1="94" x2="44" y2="94" className="mascot-book-line" />
+          <line x1="22" y1="101" x2="44" y2="101" className="mascot-book-line" />
+          <line x1="22" y1="108" x2="44" y2="108" className="mascot-book-line" />
+          <line x1="56" y1="94" x2="78" y2="94" className="mascot-book-line" />
+          <line x1="56" y1="101" x2="78" y2="101" className="mascot-book-line" />
+          <line x1="56" y1="108" x2="78" y2="108" className="mascot-book-line" />
+        </>
+      )}
+
+      {/* Head (drawn on top so it overlaps arms) */}
+      <rect x="26" y="4" width="48" height="50" rx="16" className="mascot-body" />
+      <circle cx="40" cy="25" r="5" className="mascot-panel" />
+      <circle cx="60" cy="25" r="5" className="mascot-panel" />
+      <circle cx="41.5" cy="26.5" r="2.5" className="mascot-ink" />
+      <circle cx="61.5" cy="26.5" r="2.5" className="mascot-ink" />
+      <path d="M38 39 Q50 49 62 39" className="mascot-mouth" />
+    </svg>
+  );
+}
+
+function MascotLoader({ label, detail }: { label: string; detail?: string }) {
+  const [idx, setIdx] = React.useState(0);
+  const [visible, setVisible] = React.useState(true);
+
+  React.useEffect(() => {
+    const id = window.setInterval(() => {
+      setVisible(false);
+      window.setTimeout(() => {
+        setIdx((i) => (i + 1) % MASCOT_SCENES.length);
+        setVisible(true);
+      }, 220);
+    }, 2000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return (
+    <div className="mascot-shell">
+      <div className={`mascot-scene-wrap ${visible ? 'mascot-visible' : 'mascot-hidden'}`}>
+        <MascotCharacter scene={MASCOT_SCENE_KEYS[idx]} />
+        <p className="mascot-activity-label">{MASCOT_SCENES[idx].label}</p>
+      </div>
+      <div className="mascot-footer">
+        <p className="mascot-main-label">{label}</p>
+        {detail ? <p className="mascot-detail-label">{detail}</p> : null}
+      </div>
+    </div>
+  );
+}
+
 function FullScreenStatus({ label, detail }: { label: string; detail?: string }) {
   return (
     <div className="auth-shell">
@@ -900,7 +1015,7 @@ export default function App() {
   }, [isSyncReady, stats.points]);
 
   if (!isAuthReady) {
-    return <FullScreenStatus label="Avvio dashboard" detail="Preparo lo spazio personale." />;
+    return <MascotLoader label="better me" detail="Preparo lo spazio personale." />;
   }
 
   if (!authUser) {
@@ -908,7 +1023,7 @@ export default function App() {
   }
 
   if (!isSyncReady) {
-    return <FullScreenStatus label="Sincronizzazione" detail="Carico solo i dati del tuo account." />;
+    return <MascotLoader label="better me" detail="Carico i tuoi dati…" />;
   }
 
   const activeTheme = getThemeDefinition(stats.activeTheme);
@@ -1081,10 +1196,8 @@ export default function App() {
               initial={{ opacity: 0, y: 16, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="launch-screen-card"
             >
-              <img src="/better-me-logo.png" alt="better me" className="launch-screen-logo" />
-              <div className="launch-screen-name">better me</div>
+              <MascotLoader label="better me" />
             </motion.div>
           </motion.div>
         )}
