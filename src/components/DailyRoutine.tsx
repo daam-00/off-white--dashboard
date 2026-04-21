@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { SectionHeader } from './SectionHeader';
-import { CircleCheck, Circle, Droplets, Dumbbell, Wallet, Utensils, Moon, Trophy as TrophyIcon, Plus, Trash2, PencilLine } from 'lucide-react';
+import { CircleCheck, Circle, Trophy as TrophyIcon, Plus, Trash2, PencilLine } from 'lucide-react';
 import { motion } from 'motion/react';
+import { awardUserPoints } from '../lib/account';
 
 interface RoutineTask {
   id: string;
@@ -9,37 +10,55 @@ interface RoutineTask {
   iconId: string;
   completed: boolean;
   kind?: 'preset' | 'custom';
+  points?: number;
+  awarded?: boolean;
 }
 
 const ICON_MAP: Record<string, any> = {
-  water: Droplets,
-  workout: Dumbbell,
-  finance: Wallet,
-  diet: Utensils,
-  sleep: Moon,
   custom: PencilLine,
 };
 
-const INITIAL_TASKS: RoutineTask[] = [
-  { id: 'water', label: 'BEVI 2L DI ACQUA', iconId: 'water', completed: false, kind: 'preset' },
-  { id: 'workout', label: '30 MINUTI DI ALLENAMENTO', iconId: 'workout', completed: false, kind: 'preset' },
-  { id: 'finance', label: 'REGISTRA LE SPESE', iconId: 'finance', completed: false, kind: 'preset' },
-  { id: 'diet', label: 'SEGUI IL PIANO ALIMENTARE', iconId: 'diet', completed: false, kind: 'preset' },
-  { id: 'sleep', label: '8 ORE DI SONNO', iconId: 'sleep', completed: false, kind: 'preset' },
-];
-
 const TASKS_STORAGE_KEY = 'offwhite_daily_tasks';
 const TASKS_UPDATED_KEY = 'offwhite_last_task_update';
+const DAILY_BONUS_KEY = 'offwhite_daily_routine_bonus_awarded';
+const ROUTINE_COMPLETED_DATES_KEY = 'offwhite_routine_completed_dates';
+const TASK_COMPLETION_LOG_KEY = 'offwhite_task_completion_log';
+const TASK_POINTS = 25;
+const DAILY_COMPLETION_BONUS = 50;
 
 function getTodayKey() {
-  return new Date().toISOString().split('T')[0];
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 function normalizeTasks(tasks: RoutineTask[]) {
   return tasks.map((task) => ({
     ...task,
-    kind: task.kind ?? 'preset',
+    kind: 'custom',
+    iconId: 'custom',
+    points: task.points ?? TASK_POINTS,
+    awarded: task.awarded ?? task.completed,
   }));
+}
+
+function appendStoredDate(key: string, dateKey: string) {
+  const saved = localStorage.getItem(key);
+  const dates = saved ? JSON.parse(saved) as string[] : [];
+  const nextDates = Array.from(new Set([...dates, dateKey])).sort();
+  localStorage.setItem(key, JSON.stringify(nextDates));
+}
+
+function appendTaskCompletion(dateKey: string, task: RoutineTask) {
+  const saved = localStorage.getItem(TASK_COMPLETION_LOG_KEY);
+  const log = saved ? JSON.parse(saved) as Array<{ id: string; label: string; date: string }> : [];
+  const entryId = `${dateKey}-${task.id}`;
+
+  if (log.some((entry) => entry.id === entryId)) return;
+
+  localStorage.setItem(
+    TASK_COMPLETION_LOG_KEY,
+    JSON.stringify([...log, { id: entryId, label: task.label, date: dateKey }]),
+  );
 }
 
 export const DailyRoutine: React.FC = () => {
@@ -49,17 +68,18 @@ export const DailyRoutine: React.FC = () => {
     const today = getTodayKey();
 
     if (lastUpdate !== today) {
-      return INITIAL_TASKS;
+      return [];
     }
 
     if (!saved) {
-      return INITIAL_TASKS;
+      return [];
     }
 
     try {
-      return normalizeTasks(JSON.parse(saved) as RoutineTask[]);
+      const parsed = JSON.parse(saved) as RoutineTask[];
+      return normalizeTasks(parsed).filter((task) => task.kind === 'custom');
     } catch {
-      return INITIAL_TASKS;
+      return [];
     }
   });
   const [customGoal, setCustomGoal] = useState('');
@@ -74,7 +94,40 @@ export const DailyRoutine: React.FC = () => {
   }, [tasks]);
 
   const toggleTask = (id: string) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    setTasks((prev) => {
+      let pointsToAward = 0;
+      let shouldAwardDailyBonus = false;
+
+      const next = prev.map((task) => {
+        if (task.id !== id) return task;
+
+        const nextCompleted = !task.completed;
+        const shouldAwardTask = nextCompleted && !task.awarded;
+        if (shouldAwardTask) {
+          pointsToAward += task.points ?? TASK_POINTS;
+          appendTaskCompletion(getTodayKey(), task);
+        }
+
+        return {
+          ...task,
+          completed: nextCompleted,
+          awarded: task.awarded || shouldAwardTask,
+        };
+      });
+
+      const today = getTodayKey();
+      const bonusAlreadyAwarded = localStorage.getItem(DAILY_BONUS_KEY) === today;
+      if (next.length > 0 && next.every((task) => task.completed) && !bonusAlreadyAwarded) {
+        shouldAwardDailyBonus = true;
+        localStorage.setItem(DAILY_BONUS_KEY, today);
+        appendStoredDate(ROUTINE_COMPLETED_DATES_KEY, today);
+      }
+
+      if (pointsToAward > 0) awardUserPoints(pointsToAward);
+      if (shouldAwardDailyBonus) awardUserPoints(DAILY_COMPLETION_BONUS);
+
+      return next;
+    });
   };
 
   const addCustomTask = (event: React.FormEvent<HTMLFormElement>) => {
@@ -90,6 +143,8 @@ export const DailyRoutine: React.FC = () => {
         iconId: 'custom',
         completed: false,
         kind: 'custom',
+        points: TASK_POINTS,
+        awarded: false,
       },
     ]);
     setCustomGoal('');
@@ -110,7 +165,10 @@ export const DailyRoutine: React.FC = () => {
           <div>
             <div className="offwhite-label mb-1">OBIETTIVI_PERSONALI</div>
             <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
-              Aggiungi i tuoi to-do personali e salvali automaticamente per oggi.
+              Aggiungi i tuoi to-do personali. La routine parte vuota ogni giorno.
+            </p>
+            <p className="mt-2 font-mono text-[9px] uppercase tracking-widest text-offwhite-orange">
+              Ogni to-do completato vale +{TASK_POINTS} credits. Completali tutti: bonus +{DAILY_COMPLETION_BONUS}.
             </p>
           </div>
         </div>
@@ -134,7 +192,16 @@ export const DailyRoutine: React.FC = () => {
       </div>
       
       <div className="space-y-3">
-        {tasks.map((task) => {
+        {tasks.length === 0 ? (
+          <div className="border-2 border-dashed border-black/25 bg-white p-6 text-center">
+            <PencilLine size={28} className="mx-auto mb-3 text-offwhite-orange" />
+            <div className="mb-2 text-xl font-black uppercase tracking-tighter">Nessun to-do</div>
+            <p className="mx-auto max-w-md font-mono text-[10px] uppercase leading-relaxed tracking-widest text-gray-500">
+              Scrivi il primo obiettivo della giornata. Qui compariranno solo i to-do che inserisci tu.
+            </p>
+          </div>
+        ) : (
+          tasks.map((task) => {
           const Icon = ICON_MAP[task.iconId] || Circle;
           return (
             <div key={task.id} className="flex items-stretch gap-3">
@@ -152,6 +219,9 @@ export const DailyRoutine: React.FC = () => {
                   </div>
                   <span className={`font-black text-sm uppercase tracking-tighter ${task.completed ? 'text-white' : 'text-gray-600'}`}>
                     {task.label}
+                  </span>
+                  <span className={`shrink-0 font-mono text-[9px] font-black uppercase tracking-widest ${task.completed ? 'text-white/70' : 'text-offwhite-orange'}`}>
+                    +{task.points ?? TASK_POINTS}
                   </span>
                 </div>
                 {task.completed ? (
@@ -173,7 +243,7 @@ export const DailyRoutine: React.FC = () => {
               )}
             </div>
           );
-        })}
+        }))}
       </div>
 
       <div className="mt-8 p-6 bg-black text-white relative overflow-hidden border-2 border-black">
@@ -195,7 +265,11 @@ export const DailyRoutine: React.FC = () => {
           </div>
           
           <div className="mt-4 font-mono text-[8px] uppercase text-gray-500 tracking-widest">
-            {progress === 100 ? 'TUTTE LE ATTIVITA COMPLETATE! PREMIO SBLOCCATO' : 'COMPLETA TUTTE LE ATTIVITA PER OTTENERE PREMI'}
+            {tasks.length === 0
+              ? 'AGGIUNGI I TUOI TO-DO PER INIZIARE'
+              : progress === 100
+                ? 'TUTTE LE ATTIVITA COMPLETATE! PREMIO SBLOCCATO'
+                : 'COMPLETA TUTTE LE ATTIVITA PER OTTENERE PREMI'}
           </div>
         </div>
       </div>

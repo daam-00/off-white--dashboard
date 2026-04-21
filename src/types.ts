@@ -14,10 +14,14 @@ export interface Transaction {
   category: string;
 }
 
+export type MealCategory = 'mattina' | 'pranzo' | 'cena' | 'spuntino';
+
 export interface Recipe {
   id: string;
   name: string;
   ingredients: string[];
+  image?: string;
+  category?: MealCategory;
 }
 
 export interface CheckIn {
@@ -55,5 +59,8 @@ export interface Trophy {
 export interface UserStats {
   points: number;
   activeTheme: string;
+  unlockedThemes?: string[];
   avatarUrl?: string;
+  avatarId?: string;
+  unlockedAvatars?: string[];
 }

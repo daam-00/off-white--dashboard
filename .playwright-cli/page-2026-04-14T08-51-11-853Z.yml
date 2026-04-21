@@ -1,0 +1,22 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - img "better me" [ref=e6]
+    - generic [ref=e7]:
+      - generic [ref=e8]: BETTER_ME_OS
+      - heading "Accedi alla dashboard" [level=1] [ref=e9]
+  - paragraph [ref=e10]: Ogni account parte pulito e conserva solo i propri dati.
+  - generic [ref=e11]:
+    - generic [ref=e12]:
+      - generic [ref=e13]: Email
+      - generic [ref=e14]:
+        - img [ref=e15]
+        - textbox "Email" [ref=e18]:
+          - /placeholder: nome@email.com
+    - generic [ref=e19]:
+      - generic [ref=e20]: Password
+      - generic [ref=e21]:
+        - img [ref=e22]
+        - textbox "Password" [ref=e25]:
+          - /placeholder: Minimo 6 caratteri
+    - button "Entra" [ref=e26]
+  - button "Nuovo utente? Crea account" [ref=e27]

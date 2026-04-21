@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" fill="none">
+  <!-- Corpo -->
+  <ellipse cx="100" cy="180" rx="42" ry="68" fill="#EC4899"/>
+  <rect x="72" y="122" width="56" height="78" fill="#EC4899" rx="10"/>
+  
+  <!-- Dettagli costume -->
+  <rect x="68" y="175" width="64" height="12" fill="#FDB4A0"/>
+  
+  <!-- Gambe -->
+  <rect x="78" y="190" width="19" height="58" fill="#EC4899" rx="8"/>
+  <rect x="103" y="190" width="19" height="58" fill="#EC4899" rx="8"/>
+  
+  <!-- Stivali -->
+  <rect x="73" y="240" width="24" height="20" fill="#FDB4A0" rx="5"/>
+  <rect x="103" y="240" width="24" height="20" fill="#FDB4A0" rx="5"/>
+  
+  <!-- Braccia -->
+  <rect x="45" y="132" width="17" height="48" fill="#EC4899" rx="8" transform="rotate(-15 53.5 156)"/>
+  <rect x="138" y="132" width="17" height="48" fill="#EC4899" rx="8" transform="rotate(15 146.5 156)"/>
+  
+  <!-- Guanti -->
+  <circle cx="50" cy="183" r="11" fill="#FDB4A0"/>
+  <circle cx="150" cy="183" r="11" fill="#FDB4A0"/>
+  
+  <!-- Logo atomo sul petto -->
+  <circle cx="100" cy="150" r="16" fill="white"/>
+  <circle cx="100" cy="150" r="3" fill="#EC4899"/>
+  <ellipse cx="100" cy="150" rx="14" ry="6" fill="none" stroke="#EC4899" stroke-width="2"/>
+  <ellipse cx="100" cy="150" rx="6" ry="14" fill="none" stroke="#EC4899" stroke-width="2"/>
+  <circle cx="100" cy="136" r="2" fill="#EC4899"/>
+  <circle cx="100" cy="164" r="2" fill="#EC4899"/>
+  <circle cx="86" cy="150" r="2" fill="#EC4899"/>
+  <circle cx="114" cy="150" r="2" fill="#EC4899"/>
+  
+  <!-- Testa -->
+  <circle cx="100" cy="78" r="34" fill="#FDB4A0"/>
+  
+  <!-- Maschera -->
+  <ellipse cx="100" cy="73" rx="36" ry="23" fill="#EC4899"/>
+  
+  <!-- Occhi -->
+  <ellipse cx="89" cy="73" rx="7" ry="9" fill="white"/>
+  <ellipse cx="111" cy="73" rx="7" ry="9" fill="white"/>
+  <circle cx="89" cy="75" r="4" fill="#061426"/>
+  <circle cx="111" cy="75" r="4" fill="#061426"/>
+  
+  <!-- Ciglia -->
+  <path d="M 82 68 L 78 65" stroke="#061426" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 118 68 L 122 65" stroke="#061426" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Capelli rosa -->
+  <path d="M 68 58 Q 72 42 82 46 Q 88 38 98 42 Q 108 38 118 46 Q 128 42 132 58 Q 130 68 125 62 Q 120 55 115 58 Q 110 52 100 54 Q 90 52 85 58 Q 80 55 75 62 Q 70 68 68 58 Z" fill="#F472B6"/>
+  
+  <!-- Ciocche capelli -->
+  <path d="M 75 60 Q 78 70 82 68" fill="#F472B6"/>
+  <path d="M 125 60 Q 122 70 118 68" fill="#F472B6"/>
+  
+  <!-- Particelle energia rosa -->
+  <circle cx="60" cy="140" r="3" fill="#EC4899" opacity="0.6">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="140" cy="140" r="3" fill="#EC4899" opacity="0.6">
+    <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="70" cy="160" r="2" fill="#F472B6" opacity="0.5">
+    <animate attributeName="opacity" values="0.2;0.7;0.2" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="130" cy="160" r="2" fill="#F472B6" opacity="0.5">
+    <animate attributeName="opacity" values="0.7;0.2;0.7" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SectionHeader } from './SectionHeader';
 import { Account, Transaction } from '../types';
 import {
@@ -14,16 +14,27 @@ import {
   Gamepad2,
   GraduationCap,
   HeartPulse,
+  ImagePlus,
   Minus,
   Music4,
   Phone,
   Plus,
+  RotateCcw,
   Scissors,
   Tv,
   WalletCards,
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
+const FINANCE_SPRING = {
+  type: 'spring' as const,
+  stiffness: 220,
+  damping: 24,
+  mass: 0.9,
+};
+
+const FINANCE_TAP = { scale: 0.985, y: 1.5 };
+const FINANCE_HOVER = { y: -2, scale: 1.01 };
 
 const DEFAULT_ACCOUNT: Account = { id: 'default', name: 'PORTAFOGLIO', balance: 0 };
 const DEFAULT_EXPENSE_CATEGORIES = [
@@ -43,6 +54,7 @@ const DEFAULT_EXPENSE_CATEGORIES = [
 
 type FinanceTab = 'portfolio' | 'subscriptions';
 type MovementType = 'income' | 'expense';
+type PortfolioAction = 'balance' | 'income' | 'expense' | null;
 type SubscriptionMobileView = 'subscriptions' | 'calendar';
 type SubscriptionIconName =
   | 'film'
@@ -62,6 +74,7 @@ interface SubscriptionItem {
   dayOfMonth: number;
   active: boolean;
   iconName: SubscriptionIconName;
+  customIconDataUrl?: string;
 }
 
 const SUBSCRIPTION_ICON_OPTIONS: Array<{
@@ -92,6 +105,28 @@ function formatMonthLabel(monthKey: string) {
   }).toUpperCase();
 }
 
+function getShortMonthLabel(monthKey: string) {
+  const [year, month] = monthKey.split('-').map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString('it-IT', {
+    month: 'short',
+  }).replace('.', '').toUpperCase();
+}
+
+function buildLinePath(points: Array<{ x: number; y: number }>) {
+  if (points.length === 0) return '';
+  return points
+    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(' ');
+}
+
+function buildAreaPath(points: Array<{ x: number; y: number }>, height: number) {
+  if (points.length === 0) return '';
+  const linePath = buildLinePath(points);
+  const lastPoint = points[points.length - 1];
+  const firstPoint = points[0];
+  return `${linePath} L ${lastPoint.x.toFixed(2)} ${height.toFixed(2)} L ${firstPoint.x.toFixed(2)} ${height.toFixed(2)} Z`;
+}
+
 function formatCurrency(value: number) {
   return value.toLocaleString('it-IT', {
     minimumFractionDigits: 2,
@@ -115,7 +150,36 @@ function normalizeSubscription(raw: Partial<SubscriptionItem>): SubscriptionItem
     dayOfMonth: raw.dayOfMonth,
     active: raw.active ?? true,
     iconName,
+    customIconDataUrl: typeof raw.customIconDataUrl === 'string' ? raw.customIconDataUrl : undefined,
   };
+}
+
+function getSubscriptionIconOption(iconName: SubscriptionIconName) {
+  return SUBSCRIPTION_ICON_OPTIONS.find((option) => option.id === iconName) ?? SUBSCRIPTION_ICON_OPTIONS[0];
+}
+
+function SubscriptionIcon({
+  subscription,
+  size = 18,
+  className,
+}: {
+  subscription: Pick<SubscriptionItem, 'iconName' | 'customIconDataUrl' | 'name'>;
+  size?: number;
+  className?: string;
+}) {
+  if (subscription.customIconDataUrl) {
+    return (
+      <img
+        src={subscription.customIconDataUrl}
+        alt={`${subscription.name} icon`}
+        className={`subscription-custom-icon ${className ?? ''}`}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
+  const Icon = getSubscriptionIconOption(subscription.iconName).Icon;
+  return <Icon size={size} className={className} />;
 }
 
 function getSubscriptionDueLabel(dayOfMonth: number) {
@@ -303,13 +367,20 @@ const AnimatedValue: React.FC<{
     return () => window.cancelAnimationFrame(frame);
   }, [value]);
 
-  return <span className={className}>{prefix}{formatCurrency(Math.abs(displayValue))}</span>;
+  const formattedValue = `${prefix}${formatCurrency(Math.abs(displayValue))}`;
+  const compactClassName =
+    formattedValue.length >= 11 ? 'is-ultra-compact' : formattedValue.length >= 9 ? 'is-compact' : '';
+
+  return <span className={[className, compactClassName].filter(Boolean).join(' ')}>{formattedValue}</span>;
 };
 
 export const Finance: React.FC = () => {
   const [activeTab, setActiveTab] = useState<FinanceTab>('portfolio');
+  const [portfolioAction, setPortfolioAction] = useState<PortfolioAction>(null);
   const [showSubscriptionSheet, setShowSubscriptionSheet] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [editingSubscriptionId, setEditingSubscriptionId] = useState<string | null>(null);
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
   const [subscriptionMobileView, setSubscriptionMobileView] = useState<SubscriptionMobileView>('subscriptions');
   const [calendarMonthDate, setCalendarMonthDate] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() =>
@@ -323,7 +394,6 @@ export const Finance: React.FC = () => {
   const [totalAmount, setTotalAmount] = useState('');
   const [movementAmount, setMovementAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [movementType, setMovementType] = useState<MovementType>('expense');
   const [selectedCategory, setSelectedCategory] = useState(DEFAULT_EXPENSE_CATEGORIES[0]);
   const [selectedMonthKey, setSelectedMonthKey] = useState(getMonthKey());
 
@@ -331,6 +401,8 @@ export const Finance: React.FC = () => {
   const [subscriptionAmount, setSubscriptionAmount] = useState('');
   const [subscriptionDay, setSubscriptionDay] = useState('1');
   const [subscriptionIconName, setSubscriptionIconName] = useState<SubscriptionIconName>('film');
+  const [subscriptionCustomIconDataUrl, setSubscriptionCustomIconDataUrl] = useState<string | undefined>(undefined);
+  const portfolioAmountInputRef = useRef<HTMLInputElement | null>(null);
 
   const resetSubscriptionForm = () => {
     setEditingSubscriptionId(null);
@@ -338,6 +410,7 @@ export const Finance: React.FC = () => {
     setSubscriptionAmount('');
     setSubscriptionDay('1');
     setSubscriptionIconName('film');
+    setSubscriptionCustomIconDataUrl(undefined);
   };
 
   const openNewSubscriptionSheet = () => {
@@ -351,6 +424,7 @@ export const Finance: React.FC = () => {
     setSubscriptionAmount(String(subscription.amount));
     setSubscriptionDay(String(subscription.dayOfMonth));
     setSubscriptionIconName(subscription.iconName);
+    setSubscriptionCustomIconDataUrl(subscription.customIconDataUrl);
     setShowSubscriptionSheet(true);
   };
 
@@ -370,6 +444,76 @@ export const Finance: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('offwhite_subscriptions', JSON.stringify(subscriptions));
   }, [subscriptions]);
+
+  useEffect(() => {
+    const shouldLockScroll = Boolean(portfolioAction || showSubscriptionSheet);
+    if (!shouldLockScroll || typeof window === 'undefined') return;
+
+    const scrollY = window.scrollY;
+    const { body, documentElement } = document;
+    const previousBodyOverflow = body.style.overflow;
+    const previousBodyPosition = body.style.position;
+    const previousBodyTop = body.style.top;
+    const previousBodyWidth = body.style.width;
+    const previousHtmlOverflow = documentElement.style.overflow;
+
+    documentElement.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+
+    return () => {
+      documentElement.style.overflow = previousHtmlOverflow;
+      body.style.overflow = previousBodyOverflow;
+      body.style.position = previousBodyPosition;
+      body.style.top = previousBodyTop;
+      body.style.width = previousBodyWidth;
+      window.scrollTo(0, scrollY);
+    };
+  }, [portfolioAction, showSubscriptionSheet]);
+
+  useEffect(() => {
+    if (!portfolioAction) return;
+    const input = portfolioAmountInputRef.current;
+    if (!input) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        input.focus({ preventScroll: true });
+      } catch {
+        input.focus();
+      }
+      const length = input.value.length;
+      input.setSelectionRange(length, length);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [portfolioAction]);
+
+  useEffect(() => {
+    const shouldTrackViewport = Boolean(portfolioAction || showSubscriptionSheet);
+    if (!shouldTrackViewport || typeof window === 'undefined' || !window.visualViewport) {
+      setKeyboardOffset(0);
+      return;
+    }
+
+    const viewport = window.visualViewport;
+    const updateKeyboardOffset = () => {
+      const nextOffset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      setKeyboardOffset(nextOffset);
+    };
+
+    updateKeyboardOffset();
+    viewport.addEventListener('resize', updateKeyboardOffset);
+    viewport.addEventListener('scroll', updateKeyboardOffset);
+
+    return () => {
+      viewport.removeEventListener('resize', updateKeyboardOffset);
+      viewport.removeEventListener('scroll', updateKeyboardOffset);
+      setKeyboardOffset(0);
+    };
+  }, [portfolioAction, showSubscriptionSheet]);
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const currentMonthKey = getMonthKey();
@@ -392,6 +536,46 @@ export const Finance: React.FC = () => {
     .filter((transaction) => transaction.type === 'income')
     .reduce((sum, transaction) => sum + transaction.amount, 0);
   const selectedMonthSaved = selectedMonthIncome - selectedMonthExpenses;
+  const selectedMonthDate = new Date(`${selectedMonthKey}-01T00:00:00`);
+  const portfolioMarketData = Array.from({ length: 8 }, (_, offset) => {
+    const date = new Date(selectedMonthDate.getFullYear(), selectedMonthDate.getMonth() - (7 - offset), 1);
+    const monthKey = getMonthKey(date);
+    const monthTransactions = transactions.filter((transaction) => transaction.date.startsWith(monthKey));
+    const income = monthTransactions
+      .filter((transaction) => transaction.type === 'income')
+      .reduce((sum, transaction) => sum + transaction.amount, 0);
+    const expense = monthTransactions
+      .filter((transaction) => transaction.type === 'expense')
+      .reduce((sum, transaction) => sum + transaction.amount, 0);
+    const net = income - expense;
+
+    return {
+      key: monthKey,
+      label: getShortMonthLabel(monthKey),
+      income,
+      expense,
+      net,
+    };
+  });
+  const marketMin = Math.min(...portfolioMarketData.map((item) => item.net), 0);
+  const marketMax = Math.max(...portfolioMarketData.map((item) => item.net), 0, 1);
+  const marketRange = Math.max(1, marketMax - marketMin);
+  const marketChartWidth = 320;
+  const marketChartHeight = 132;
+  const marketChartPaddingX = 8;
+  const marketChartPaddingY = 14;
+  const marketPoints = portfolioMarketData.map((item, index) => {
+    const progressX = portfolioMarketData.length === 1 ? 0.5 : index / (portfolioMarketData.length - 1);
+    const x = marketChartPaddingX + progressX * (marketChartWidth - marketChartPaddingX * 2);
+    const normalized = (item.net - marketMin) / marketRange;
+    const y = marketChartHeight - marketChartPaddingY - normalized * (marketChartHeight - marketChartPaddingY * 2);
+    return { x, y, key: item.key, label: item.label, net: item.net };
+  });
+  const marketLinePath = buildLinePath(marketPoints);
+  const marketAreaPath = buildAreaPath(marketPoints, marketChartHeight - marketChartPaddingY);
+  const latestMarketPoint = portfolioMarketData[portfolioMarketData.length - 1];
+  const previousMarketPoint = portfolioMarketData[portfolioMarketData.length - 2];
+  const marketDelta = latestMarketPoint.net - (previousMarketPoint?.net ?? 0);
 
   const activeSubscriptions = subscriptions.filter((subscription) => subscription.active);
   const monthlySubscriptionsTotal = activeSubscriptions.reduce((sum, subscription) => sum + subscription.amount, 0);
@@ -402,76 +586,124 @@ export const Finance: React.FC = () => {
       - getClampedDayOfMonth(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth(), b.dayOfMonth),
   );
 
-  const spendingTrendData = Array.from(
-    new Map(
-      selectedMonthTransactions
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .reduce<Array<{ label: string; amount: number }>>((accumulator, transaction) => {
-          const dayLabel = new Date(transaction.date).toLocaleDateString('it-IT', {
-            day: '2-digit',
-            month: '2-digit',
-          });
-          const signedAmount = transaction.type === 'expense' ? -transaction.amount : transaction.amount;
-          const previous = accumulator[accumulator.length - 1];
-
-          if (previous && previous.label === dayLabel) {
-            previous.amount += signedAmount;
-          } else {
-            accumulator.push({ label: dayLabel, amount: signedAmount });
-          }
-
-          return accumulator;
-        }, [])
-        .map((entry) => [entry.label, entry]),
-    ).values(),
-  );
-
   const recentTransactions = [...selectedMonthTransactions]
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 6);
 
-  const adjustTotalBalance = (direction: 'increase' | 'decrease') => {
-    const parsedAmount = parseFloat(totalAmount);
-    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
-
-    setAccounts((prev) => {
-      const current = prev[0] ?? DEFAULT_ACCOUNT;
-      const nextBalance = direction === 'increase'
-        ? current.balance + parsedAmount
-        : current.balance - parsedAmount;
-
-      return [{ ...current, balance: nextBalance }];
-    });
-
-    setTotalAmount('');
+  const openPortfolioAction = (action: Exclude<PortfolioAction, null>) => {
+    setPortfolioAction(action);
+    setMovementAmount('');
+    setDescription('');
+    setTotalAmount(action === 'balance' ? String(Math.max(totalBalance, 0)) : '');
+    setEditingTransactionId(null);
   };
 
-  const addMovement = (event: React.FormEvent) => {
+  const closePortfolioAction = () => {
+    setPortfolioAction(null);
+    setMovementAmount('');
+    setDescription('');
+    setTotalAmount('');
+    setEditingTransactionId(null);
+  };
+
+  const openEditTransactionSheet = (transaction: Transaction) => {
+    setEditingTransactionId(transaction.id);
+    setPortfolioAction(transaction.type === 'income' ? 'income' : 'expense');
+    setMovementAmount(String(transaction.amount));
+    setDescription(transaction.description);
+    setSelectedCategory(transaction.category);
+  };
+
+  const savePortfolioAction = (event: React.FormEvent) => {
     event.preventDefault();
+    if (!portfolioAction) return;
+
+    if (portfolioAction === 'balance') {
+      const parsedAmount = parseFloat(totalAmount);
+      if (Number.isNaN(parsedAmount) || parsedAmount < 0) return;
+      setAccounts((prev) => [{ ...(prev[0] ?? DEFAULT_ACCOUNT), balance: parsedAmount }]);
+      closePortfolioAction();
+      return;
+    }
+
     const parsedAmount = parseFloat(movementAmount);
     if (Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
 
-    const newTransaction: Transaction = {
-      id: crypto.randomUUID(),
-      accountId: DEFAULT_ACCOUNT.id,
-      amount: parsedAmount,
-      description: description.trim() ? description.trim().toUpperCase() : movementType === 'income' ? 'ENTRATA' : 'USCITA',
-      date: new Date().toISOString(),
-      type: movementType,
-      category: movementType === 'expense' ? selectedCategory : 'ENTRATA',
-    };
+    const type: MovementType = portfolioAction === 'income' ? 'income' : 'expense';
 
-    setTransactions((prev) => [newTransaction, ...prev]);
-    setAccounts((prev) => {
-      const current = prev[0] ?? DEFAULT_ACCOUNT;
-      const balance = movementType === 'income'
-        ? current.balance + parsedAmount
-        : current.balance - parsedAmount;
-      return [{ ...current, balance }];
+    if (editingTransactionId) {
+      setTransactions((prev) => {
+        const oldTransaction = prev.find((t) => t.id === editingTransactionId);
+        if (!oldTransaction) return prev;
+
+        const updatedTransactions = prev.map((transaction) =>
+          transaction.id === editingTransactionId
+            ? {
+                ...transaction,
+                amount: parsedAmount,
+                type,
+                description: description.trim()
+                  ? description.trim().toUpperCase()
+                  : selectedCategory,
+                category: selectedCategory,
+              }
+            : transaction,
+        );
+
+        setAccounts((prevAccounts) => {
+          const current = prevAccounts[0] ?? DEFAULT_ACCOUNT;
+          // Rimuovi l'effetto della vecchia transazione
+          const oldAmount = oldTransaction.type === 'income' ? -oldTransaction.amount : oldTransaction.amount;
+          // Aggiungi l'effetto della nuova transazione
+          const newAmount = type === 'income' ? parsedAmount : -parsedAmount;
+          return [{ ...current, balance: current.balance + oldAmount + newAmount }];
+        });
+
+        return updatedTransactions;
+      });
+    } else {
+      const newTransaction: Transaction = {
+        id: crypto.randomUUID(),
+        accountId: DEFAULT_ACCOUNT.id,
+        amount: parsedAmount,
+        description: description.trim()
+          ? description.trim().toUpperCase()
+          : selectedCategory,
+        date: new Date().toISOString(),
+        type,
+        category: selectedCategory,
+      };
+
+      setTransactions((prev) => [newTransaction, ...prev]);
+      setAccounts((prev) => {
+        const current = prev[0] ?? DEFAULT_ACCOUNT;
+        const balance = type === 'income'
+          ? current.balance + parsedAmount
+          : current.balance - parsedAmount;
+        return [{ ...current, balance }];
+      });
+    }
+
+    closePortfolioAction();
+  };
+
+  const deleteTransaction = () => {
+    if (!editingTransactionId) return;
+    
+    setTransactions((prev) => {
+      const transaction = prev.find((t) => t.id === editingTransactionId);
+      if (!transaction) return prev;
+
+      setAccounts((prevAccounts) => {
+        const current = prevAccounts[0] ?? DEFAULT_ACCOUNT;
+        const adjustment = transaction.type === 'income' ? -transaction.amount : transaction.amount;
+        return [{ ...current, balance: current.balance + adjustment }];
+      });
+
+      return prev.filter((t) => t.id !== editingTransactionId);
     });
 
-    setMovementAmount('');
-    setDescription('');
+    closePortfolioAction();
   };
 
   const saveSubscription = (event: React.FormEvent) => {
@@ -491,6 +723,7 @@ export const Finance: React.FC = () => {
                 amount: parsedAmount,
                 dayOfMonth: parsedDay,
                 iconName: subscriptionIconName,
+                customIconDataUrl: subscriptionCustomIconDataUrl,
               }
             : subscription,
         );
@@ -505,11 +738,30 @@ export const Finance: React.FC = () => {
           dayOfMonth: parsedDay,
           active: true,
           iconName: subscriptionIconName,
+          customIconDataUrl: subscriptionCustomIconDataUrl,
         },
       ];
     });
 
     closeSubscriptionSheet();
+  };
+
+  const handleSubscriptionIconUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !file.type.startsWith('image/')) return;
+    if (file.size > 512_000) {
+      window.alert('Icona troppo grande. Usa un file sotto 512KB, meglio PNG/WebP trasparente.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setSubscriptionCustomIconDataUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const deleteSubscription = () => {
@@ -568,13 +820,25 @@ export const Finance: React.FC = () => {
     setNotificationPermission(permission);
   };
 
+  const subscriptionIconPreview = {
+    name: subscriptionName.trim() || 'Abbonamento',
+    iconName: subscriptionIconName,
+    customIconDataUrl: subscriptionCustomIconDataUrl,
+  };
+
   return (
-    <div className={activeTab === 'subscriptions' ? 'min-h-full md:border-2 md:border-black md:p-6' : 'offwhite-border min-h-full'}>
+    <div
+      className={
+        activeTab === 'subscriptions'
+          ? 'min-h-full w-full min-w-0 overflow-x-clip md:border-2 md:border-black md:p-6'
+          : 'finance-portfolio-screen offwhite-border min-h-full w-full min-w-0 overflow-x-clip'
+      }
+    >
       <div className={activeTab === 'subscriptions' ? 'hidden md:block' : ''}>
         <SectionHeader title="PORTAFOGLIO" label="GESTIONE_DENARO_V5.0" />
       </div>
 
-      <div className={`finance-tab-shell mb-6 grid grid-cols-2 gap-2 ${activeTab === 'subscriptions' ? 'hidden md:grid' : ''}`}>
+      <div className={`finance-tab-shell mb-3 md:mb-6 grid grid-cols-2 gap-2 ${activeTab === 'subscriptions' ? 'hidden md:grid' : ''}`}>
         <button
           type="button"
           onClick={() => setActiveTab('portfolio')}
@@ -594,269 +858,287 @@ export const Finance: React.FC = () => {
       </div>
 
       {activeTab === 'portfolio' ? (
-        <div className="space-y-6">
-          <div className="finance-hero border-2 border-black p-5">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="finance-ios-shell">
+          <motion.section
+            className="finance-ios-balance-card"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={FINANCE_SPRING}
+          >
+            <motion.button
+              type="button"
+              onClick={() => openPortfolioAction('balance')}
+              className="finance-ios-balance-button"
+              whileHover={FINANCE_HOVER}
+              whileTap={FINANCE_TAP}
+              transition={FINANCE_SPRING}
+            >
+              <div className="finance-ios-balance-topline">
+                <span>Totale portafoglio</span>
+                <small>Tocca per modificarlo</small>
+              </div>
+              <motion.div
+                key={`balance-${totalBalance}`}
+                className="finance-ios-balance-figure"
+                initial={{ opacity: 0.72, y: 10, filter: 'blur(8px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <span className="finance-ios-balance-currency">EUR</span>
+                <strong className="finance-ios-balance-amount"><AnimatedValue value={totalBalance} prefix="€" /></strong>
+              </motion.div>
+            </motion.button>
+
+            <div className="finance-ios-actions">
+              <motion.button
+                type="button"
+                onClick={() => openPortfolioAction('expense')}
+                className="finance-ios-action is-minus"
+                whileHover={FINANCE_HOVER}
+                whileTap={FINANCE_TAP}
+                transition={FINANCE_SPRING}
+              >
+                <Minus size={22} />
+                <span>Uscita</span>
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => openPortfolioAction('income')}
+                className="finance-ios-action is-plus"
+                whileHover={FINANCE_HOVER}
+                whileTap={FINANCE_TAP}
+                transition={FINANCE_SPRING}
+              >
+                <Plus size={22} />
+                <span>Entrata</span>
+              </motion.button>
+            </div>
+
+            <div className="finance-ios-month-strip">
+              <motion.div
+                key={`income-${selectedMonthIncome}`}
+                initial={{ opacity: 0.8, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1], delay: 0.02 }}
+              >
+                <span>Entrate</span>
+                <strong>€{formatCurrency(selectedMonthIncome)}</strong>
+              </motion.div>
+              <motion.div
+                key={`expenses-${selectedMonthExpenses}`}
+                initial={{ opacity: 0.8, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
+              >
+                <span>Uscite</span>
+                <strong>€{formatCurrency(selectedMonthExpenses)}</strong>
+              </motion.div>
+              <motion.div
+                key={`saved-${selectedMonthSaved}`}
+                initial={{ opacity: 0.8, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+              >
+                <span>Netto</span>
+                <strong>{selectedMonthSaved >= 0 ? '+' : '-'}€{formatCurrency(Math.abs(selectedMonthSaved))}</strong>
+              </motion.div>
+            </div>
+          </motion.section>
+
+          <section className="finance-ios-history">
+            <div className="finance-ios-history-head">
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-gray-500">Saldo totale</div>
-                <div className="mt-2 text-4xl font-black tracking-tighter md:text-5xl">
-                  <AnimatedValue value={totalBalance} prefix="€" />
-                </div>
-                <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">
-                  flusso mensile sincronizzato
-                </div>
-                <div className="mt-5 flex flex-col gap-3 sm:max-w-[340px]">
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="MODIFICA TOTALE"
-                    value={totalAmount}
-                    onChange={(event) => setTotalAmount(event.target.value)}
-                    className="w-full border-2 border-black bg-white/80 p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => adjustTotalBalance('decrease')}
-                      className="finance-total-adjust-button"
-                    >
-                      <Minus size={16} />
-                      <span>Scala</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => adjustTotalBalance('increase')}
-                      className="finance-total-adjust-button is-positive"
-                    >
-                      <Plus size={16} />
-                      <span>Aggiungi</span>
-                    </button>
-                  </div>
-                </div>
+                <span>Storico</span>
+                <strong>{selectedMonthLabel}</strong>
               </div>
-
-              <div className="grid grid-cols-3 gap-3 md:min-w-[360px]">
-                <div className="finance-stat-card border-2 border-black p-3">
-                  <div className="font-mono text-[8px] uppercase tracking-[0.24em] text-gray-500">Entrate</div>
-                  <div className="mt-2 text-xl font-black">€{formatCurrency(selectedMonthIncome)}</div>
-                </div>
-                <div className="finance-stat-card border-2 border-black p-3">
-                  <div className="font-mono text-[8px] uppercase tracking-[0.24em] text-gray-500">Uscite</div>
-                  <div className="mt-2 text-xl font-black text-offwhite-orange">€{formatCurrency(selectedMonthExpenses)}</div>
-                </div>
-                <div className="finance-stat-card border-2 border-black p-3">
-                  <div className="font-mono text-[8px] uppercase tracking-[0.24em] text-gray-500">Netto</div>
-                  <div className={`mt-2 text-xl font-black tabular-nums ${selectedMonthSaved >= 0 ? '' : 'text-offwhite-orange'}`}>
-                    <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
-                      <span>{selectedMonthSaved >= 0 ? '+' : '-'}</span>
-                      <span>€{formatCurrency(Math.abs(selectedMonthSaved))}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <select value={selectedMonthKey} onChange={(event) => setSelectedMonthKey(event.target.value)}>
+                {monthKeys.slice(0, 12).map((monthKey) => (
+                  <option key={monthKey} value={monthKey}>
+                    {formatMonthLabel(monthKey)}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
 
-          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-            <div className="space-y-6">
-              <div className="finance-panel border-2 border-black p-4 md:p-5">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="finance-panel-icon">
-                    {movementType === 'expense' ? <Minus size={16} /> : <Plus size={16} />}
-                  </div>
-                  <div>
-                    <div className="offwhite-label mb-1">NUOVO_MOVIMENTO</div>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">
-                      Registra entrate e uscite in modo rapido.
-                    </p>
-                  </div>
+            <motion.div
+              className="finance-ios-market-card"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+            >
+              <div className="finance-ios-market-head">
+                <div>
+                  <span>Trend cashflow</span>
+                  <strong>Andamento portafoglio</strong>
                 </div>
+                <div className={`finance-ios-market-badge ${marketDelta >= 0 ? 'is-up' : 'is-down'}`}>
+                  {marketDelta >= 0 ? '+' : '-'}€{formatCurrency(Math.abs(marketDelta))}
+                </div>
+              </div>
 
-                <form onSubmit={addMovement} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setMovementType('expense')}
-                      className={`finance-toggle-button ${movementType === 'expense' ? 'is-active' : ''}`}
-                    >
-                      <Minus size={16} />
-                      <span>Uscita</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMovementType('income')}
-                      className={`finance-toggle-button ${movementType === 'income' ? 'is-income-active' : ''}`}
-                    >
-                      <Plus size={16} />
-                      <span>Entrata</span>
-                    </button>
-                  </div>
-
-                  <input
-                    type="text"
-                    placeholder="DESCRIZIONE"
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    className="w-full border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-                  />
-
-                  <div className="grid grid-cols-[1fr_140px] gap-3">
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="IMPORTO"
-                      value={movementAmount}
-                      onChange={(event) => setMovementAmount(event.target.value)}
-                      className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
+              <div className="finance-ios-market-chart">
+                <svg viewBox={`0 0 ${marketChartWidth} ${marketChartHeight}`} preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="finance-market-fill" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="rgba(255, 92, 0, 0.28)" />
+                      <stop offset="100%" stopColor="rgba(255, 92, 0, 0)" />
+                    </linearGradient>
+                  </defs>
+                  <path className="finance-ios-market-area" d={marketAreaPath} />
+                  <path className="finance-ios-market-line" d={marketLinePath} />
+                  {marketPoints.map((point) => (
+                    <circle
+                      key={point.key}
+                      className={point.key === selectedMonthKey ? 'is-current' : ''}
+                      cx={point.x}
+                      cy={point.y}
+                      r={point.key === selectedMonthKey ? 4.5 : 3}
                     />
-                    {movementType === 'expense' ? (
-                      <select
-                        value={selectedCategory}
-                        onChange={(event) => setSelectedCategory(event.target.value)}
-                        className="border-2 border-black p-3 font-mono text-xs uppercase focus:bg-black focus:text-white focus:outline-none"
-                      >
-                        {expenseCategories.map((category) => (
-                          <option key={category} value={category}>
-                            {category}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="flex items-center border-2 border-black px-3 font-mono text-xs uppercase tracking-widest text-gray-400">
-                        ENTRATA
-                      </div>
-                    )}
-                  </div>
+                  ))}
+                </svg>
+                <div className="finance-ios-market-axis">
+                  {portfolioMarketData.map((item) => (
+                    <small key={item.key} className={item.key === selectedMonthKey ? 'is-current' : ''}>
+                      {item.label}
+                    </small>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
 
+            <div className="finance-ios-list">
+              {recentTransactions.length > 0 ? (
+                recentTransactions.map((transaction) => (
                   <button
-                    type="submit"
-                    className="w-full border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
+                    key={transaction.id} 
+                    type="button"
+                    className="finance-ios-row"
+                    onClick={() => openEditTransactionSheet(transaction)}
                   >
-                    Registra movimento
+                    <div className={`finance-ios-row-icon ${transaction.type === 'income' ? 'is-income' : ''}`}>
+                      {transaction.type === 'income' ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                    </div>
+                    <div className="min-w-0">
+                      <strong>{transaction.description}</strong>
+                      <span>{transaction.category} · {new Date(transaction.date).toLocaleDateString('it-IT')}</span>
+                    </div>
+                    <b className={transaction.type === 'income' ? 'is-income' : ''}>
+                      {transaction.type === 'income' ? '+' : '-'}€{formatCurrency(transaction.amount)}
+                    </b>
                   </button>
-                </form>
-              </div>
+                ))
+              ) : (
+                <div className="finance-ios-empty">Nessun movimento registrato</div>
+              )}
             </div>
+          </section>
 
-            <div className="space-y-6">
-              <div className="finance-panel overflow-hidden border-2 border-black">
-                <div className="border-b-2 border-black px-4 py-4">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">Trend mensile</div>
-                      <div className="text-2xl font-black tracking-tighter">{selectedMonthLabel}</div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {monthKeys.slice(0, 6).map((monthKey) => (
-                        <button
-                          key={monthKey}
-                          type="button"
-                          onClick={() => setSelectedMonthKey(monthKey)}
-                          className={`finance-chip ${selectedMonthKey === monthKey ? 'is-active' : ''}`}
-                        >
-                          {formatMonthLabel(monthKey)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="h-[280px] p-4">
-                  {spendingTrendData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={spendingTrendData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="4 8" stroke="rgba(15,23,42,0.15)" />
-                        <XAxis
-                          dataKey="label"
-                          tickLine={false}
-                          axisLine={false}
-                          tick={{ fontSize: 10, fill: '#6b7280', fontFamily: 'JetBrains Mono, monospace' }}
-                        />
-                        <YAxis
-                          tickLine={false}
-                          axisLine={false}
-                          tick={{ fontSize: 10, fill: '#6b7280', fontFamily: 'JetBrains Mono, monospace' }}
-                          tickFormatter={(value) => `${value > 0 ? '+' : ''}${Math.round(value)}`}
-                        />
-                        <Tooltip
-                          formatter={(value: number) => [`€${formatCurrency(value)}`, 'Valore']}
-                          labelFormatter={(label) => `Giorno ${label}`}
-                          contentStyle={{
-                            borderRadius: 0,
-                            border: '2px solid #111',
-                            backgroundColor: '#fff',
-                            fontFamily: 'JetBrains Mono, monospace',
-                            textTransform: 'uppercase',
-                            fontSize: '10px',
-                          }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="amount"
-                          stroke="var(--theme-accent)"
-                          strokeWidth={3}
-                          dot={{ r: 3, strokeWidth: 0, fill: 'var(--theme-accent)' }}
-                          activeDot={{ r: 5, stroke: 'var(--theme-border)', strokeWidth: 2, fill: 'var(--theme-accent)' }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="flex h-full items-center justify-center border-2 border-dashed border-black/10">
-                      <div className="text-center">
-                        <div className="font-black uppercase tracking-tight text-gray-400">Nessun dato per il mese</div>
-                        <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.22em] text-gray-300">
-                          Registra entrate o uscite per vedere il trend
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="finance-panel border-2 border-black p-4 md:p-5">
-                <div className="mb-4 flex items-center justify-between gap-3">
+          {portfolioAction ? (
+            <div
+              className="finance-ios-sheet-backdrop"
+              onClick={closePortfolioAction}
+              style={{ paddingBottom: `calc(1rem + ${keyboardOffset}px)` }}
+            >
+              <motion.form
+                onSubmit={savePortfolioAction}
+                className="finance-ios-sheet"
+                initial={{ y: 28, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 28, opacity: 0 }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="finance-ios-sheet-handle" />
+                <div className="finance-ios-sheet-head">
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">Movimenti recenti</div>
-                    <div className="text-2xl font-black tracking-tighter">Ultime voci</div>
+                    <span>{portfolioAction === 'balance' ? 'Saldo totale' : portfolioAction === 'income' ? 'Entrata' : 'Uscita'}</span>
+                    <strong>{portfolioAction === 'balance' ? 'Imposta importo' : editingTransactionId ? 'Modifica movimento' : 'Nuovo movimento'}</strong>
                   </div>
-                  <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-gray-500">
-                    {recentTransactions.length} elementi
-                  </div>
+                  <button type="button" onClick={closePortfolioAction}>×</button>
                 </div>
 
-                <div className="space-y-3">
-                  {recentTransactions.length > 0 ? (
-                    recentTransactions.map((transaction) => (
-                      <div key={transaction.id} className="finance-transaction-row border-2 border-black p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div className={`finance-transaction-icon ${transaction.type === 'income' ? 'is-income' : ''}`}>
-                              {transaction.type === 'income' ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="truncate font-black text-sm uppercase tracking-tight">
-                                {transaction.description}
-                              </div>
-                              <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-gray-400">
-                                {transaction.category} · {new Date(transaction.date).toLocaleDateString('it-IT')}
-                              </div>
-                            </div>
-                          </div>
-                          <div className={`text-right font-black ${transaction.type === 'income' ? '' : 'text-offwhite-orange'}`}>
-                            {transaction.type === 'income' ? '+' : '-'}€{formatCurrency(transaction.amount)}
-                          </div>
-                        </div>
+                <label className="finance-ios-amount-field">
+                  <div className="finance-ios-amount-head">
+                    <span className="finance-ios-amount-kicker">Importo</span>
+                    <span className="finance-ios-amount-currency">EUR</span>
+                  </div>
+                  <div className="finance-ios-amount-entry">
+                    <span className="finance-ios-amount-prefix">€</span>
+                    <input
+                      ref={portfolioAmountInputRef}
+                      inputMode="decimal"
+                      type="text"
+                      placeholder="0,00"
+                      value={portfolioAction === 'balance' ? totalAmount : movementAmount}
+                      onChange={(event) => {
+                        const cleanValue = event.target.value.replace(/[^\d,.]/g, '').replace(',', '.');
+                        if (portfolioAction === 'balance') setTotalAmount(cleanValue);
+                        else setMovementAmount(cleanValue);
+                      }}
+                      className="finance-ios-amount-input"
+                    />
+                  </div>
+                </label>
+
+                {portfolioAction !== 'balance' ? (
+                  <>
+                    {editingTransactionId ? (
+                      <div className="finance-ios-type-selector">
+                        <button
+                          type="button"
+                          onClick={() => setPortfolioAction('income')}
+                          className={`finance-ios-type-button ${portfolioAction === 'income' ? 'is-active' : ''}`}
+                        >
+                          <ArrowUpRight size={18} />
+                          <span>Entrata</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPortfolioAction('expense')}
+                          className={`finance-ios-type-button ${portfolioAction === 'expense' ? 'is-active' : ''}`}
+                        >
+                          <ArrowDownRight size={18} />
+                          <span>Uscita</span>
+                        </button>
                       </div>
-                    ))
-                  ) : (
-                    <div className="border-2 border-dashed border-black/10 py-10 text-center">
-                      <div className="font-black uppercase tracking-tight text-gray-400">Nessun movimento registrato</div>
-                    </div>
-                  )}
-                </div>
-              </div>
+                    ) : null}
+                    <select
+                      value={selectedCategory}
+                      onChange={(event) => setSelectedCategory(event.target.value)}
+                      className="finance-ios-field"
+                    >
+                      {expenseCategories.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Nota opzionale"
+                      value={description}
+                      onChange={(event) => setDescription(event.target.value)}
+                      className="finance-ios-field"
+                    />
+                  </>
+                ) : null}
+
+                <button type="submit" className="finance-ios-submit">
+                  {editingTransactionId ? 'Salva modifiche' : 'Salva'}
+                </button>
+
+                {editingTransactionId ? (
+                  <button
+                    type="button"
+                    onClick={deleteTransaction}
+                    className="finance-ios-submit"
+                    style={{ marginTop: '0.5rem', backgroundColor: '#dc2626' }}
+                  >
+                    Elimina movimento
+                  </button>
+                ) : null}
+              </motion.form>
             </div>
-          </div>
+          ) : null}
         </div>
       ) : (
         <div className="space-y-6">
@@ -915,8 +1197,6 @@ export const Finance: React.FC = () => {
                     >
                       <div className={`orbit-hero-ring ${layerIndex === 0 ? 'orbit-hero-ring-primary' : 'orbit-hero-ring-secondary'}`} />
                       {layer.items.map((subscription, itemIndex) => {
-                        const iconOption = SUBSCRIPTION_ICON_OPTIONS.find((option) => option.id === subscription.iconName) ?? SUBSCRIPTION_ICON_OPTIONS[0];
-                        const Icon = iconOption.Icon;
                         const nodeSize = layerIndex === 0 ? 30 : 26;
 
                         return (
@@ -929,7 +1209,7 @@ export const Finance: React.FC = () => {
                             } as React.CSSProperties}
                           >
                             <div className="orbit-mobile-node">
-                              <Icon size={nodeSize > 28 ? 17 : 15} />
+                              <SubscriptionIcon subscription={subscription} size={nodeSize > 28 ? 17 : 15} />
                             </div>
                           </div>
                         );
@@ -965,8 +1245,6 @@ export const Finance: React.FC = () => {
                 <div className="orbit-mobile-list">
                   {sortedSubscriptions.length > 0 ? (
                     sortedSubscriptions.map((subscription) => {
-                      const iconOption = SUBSCRIPTION_ICON_OPTIONS.find((option) => option.id === subscription.iconName) ?? SUBSCRIPTION_ICON_OPTIONS[0];
-                      const Icon = iconOption.Icon;
                       return (
                         <button
                           type="button"
@@ -976,7 +1254,7 @@ export const Finance: React.FC = () => {
                         >
                           <div className="orbit-subscription-row-left">
                             <div className="orbit-subscription-icon">
-                              <Icon size={20} />
+                              <SubscriptionIcon subscription={subscription} size={20} />
                             </div>
                             <div className="min-w-0 text-left">
                               <div className="truncate text-[1.1rem] font-semibold text-white">{subscription.name}</div>
@@ -1139,12 +1417,15 @@ export const Finance: React.FC = () => {
 
                     <div className="subscription-icon-grid">
                       {SUBSCRIPTION_ICON_OPTIONS.map((option) => {
-                        const active = subscriptionIconName === option.id;
+                        const active = !subscriptionCustomIconDataUrl && subscriptionIconName === option.id;
                         return (
                           <button
                             key={option.id}
                             type="button"
-                            onClick={() => setSubscriptionIconName(option.id)}
+                            onClick={() => {
+                              setSubscriptionIconName(option.id);
+                              setSubscriptionCustomIconDataUrl(undefined);
+                            }}
                             className={`subscription-icon-picker orbit-sheet-icon-picker ${active ? 'is-active' : ''}`}
                           >
                             <option.Icon size={18} />
@@ -1152,6 +1433,31 @@ export const Finance: React.FC = () => {
                           </button>
                         );
                       })}
+                    </div>
+
+                    <div className="subscription-custom-icon-panel">
+                      <div className="subscription-custom-icon-preview">
+                        <SubscriptionIcon subscription={subscriptionIconPreview} size={30} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="subscription-custom-icon-title">Icona personalizzata</div>
+                        <div className="subscription-custom-icon-copy">Carica PNG/WebP/SVG trasparente: viene inserita senza sfondo.</div>
+                      </div>
+                      <label className="subscription-upload-button">
+                        <ImagePlus size={16} />
+                        Carica
+                        <input type="file" accept="image/*" onChange={handleSubscriptionIconUpload} />
+                      </label>
+                      {subscriptionCustomIconDataUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setSubscriptionCustomIconDataUrl(undefined)}
+                          className="subscription-reset-icon-button"
+                          aria-label="Rimuovi icona personalizzata"
+                        >
+                          <RotateCcw size={16} />
+                        </button>
+                      ) : null}
                     </div>
 
                     <button
@@ -1215,8 +1521,6 @@ export const Finance: React.FC = () => {
                 </motion.div>
 
                 {activeSubscriptions.slice(0, 8).map((subscription, index) => {
-                  const iconOption = SUBSCRIPTION_ICON_OPTIONS.find((option) => option.id === subscription.iconName) ?? SUBSCRIPTION_ICON_OPTIONS[0];
-                  const Icon = iconOption.Icon;
                   const radius = getOrbitRadius(index, activeSubscriptions.length || 1);
                   const angle = (360 / Math.max(activeSubscriptions.length, 1)) * index;
                   return (
@@ -1235,7 +1539,7 @@ export const Finance: React.FC = () => {
                       }
                     >
                       <div className="subscription-orbit-badge">
-                        <Icon size={18} />
+                        <SubscriptionIcon subscription={subscription} size={18} />
                       </div>
                     </motion.div>
                     );
@@ -1293,12 +1597,15 @@ export const Finance: React.FC = () => {
 
                   <div className="subscription-icon-grid">
                     {SUBSCRIPTION_ICON_OPTIONS.map((option) => {
-                      const active = subscriptionIconName === option.id;
+                      const active = !subscriptionCustomIconDataUrl && subscriptionIconName === option.id;
                       return (
                         <button
                           key={option.id}
                           type="button"
-                          onClick={() => setSubscriptionIconName(option.id)}
+                          onClick={() => {
+                            setSubscriptionIconName(option.id);
+                            setSubscriptionCustomIconDataUrl(undefined);
+                          }}
                           className={`subscription-icon-picker ${active ? 'is-active' : ''}`}
                         >
                           <option.Icon size={18} />
@@ -1306,6 +1613,31 @@ export const Finance: React.FC = () => {
                         </button>
                       );
                     })}
+                  </div>
+
+                  <div className="subscription-custom-icon-panel">
+                    <div className="subscription-custom-icon-preview">
+                      <SubscriptionIcon subscription={subscriptionIconPreview} size={30} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="subscription-custom-icon-title">Icona personalizzata</div>
+                      <div className="subscription-custom-icon-copy">Carica un file con trasparenza: verra usato senza sfondo.</div>
+                    </div>
+                    <label className="subscription-upload-button">
+                      <ImagePlus size={16} />
+                      Carica
+                      <input type="file" accept="image/*" onChange={handleSubscriptionIconUpload} />
+                    </label>
+                    {subscriptionCustomIconDataUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => setSubscriptionCustomIconDataUrl(undefined)}
+                        className="subscription-reset-icon-button"
+                        aria-label="Rimuovi icona personalizzata"
+                      >
+                        <RotateCcw size={16} />
+                      </button>
+                    ) : null}
                   </div>
 
                   <button
@@ -1320,9 +1652,6 @@ export const Finance: React.FC = () => {
               <div className="space-y-3 pt-5">
                 {subscriptions.length > 0 ? (
                   subscriptions.map((subscription) => {
-                    const iconOption = SUBSCRIPTION_ICON_OPTIONS.find((option) => option.id === subscription.iconName) ?? SUBSCRIPTION_ICON_OPTIONS[0];
-                    const Icon = iconOption.Icon;
-
                     return (
                       <button
                         type="button"
@@ -1332,7 +1661,7 @@ export const Finance: React.FC = () => {
                       >
                         <div className="subscription-app-row-left">
                           <div className="subscription-app-row-icon">
-                            <Icon size={18} />
+                            <SubscriptionIcon subscription={subscription} size={18} />
                           </div>
                           <div className="min-w-0 text-left">
                             <div className="truncate text-lg font-black text-white">{subscription.name}</div>

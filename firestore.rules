@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /userDashboards/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /dailyVerseComments/{verseId}/comments/{commentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['text', 'authorName', 'userId', 'createdAt'])
+        && request.resource.data.keys().hasAll(['text', 'authorName', 'userId', 'createdAt'])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 180
+        && request.resource.data.authorName is string
+        && request.resource.data.authorName.size() > 0
+        && request.resource.data.authorName.size() <= 80;
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 180;
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    match /dailyVerseReactions/{verseId} {
+      allow read: if request.auth != null;
+
+      match /likes/{userId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && userId == request.auth.uid
+          && request.resource.data.keys().hasOnly(['userId', 'createdAt'])
+          && request.resource.data.keys().hasAll(['userId', 'createdAt'])
+          && request.resource.data.userId == request.auth.uid;
+        allow delete: if request.auth != null
+          && userId == request.auth.uid
+          && resource.data.userId is string
+          && resource.data.userId == request.auth.uid;
+        allow update: if false;
+      }
+    }
+
+    match /dailyVerseLikes/{likeId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

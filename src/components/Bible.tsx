@@ -210,12 +210,12 @@ export const Bible: React.FC = () => {
 
   const highlightSearchTerms = (text: string, searchQuery: string) => {
     if (!searchQuery.trim()) return text;
-    
+
     const needle = searchQuery.trim();
     const regex = new RegExp(`(${needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     const parts = text.split(regex);
-    
-    return parts.map((part, index) => 
+
+    return parts.map((part, index) =>
       regex.test(part) ? <mark key={index} className="bible-search-highlight">{part}</mark> : part
     );
   };
@@ -311,7 +311,7 @@ export const Bible: React.FC = () => {
           {selectedChapter.verses.map((verse, index) => {
             const verseId = `${selectedChapter.id}-${index}`;
             const isHighlighted = highlightedVerses.has(verseId);
-            
+
             return (
               <p
                 key={verseId}

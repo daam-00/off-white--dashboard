@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" fill="none">
+  <!-- Corpo muscoloso -->
+  <ellipse cx="100" cy="180" rx="50" ry="75" fill="white"/>
+  <rect x="65" y="115" width="70" height="90" fill="white" rx="12"/>
+  
+  <!-- Dettagli costume -->
+  <rect x="60" y="175" width="80" height="18" fill="#ED1C24"/>
+  
+  <!-- Gambe -->
+  <rect x="72" y="193" width="24" height="65" fill="white" rx="10"/>
+  <rect x="104" y="193" width="24" height="65" fill="white" rx="10"/>
+  
+  <!-- Stivali rossi -->
+  <rect x="67" y="245" width="28" height="25" fill="#ED1C24" rx="6"/>
+  <rect x="105" y="245" width="28" height="25" fill="#ED1C24" rx="6"/>
+  
+  <!-- Braccia muscolose -->
+  <rect x="35" y="125" width="22" height="55" fill="white" rx="10" transform="rotate(-25 46 152)"/>
+  <rect x="143" y="125" width="22" height="55" fill="white" rx="10" transform="rotate(25 154 152)"/>
+  
+  <!-- Guanti rossi -->
+  <circle cx="38" cy="188" r="14" fill="#ED1C24"/>
+  <circle cx="162" cy="188" r="14" fill="#ED1C24"/>
+  
+  <!-- Logo sul petto -->
+  <circle cx="100" cy="145" r="22" fill="#ED1C24"/>
+  <text x="100" y="155" font-family="Arial Black" font-size="28" font-weight="bold" fill="white" text-anchor="middle">O</text>
+  
+  <!-- Testa -->
+  <circle cx="100" cy="75" r="38" fill="#FDB4A0"/>
+  
+  <!-- Baffi iconici -->
+  <path d="M 75 90 Q 70 95 65 93" stroke="#2C1810" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M 125 90 Q 130 95 135 93" stroke="#2C1810" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <rect x="85" y="88" width="30" height="5" fill="#2C1810" rx="2"/>
+  
+  <!-- Occhi determinati -->
+  <ellipse cx="85" cy="72" rx="9" ry="11" fill="white"/>
+  <ellipse cx="115" cy="72" rx="9" ry="11" fill="white"/>
+  <circle cx="85" cy="74" r="5" fill="#061426"/>
+  <circle cx="115" cy="74" r="5" fill="#061426"/>
+  
+  <!-- Sopracciglia -->
+  <path d="M 75 65 L 92 67" stroke="#2C1810" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 125 65 L 108 67" stroke="#2C1810" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Capelli neri -->
+  <path d="M 65 55 Q 70 40 80 42 Q 85 35 95 38 Q 100 32 105 38 Q 115 35 120 42 Q 130 40 135 55 L 130 65 Q 125 50 115 52 Q 110 48 100 50 Q 90 48 85 52 Q 75 50 70 65 Z" fill="#2C1810"/>
+  
+  <!-- Mantello -->
+  <path d="M 65 115 Q 40 190 50 260 L 62 248 Q 58 190 70 125 Z" fill="#ED1C24" opacity="0.9"/>
+  <path d="M 135 115 Q 160 190 150 260 L 138 248 Q 142 190 130 125 Z" fill="#ED1C24" opacity="0.9"/>
+  
+  <!-- Ombreggiature muscoli -->
+  <ellipse cx="85" cy="155" rx="8" ry="15" fill="#061426" opacity="0.1"/>
+  <ellipse cx="115" cy="155" rx="8" ry="15" fill="#061426" opacity="0.1"/>
+</svg>

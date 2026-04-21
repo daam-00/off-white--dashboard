@@ -5,14 +5,15 @@
 
 import React, { Suspense, lazy, useState } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, type User } from 'firebase/auth';
-import { addDoc, collection, deleteDoc, doc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, type Timestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, type Timestamp, updateDoc, where } from 'firebase/firestore';
 import { BookOpen, Calendar, Check, CircleHelp, Dumbbell, Flame, Heart, LayoutDashboard, LogOut, Mail, Menu, MessageCircle, PencilLine, Send, ShoppingBag, Sparkles, SwatchBook, Trophy, Utensils, UserRound, Wallet, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getThemeCssClass, getThemeDefinition, normalizeThemeId } from './lib/themes';
 import { getDailyVerse } from './data/dailyVerses';
 import { auth, db } from './lib/firebase';
 import { initializeFirebaseSync, markDashboardStateChanged, resetFirebaseSync, syncDashboardStateNow } from './lib/firebaseSync';
-import { awardUserPoints, getAccountLevelInfo, getStoredUserStats } from './lib/account';
+import { ACCOUNT_LEVELS, awardUserPoints, getAccountLevelInfo, getStoredUserStats, saveUserStats } from './lib/account';
+import { PROFILE_AVATARS } from './lib/avatars';
 
 const Finance = lazy(() => import('./components/Finance').then((module) => ({ default: module.Finance })));
 const Fitness = lazy(() => import('./components/Fitness').then((module) => ({ default: module.Fitness })));
@@ -133,7 +134,13 @@ function saveEnabledSections(sections: SectionTab[]) {
 }
 
 function getStoredVerseReactions(): VerseReactionMap {
-  return {};
+  try {
+    const raw = localStorage.getItem(VERSE_REACTIONS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as VerseReactionMap;
+  } catch {
+    return {};
+  }
 }
 
 function getEmptyVerseReaction(): VerseReaction {
@@ -421,6 +428,7 @@ function UserPanel({
   nextLevelCopy,
   checkinStreak,
   enabledSections,
+  avatarId,
   onProfileSave,
   onSectionsSave,
   onClose,
@@ -435,6 +443,7 @@ function UserPanel({
   nextLevelCopy: string;
   checkinStreak: number;
   enabledSections: SectionTab[];
+  avatarId?: string | null;
   onProfileSave: (profile: UserProfile) => void;
   onSectionsSave: (sections: SectionTab[]) => void;
   onClose: () => void;
@@ -499,7 +508,16 @@ function UserPanel({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="user-panel-head">
-          <div className="user-avatar-large">{displayName.slice(0, 1).toUpperCase()}</div>
+          <div className="user-avatar-large">
+            {avatarId ? (
+              (() => {
+                const av = PROFILE_AVATARS.find(a => a.id === avatarId);
+                return av ? (
+                  <img src={av.imageUrl} alt={av.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', borderRadius: '9999px', backgroundColor: av.bgColor }} />
+                ) : displayName.slice(0, 1).toUpperCase();
+              })()
+            ) : displayName.slice(0, 1).toUpperCase()}
+          </div>
           <div>
             <div className="offwhite-label">AREA_UTENTE</div>
             <h2>{displayName}</h2>
@@ -700,11 +718,13 @@ export default function App() {
   const [verseCommentDraft, setVerseCommentDraft] = useState('');
   const [sharedVerseComments, setSharedVerseComments] = useState<VerseComment[]>([]);
   const [verseCommentError, setVerseCommentError] = useState('');
+  const [verseReactionReady, setVerseReactionReady] = useState<Record<string, boolean>>({});
   const [showVerseChat, setShowVerseChat] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState('');
   const [levelUpCelebration, setLevelUpCelebration] = useState<{ level: number; title: string } | null>(null);
   const [streakCelebration, setStreakCelebration] = useState<number | null>(null);
+  const [showLevelModal, setShowLevelModal] = useState(false);
   const didHydrateLevelRef = React.useRef(false);
   const lastKnownLevelRef = React.useRef(1);
   const isFinanceFullscreen = activeTab === 'finance';
@@ -759,6 +779,10 @@ export default function App() {
   }, [authUser]);
 
   React.useEffect(() => {
+    localStorage.setItem(VERSE_REACTIONS_KEY, JSON.stringify(verseReactions));
+  }, [verseReactions]);
+
+  React.useEffect(() => {
     const handleStatsUpdate = () => {
       setStats(getStoredStats());
     };
@@ -789,12 +813,14 @@ export default function App() {
     };
 
     window.addEventListener('checkin-update', handleMetricsUpdate);
+    window.addEventListener('dashboard-data-update', handleMetricsUpdate);
     window.addEventListener('shopping-update', handleMetricsUpdate);
     window.addEventListener('storage', handleMetricsUpdate);
     window.addEventListener('focus', handleMetricsUpdate);
 
     return () => {
       window.removeEventListener('checkin-update', handleMetricsUpdate);
+      window.removeEventListener('dashboard-data-update', handleMetricsUpdate);
       window.removeEventListener('shopping-update', handleMetricsUpdate);
       window.removeEventListener('storage', handleMetricsUpdate);
       window.removeEventListener('focus', handleMetricsUpdate);
@@ -814,15 +840,47 @@ export default function App() {
   React.useEffect(() => {
     if (!authUser) {
       setSharedVerseComments([]);
+      setVerseReactionReady({});
       return;
     }
 
     const commentsQuery = query(
       collection(db, 'dailyVerseComments', dailyVerseReactionId, 'comments'),
-      orderBy('createdAt', 'desc'),
-      limit(12),
+      orderBy('createdAt', 'asc'),
     );
-    const likesQuery = query(collection(db, 'dailyVerseLikes'), where('verseId', '==', dailyVerseReactionId));
+    const likesCollection = collection(db, 'dailyVerseReactions', dailyVerseReactionId, 'likes');
+    const legacyLikesQuery = query(collection(db, 'dailyVerseLikes'), where('verseId', '==', dailyVerseReactionId));
+    let nestedLikeUserIds = new Set<string>();
+    let legacyLikeUserIds = new Set<string>();
+
+    const publishLikes = () => {
+      const combined = new Set<string>([...legacyLikeUserIds, ...nestedLikeUserIds]);
+      setVerseReactions((current) => ({
+        ...current,
+        [dailyVerseReactionId]: {
+          liked: combined.has(authUser.uid),
+          likes: combined.size,
+        },
+      }));
+      setVerseReactionReady((current) => ({ ...current, [dailyVerseReactionId]: true }));
+    };
+
+    void Promise.all([getDocs(likesCollection), getDocs(legacyLikesQuery)])
+      .then(([nestedSnapshot, legacySnapshot]) => {
+        nestedLikeUserIds = new Set(nestedSnapshot.docs.map((likeDoc) => likeDoc.id));
+        legacyLikeUserIds = new Set(
+          legacySnapshot.docs
+            .map((likeDoc) => {
+              const data = likeDoc.data() as { userId?: string };
+              return data.userId ?? '';
+            })
+            .filter(Boolean),
+        );
+        publishLikes();
+      })
+      .catch(() => {
+        setVerseReactionReady((current) => ({ ...current, [dailyVerseReactionId]: true }));
+      });
 
     const unsubscribeComments = onSnapshot(
       commentsQuery,
@@ -852,15 +910,27 @@ export default function App() {
       },
     );
     const unsubscribeLikes = onSnapshot(
-      likesQuery,
+      likesCollection,
       (snapshot) => {
-        setVerseReactions((current) => ({
-          ...current,
-          [dailyVerseReactionId]: {
-            liked: snapshot.docs.some((likeDoc) => (likeDoc.data() as { userId?: string }).userId === authUser.uid),
-            likes: snapshot.size,
-          },
-        }));
+        nestedLikeUserIds = new Set(snapshot.docs.map((likeDoc) => likeDoc.id));
+        publishLikes();
+      },
+      () => {
+        setVerseCommentError('Like condivisi non disponibili al momento.');
+      },
+    );
+    const unsubscribeLegacyLikes = onSnapshot(
+      legacyLikesQuery,
+      (snapshot) => {
+        legacyLikeUserIds = new Set(
+          snapshot.docs
+            .map((likeDoc) => {
+              const data = likeDoc.data() as { userId?: string };
+              return data.userId ?? '';
+            })
+            .filter(Boolean),
+        );
+        publishLikes();
       },
       () => {
         setVerseCommentError('Like condivisi non disponibili al momento.');
@@ -870,6 +940,7 @@ export default function App() {
     return () => {
       unsubscribeComments();
       unsubscribeLikes();
+      unsubscribeLegacyLikes();
     };
   }, [authUser, dailyVerseReactionId]);
 
@@ -901,6 +972,17 @@ export default function App() {
     lastKnownLevelRef.current = currentLevel;
   }, [isSyncReady, stats.points]);
 
+  // Admin: keep points at 99999 and unlock all themes/avatars
+  const ADMIN_EMAIL = 'thsedici@gmail.com';
+  React.useEffect(() => {
+    if (!isSyncReady || authUser?.email !== ADMIN_EMAIL) return;
+    const current = getStoredUserStats();
+    if (current.points < 99999) {
+      const boosted = saveUserStats({ ...current, points: 99999 });
+      setStats(boosted);
+    }
+  }, [isSyncReady, authUser?.email]);
+
   if (!isAuthReady) {
     return <FullScreenStatus label="Avvio dashboard" detail="Preparo lo spazio personale." />;
   }
@@ -915,9 +997,15 @@ export default function App() {
 
   const activeTheme = getThemeDefinition(stats.activeTheme);
   const displayName = profile.name?.trim() || authUser.email?.split('@')[0] || 'Utente';
+  const isAdmin = authUser?.email === ADMIN_EMAIL;
   const accountLevel = getAccountLevelInfo(stats.points);
-  const levelProgressWidth = `${accountLevel.progressPercent}%`;
-  const nextLevelCopy = accountLevel.nextLevelAt
+  const displayPoints = isAdmin ? '∞' : String(stats.points);
+  const displayLevel = isAdmin ? 7 : accountLevel.level;
+  const displayLevelTitle = isAdmin ? 'Apex' : accountLevel.title;
+  const levelProgressWidth = isAdmin ? '100%' : `${accountLevel.progressPercent}%`;
+  const nextLevelCopy = isAdmin
+    ? '∞ credits · Livello Apex massimo'
+    : accountLevel.nextLevelAt
     ? `${Math.max(0, accountLevel.nextLevelAt - stats.points)} credits al livello ${accountLevel.level + 1}`
     : 'Livello massimo attuale raggiunto';
 
@@ -939,20 +1027,24 @@ export default function App() {
   const hasCheckedInToday = checkins.includes(today);
   const checkinStreak = calculateCheckinStreak(checkins);
   const dailyVerseReaction = verseReactions[dailyVerseReactionId] ?? getEmptyVerseReaction();
+  const isDailyVerseReactionReady = verseReactionReady[dailyVerseReactionId] ?? false;
   const visibleVerseComments = sharedVerseComments;
 
   const toggleDailyVerseLike = () => {
-    const likeDoc = doc(db, 'dailyVerseLikes', `${dailyVerseReactionId}__${authUser.uid}`);
-    if (dailyVerseReaction.liked) {
+    const current = verseReactions[dailyVerseReactionId] ?? getEmptyVerseReaction();
+    setVerseReactions((prev) => ({
+      ...prev,
+      [dailyVerseReactionId]: {
+        liked: !current.liked,
+        likes: Math.max(0, current.likes + (current.liked ? -1 : 1)),
+      },
+    }));
+    const likeDoc = doc(db, 'dailyVerseReactions', dailyVerseReactionId, 'likes', authUser.uid);
+    if (current.liked) {
       void deleteDoc(likeDoc);
-      return;
+    } else {
+      void setDoc(likeDoc, { userId: authUser.uid, createdAt: serverTimestamp() });
     }
-
-    void setDoc(likeDoc, {
-      verseId: dailyVerseReactionId,
-      userId: authUser.uid,
-      createdAt: serverTimestamp(),
-    });
   };
 
   const addDailyVerseComment = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -960,8 +1052,18 @@ export default function App() {
     const text = verseCommentDraft.trim();
     if (!text) return;
 
+    const optimisticId = `optimistic-${Date.now()}`;
+    const optimisticComment: VerseComment = {
+      id: optimisticId,
+      text,
+      authorName: displayName,
+      userId: authUser.uid,
+      createdAt: new Date().toISOString(),
+    };
+
     setVerseCommentDraft('');
     setVerseCommentError('');
+    setSharedVerseComments((prev) => [...prev, optimisticComment]);
 
     try {
       await addDoc(collection(db, 'dailyVerseComments', dailyVerseReactionId, 'comments'), {
@@ -973,10 +1075,12 @@ export default function App() {
     } catch {
       setVerseCommentDraft(text);
       setVerseCommentError('Non riesco a pubblicare il commento condiviso adesso.');
+      setSharedVerseComments((prev) => prev.filter((c) => c.id !== optimisticId));
     }
   };
 
   const deleteVerseComment = async (commentId: string) => {
+    setSharedVerseComments((prev) => prev.filter((c) => c.id !== commentId));
     try {
       await deleteDoc(doc(db, 'dailyVerseComments', dailyVerseReactionId, 'comments', commentId));
     } catch {
@@ -987,13 +1091,14 @@ export default function App() {
   const saveEditComment = async (commentId: string) => {
     const text = editingCommentText.trim();
     if (!text) return;
+    setSharedVerseComments((prev) => prev.map((c) => c.id === commentId ? { ...c, text } : c));
+    setEditingCommentId(null);
+    setEditingCommentText('');
     try {
       await updateDoc(doc(db, 'dailyVerseComments', dailyVerseReactionId, 'comments', commentId), { text });
     } catch {
-      // silently ignore
+      // onSnapshot ripristina stato corretto
     }
-    setEditingCommentId(null);
-    setEditingCommentText('');
   };
 
   const handleLogout = async () => {
@@ -1052,6 +1157,8 @@ export default function App() {
 
   const caloriesPercent = Math.min(100, Math.round((homeMetrics.caloriesConsumed / homeMetrics.caloriesTarget) * 100) || 0);
   const workoutPercent = Math.min(100, Math.round((homeMetrics.workoutsCompleted / homeMetrics.workoutsTarget) * 100) || 0);
+  const vaultRecipeCount = (() => { try { return (JSON.parse(localStorage.getItem('offwhite_recipes') || '[]') as unknown[]).length; } catch { return 0; } })();
+  const vaultRecipePercent = Math.min(100, Math.round((vaultRecipeCount / 20) * 100));
 
   return (
     <div 
@@ -1068,6 +1175,7 @@ export default function App() {
         '--theme-border': activeTheme.border,
         '--theme-grid': activeTheme.grid,
         '--theme-shadow': activeTheme.shadow,
+        '--sidebar-w': isSidebarOpen ? '280px' : '80px',
       } as React.CSSProperties}
     >
       <AnimatePresence>
@@ -1102,12 +1210,13 @@ export default function App() {
             email={authUser.email}
             displayName={displayName}
             points={stats.points}
-            accountLevelLabel={accountLevel.title}
-            accountLevelNumber={accountLevel.level}
-            accountLevelProgress={accountLevel.progressPercent}
+            accountLevelLabel={displayLevelTitle}
+            accountLevelNumber={displayLevel}
+            accountLevelProgress={isAdmin ? 100 : accountLevel.progressPercent}
             nextLevelCopy={nextLevelCopy}
             checkinStreak={checkinStreak}
             enabledSections={enabledSections}
+            avatarId={stats.avatarId}
             onProfileSave={handleProfileSave}
             onSectionsSave={handleSectionsSave}
             onClose={() => setIsUserPanelOpen(false)}
@@ -1180,6 +1289,104 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* LEVEL MODAL */}
+      <AnimatePresence>
+        {showLevelModal && (
+          <motion.div
+            className="level-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowLevelModal(false)}
+          >
+            <motion.div
+              className="level-modal"
+              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 20 }}
+              transition={{ duration: 0.22 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="level-modal-header">
+                <div>
+                  <div className="font-mono text-[9px] uppercase tracking-[0.3em] text-offwhite-orange">PROGRESSIONE</div>
+                  <h2 className="text-3xl font-black uppercase tracking-tight mt-1">Livelli Account</h2>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-gray-500 mt-1">
+                    Sei al Livello {displayLevel} · {displayLevelTitle} · {displayPoints} credits totali
+                  </p>
+                </div>
+                <button type="button" onClick={() => setShowLevelModal(false)} className="p-1 hover:text-offwhite-orange">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="level-modal-body">
+                {/* Progress bar */}
+                <div className="mb-5">
+                  <div className="flex justify-between font-mono text-[9px] uppercase tracking-widest mb-1.5">
+                    <span>{displayLevelTitle}</span>
+                    <span>{isAdmin ? '∞ ADMIN' : accountLevel.nextLevelAt ? `${Math.max(0, accountLevel.nextLevelAt - stats.points)} mancanti` : 'LIVELLO MAX'}</span>
+                  </div>
+                  <div className="h-2 w-full bg-black/10 border border-black/20">
+                    <div className="h-full bg-black transition-all" style={{ width: levelProgressWidth }} />
+                  </div>
+                </div>
+
+                {/* All levels */}
+                <div className="border-t-2 border-black/10">
+                  {ACCOUNT_LEVELS.map((lvl, idx) => {
+                    const lvlNumber = idx + 1;
+                    const isCurrent = lvlNumber === displayLevel;
+                    const isPast = lvlNumber < displayLevel;
+                    const badgeClass = isCurrent ? 'is-current' : isPast ? 'is-past' : 'is-future';
+                    return (
+                      <div key={lvl.tier} className={`level-row ${isCurrent ? 'bg-black/[0.03]' : ''}`}>
+                        <div className={`level-row-badge ${badgeClass}`}>
+                          {isPast ? '✓' : lvlNumber}
+                        </div>
+                        <div className="level-row-info">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-sm font-black uppercase tracking-tight">{lvl.title}</span>
+                            <span className="font-mono text-[9px] text-gray-400">{lvl.minPoints} pts</span>
+                            {isCurrent && <span className="font-mono text-[8px] bg-black text-white px-1.5 py-0.5 uppercase tracking-widest">ATTUALE</span>}
+                          </div>
+                          <ul className="mt-1 space-y-0.5">
+                            {lvl.perks.map((perk) => (
+                              <li key={perk} className="font-mono text-[9px] uppercase tracking-[0.15em] text-gray-500 flex gap-1.5">
+                                <span className="text-offwhite-orange">›</span>{perk}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* How to earn */}
+                <div className="mt-5">
+                  <div className="font-mono text-[9px] uppercase tracking-[0.3em] text-offwhite-orange mb-2">Come guadagnare credits</div>
+                  <div className="level-earn-table">
+                    {[
+                      ['Check-in giornaliero', '+10 credits'],
+                      ['Completa obiettivo settimanale', '+70–90 credits'],
+                      ['Completa tutti gli obiettivi', '+300 credits'],
+                      ['Salva una ricetta nel vault', '+5 credits'],
+                      ['Giornata routine perfetta', '+20 credits'],
+                      ['Serie 7+ giorni check-in', '+50 bonus'],
+                    ].map(([action, reward]) => (
+                      <div key={action} className="level-earn-row">
+                        <span>{action}</span>
+                        <span className="font-black text-offwhite-orange">{reward}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* DESKTOP SIDEBAR */}
       <motion.aside 
         initial={false}
@@ -1231,7 +1438,7 @@ export default function App() {
               {authUser.email}
             </div>
             <div className="mt-2 font-mono text-[9px] uppercase tracking-widest text-offwhite-orange">
-              Livello {accountLevel.level} · {accountLevel.title}
+              Livello {displayLevel} · {displayLevelTitle}{isAdmin ? ' · ADMIN' : ''}
             </div>
           </div>
           <button
@@ -1254,8 +1461,8 @@ export default function App() {
       <header className={`sidebar-shell md:hidden border-b-2 border-black p-4 justify-between items-center z-50 shrink-0 ${isFinanceFullscreen || activeTab === 'dashboard' ? 'hidden' : 'flex'}`}>
         <div className="dashboard-brand font-black text-xl tracking-tighter">BETTER ME</div>
         <div className="flex items-center gap-3">
-          <div className="font-mono text-[10px] font-black text-offwhite-orange">{stats.points} PTS</div>
-          <div className="font-mono text-[10px] font-black uppercase tracking-widest opacity-50">L{accountLevel.level}</div>
+          <div className="font-mono text-[10px] font-black text-offwhite-orange">{displayPoints} PTS</div>
+          <div className="font-mono text-[10px] font-black uppercase tracking-widest opacity-50">L{displayLevel}</div>
           <button type="button" onClick={handleLogout} className="text-black" aria-label="Esci">
             <LogOut size={17} />
           </button>
@@ -1268,8 +1475,8 @@ export default function App() {
       {/* MAIN CONTENT */}
       <main className={`main-shell relative flex-1 min-h-0 overflow-y-auto md:p-8 md:pb-8 ${isFinanceFullscreen ? 'p-0 pb-0' : activeTab === 'dashboard' ? 'home-main-surface p-0 pb-24 md:p-0 md:pb-0' : 'p-4 pb-24'}`}>
         <div className="absolute top-0 right-0 p-4 flex items-center gap-4 pointer-events-none select-none hidden sm:flex">
-          <div className="font-mono text-[10px] font-black text-offwhite-orange">{stats.points} BETTER-CREDITS</div>
-          <div className="font-mono text-[10px] font-black uppercase tracking-widest text-black/45">LIVELLO {accountLevel.level}</div>
+          <div className="font-mono text-[10px] font-black text-offwhite-orange">{displayPoints} BETTER-CREDITS</div>
+          <div className="font-mono text-[10px] font-black uppercase tracking-widest text-black/45">LIVELLO {displayLevel}</div>
           <div className="font-mono text-[8px] md:text-[10px] text-gray-300">
             "IL_PROGRESSO_E_UN_PERCORSO" // V1.0
           </div>
@@ -1288,16 +1495,23 @@ export default function App() {
                 <section className="home-app-shell">
                   <div className="home-top-rail">
                     <div className="home-level-hud">
-                      <div className="home-level-circle">
-                        <strong>{accountLevel.level}</strong>
-                      </div>
+                      <button
+                        type="button"
+                        className="home-level-circle"
+                        onClick={() => setShowLevelModal(true)}
+                        aria-label={`Livello ${displayLevel} — clicca per dettagli`}
+                        title="Vedi progressione livelli"
+                      >
+                        <strong>{isAdmin ? '∞' : displayLevel}</strong>
+                      </button>
                     </div>
 
                     <div className="home-identity-stack">
                       <div className="home-app-logo">
-                        <span className="home-app-logo-mark">
-                          <img src="/better-me-logo.png" alt="better me" />
-                        </span>
+                        <div className="home-wordmark" aria-label="Better Me">
+                          <span className="home-wordmark-top">BETTER</span>
+                          <span className="home-wordmark-bottom">ME</span>
+                        </div>
                       </div>
                       <div className="home-level-track" aria-label={`Progresso livello ${accountLevel.level}`}>
                         <div className="home-level-fill" style={{ width: levelProgressWidth }} />
@@ -1310,36 +1524,25 @@ export default function App() {
                       className="home-user-button"
                       aria-label="Apri area utente"
                     >
-                      <span>{displayName.slice(0, 1).toUpperCase()}</span>
+                      {stats.avatarId ? (
+                        (() => {
+                          const av = PROFILE_AVATARS.find(a => a.id === stats.avatarId);
+                          return av ? (
+                            <img
+                              src={av.imageUrl}
+                              alt={av.name}
+                              className="w-full h-full object-cover"
+                              style={{ backgroundColor: av.bgColor }}
+                            />
+                          ) : <span>{displayName.slice(0, 1).toUpperCase()}</span>;
+                        })()
+                      ) : <span>{displayName.slice(0, 1).toUpperCase()}</span>}
                     </button>
                   </div>
 
                   <div className="home-app-glow home-app-glow-mint" />
                   <div className="home-app-glow home-app-glow-blue" />
 
-                  <div className="invincible-home-pack" aria-hidden="true">
-                    <div className="invincible-logo-strip">
-                      <img src="/themes/invincible/invincible-comic-logo.png" alt="" />
-                      <span>weekly hero system</span>
-                    </div>
-                    <div className="invincible-comic-stage">
-                      <div className="invincible-character-card invincible-character-card-main">
-                        <span className="invincible-character-mask" />
-                        <strong>INVINCIBLE</strong>
-                      </div>
-                      <div className="invincible-character-card invincible-character-card-side">
-                        <span className="invincible-character-mask" />
-                        <strong>OMNI-MAN</strong>
-                      </div>
-                      <div className="invincible-character-card invincible-character-card-third">
-                        <strong>ATOM EVE</strong>
-                      </div>
-                      <span className="invincible-action-word">WHAM!</span>
-                      <span className="invincible-speed-line invincible-speed-line-one" />
-                      <span className="invincible-speed-line invincible-speed-line-two" />
-                      <span className="invincible-speed-line invincible-speed-line-three" />
-                    </div>
-                  </div>
 
                   <div className="home-check-zone">
                     <div className="home-check-card-label">
@@ -1412,7 +1615,7 @@ export default function App() {
                         className={`home-verse-action ${dailyVerseReaction.liked ? 'is-liked' : ''}`}
                       >
                         <Heart size={16} fill={dailyVerseReaction.liked ? 'currentColor' : 'none'} />
-                        <span>{dailyVerseReaction.likes}</span>
+                        <span>{isDailyVerseReactionReady ? dailyVerseReaction.likes : '...'}</span>
                       </button>
                       <button type="button" className="home-verse-action" onClick={() => setShowVerseChat(true)}>
                         <MessageCircle size={16} />
@@ -1444,12 +1647,12 @@ export default function App() {
                     {enabledSections.includes('diet') && (
                       <button onClick={() => setActiveTab('diet')} className="home-metric-card home-metric-diet">
                         <div className="home-card-title">Diet</div>
-                        <div className="home-donut" style={{ '--progress': `${caloriesPercent}%` } as React.CSSProperties}>
-                          <span>{caloriesPercent}%</span>
+                        <div className="home-donut" style={{ '--progress': `${vaultRecipePercent}%` } as React.CSSProperties}>
+                          <span>{vaultRecipeCount}</span>
                           <Utensils size={16} strokeWidth={2.2} />
                         </div>
-                        <p>Calories:</p>
-                        <strong>{homeMetrics.caloriesConsumed}/{homeMetrics.caloriesTarget} kcal</strong>
+                        <p>Vault ricette:</p>
+                        <strong>{vaultRecipeCount} salvate</strong>
                       </button>
                     )}
 
@@ -1517,13 +1720,13 @@ export default function App() {
 
             {activeTab === 'fitness' && enabledSections.includes('fitness') && (
               <TabPanel panelKey="fitness">
-                <Fitness />
+                <Fitness ownerEmail={authUser?.email ?? null} />
               </TabPanel>
             )}
 
             {activeTab === 'diet' && enabledSections.includes('diet') && (
               <TabPanel panelKey="diet">
-                <Diet />
+                <Diet ownerEmail={authUser?.email ?? null} />
               </TabPanel>
             )}
 
@@ -1541,7 +1744,7 @@ export default function App() {
 
             {activeTab === 'themes' && enabledSections.includes('themes') && (
               <TabPanel panelKey="themes">
-                <ThemeStudio canUseInvincible={authUser?.email?.toLowerCase().trim() === 'thsedici@gmail.com'} />
+                <ThemeStudio ownerEmail={authUser?.email ?? null} />
               </TabPanel>
             )}
 
@@ -1610,7 +1813,7 @@ export default function App() {
                   <div key={comment.id} className="verse-chat-msg">
                     <div className="verse-chat-msg-meta">
                       <strong>{comment.authorName ?? 'Utente'}</strong>
-                      <span className="verse-chat-msg-time">{comment.createdAt ? new Date(comment.createdAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                      <span className="verse-chat-msg-time">{comment.createdAt ? new Date(comment.createdAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}</span>
                     </div>
                     <p className="verse-chat-msg-text">{comment.text}</p>
                     {comment.userId === authUser?.uid && (

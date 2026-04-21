@@ -26,7 +26,9 @@ This app is connected to the Firebase project `betterme-fb488` through the exist
 - Firebase project alias is stored in `.firebaserc`
 - Firebase Hosting is configured in `firebase.json`
 - Frontend Firebase SDK config is loaded from `.env.local`
-- Dashboard data is mirrored from `localStorage` to Firestore document `dashboards/off-white-dashboard`
+- Users sign in with Firebase Authentication email/password
+- Dashboard data is mirrored from `localStorage` to per-user Firestore documents in `userDashboards/{uid}`
+- Every account starts with a clean personal dashboard and syncs only its own data
 
 Deploy with:
 

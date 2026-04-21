@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Barlow+Condensed:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;500;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -874,6 +874,7 @@
   display: grid;
   flex-shrink: 0;
   justify-self: center;
+  overflow: hidden;
   width: 3.25rem;
   height: 3.25rem;
   place-items: center;
@@ -947,24 +948,38 @@
   justify-content: center;
 }
 
-.home-app-logo-mark {
-  display: inline-flex;
+/* Wordmark replaces the old PNG logo */
+.home-wordmark {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 5rem;
-  isolation: isolate;
+  gap: 0;
+  line-height: 1;
+  user-select: none;
 }
 
-.home-app-logo img {
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-  mix-blend-mode: multiply;
-  opacity: 0.96;
-  filter:
-    contrast(1.14)
-    saturate(1.05)
-    drop-shadow(0 10px 16px rgba(104, 155, 139, 0.1));
+.home-wordmark-top {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--theme-ink) 48%, transparent);
+}
+
+.home-wordmark-bottom {
+  font-family: var(--font-sans, sans-serif);
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  color: var(--theme-ink);
+  text-shadow: 0 2px 0 color-mix(in srgb, var(--theme-border) 12%, transparent);
+}
+
+/* Keep old selector harmless */
+.home-app-logo-mark {
+  display: contents;
 }
 
 .home-check-zone {
@@ -1448,9 +1463,11 @@
 
 .user-avatar-large {
   display: grid;
+  flex-shrink: 0;
   width: 4rem;
   height: 4rem;
   place-items: center;
+  overflow: hidden;
   border: 2px solid var(--theme-border);
   border-radius: 9999px;
   background: var(--theme-ink);
@@ -1458,6 +1475,15 @@
   font-family: var(--font-mono);
   font-size: 1.5rem;
   font-weight: 900;
+}
+
+.user-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 9999px;
+  display: block;
 }
 
 .user-panel h2,
@@ -2413,15 +2439,11 @@
     linear-gradient(180deg, #ffffff 0%, #f4f4f4 100%);
 }
 
-.dashboard-theme .theme-card-theme-invincible {
-  background:
-    linear-gradient(160deg, rgba(255, 211, 79, 0.92), rgba(255, 251, 232, 0.98));
-}
-
 .dashboard-theme .theme-card-theme-blue {
   background:
     linear-gradient(160deg, #eef3ff 0%, #dce6ff 100%);
 }
+
 
 .dashboard-theme .theme-live-banner {
   background-color: var(--theme-ink);
@@ -5119,1543 +5141,6 @@
   border-color: var(--theme-accent) !important;
 }
 
-.dashboard-theme.theme-invincible {
-  background:
-    linear-gradient(180deg, rgba(6, 20, 38, 0.85) 0%, rgba(6, 20, 38, 0.75) 100%),
-    url('https://images5.alphacoders.com/132/1329729.png') center/cover fixed;
-  position: relative;
-  min-height: 100vh;
-}
-
-.dashboard-theme.theme-invincible::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(255, 213, 31, 0.15) 0 200px, transparent 200px),
-    radial-gradient(circle at 80% 70%, rgba(237, 28, 36, 0.15) 0 250px, transparent 250px);
-  pointer-events: none;
-  z-index: 0;
-  animation: invincible-energy-drift 20s ease-in-out infinite alternate;
-}
-
-@keyframes invincible-energy-drift {
-  0% { opacity: 0.3; transform: translate(0, 0); }
-  100% { opacity: 0.6; transform: translate(30px, -30px); }
-}
-
-.dashboard-theme.theme-invincible .dashboard-brand,
-.dashboard-theme.theme-invincible h1:not(.home-app-title),
-.dashboard-theme.theme-invincible h2:not(.home-card-title),
-.dashboard-theme.theme-invincible .home-card-title {
-  font-family: "Anton", Impact, sans-serif;
-  letter-spacing: 0.01em;
-}
-
-.dashboard-theme.theme-invincible .main-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-linear-gradient(105deg, rgba(6, 20, 38, 0.08) 0 1px, transparent 1px 25px),
-    repeating-linear-gradient(-15deg, rgba(237, 28, 36, 0.05) 0 1px, transparent 1px 40px);
-  opacity: 1;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.dashboard-theme.theme-invincible .main-shell::after {
-  content: "";
-  position: absolute;
-  bottom: 8%;
-  right: 5%;
-  width: 150px;
-  height: 150px;
-  background: 
-    radial-gradient(circle at 50% 50%, rgba(255, 213, 31, 0.4) 0 20%, transparent 20%),
-    radial-gradient(circle at 30% 30%, rgba(237, 28, 36, 0.3) 0 35%, transparent 35%),
-    radial-gradient(circle at 70% 70%, rgba(14, 165, 233, 0.25) 0 25%, transparent 25%);
-  opacity: 0.6;
-  pointer-events: none;
-  z-index: 0;
-  animation: invincible-explosion-pulse 3s ease-in-out infinite;
-  filter: blur(2px);
-}
-
-@keyframes invincible-explosion-pulse {
-  0%, 100% { 
-    opacity: 0.4; 
-    transform: scale(1) rotate(0deg);
-  }
-  50% { 
-    opacity: 0.7; 
-    transform: scale(1.3) rotate(180deg);
-  }
-}
-
-.dashboard-theme.theme-invincible .offwhite-border {
-  border-width: 3px;
-}
-
-.dashboard-theme.theme-invincible .theme-card-theme-invincible,
-.dashboard-theme.theme-invincible .hero-panel {
-  background:
-    linear-gradient(160deg, rgba(255, 213, 31, 0.98), rgba(119, 201, 242, 0.88)),
-    linear-gradient(0deg, #fff, #fff);
-}
-
-.invincible-home-pack {
-  display: none;
-}
-
-.dashboard-theme.theme-invincible .home-main-surface {
-  background:
-    linear-gradient(180deg, rgba(6, 20, 38, 0.75) 0%, rgba(6, 20, 38, 0.85) 100%),
-    url('https://images6.alphacoders.com/132/1329731.jpg') center/cover fixed;
-  position: relative;
-  backdrop-filter: blur(2px);
-}
-
-.dashboard-theme.theme-invincible .home-main-surface::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 30% 40%, rgba(255, 213, 31, 0.15) 0 150px, transparent 150px),
-    radial-gradient(circle at 70% 60%, rgba(237, 28, 36, 0.12) 0 180px, transparent 180px);
-  animation: invincible-surface-energy 6s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes invincible-surface-energy {
-  0%, 100% { 
-    opacity: 0.4; 
-    transform: scale(1);
-  }
-  50% { 
-    opacity: 0.7; 
-    transform: scale(1.05);
-  }
-}
-
-.dashboard-theme.theme-invincible .home-main-surface::after {
-  display: none;
-}
-
-.dashboard-theme.theme-invincible .home-app-shell {
-  max-width: 58rem;
-  font-family: "Barlow Condensed", "Inter", sans-serif;
-}
-
-.dashboard-theme.theme-invincible .home-app-glow {
-  display: none;
-}
-
-.dashboard-theme.theme-invincible .home-app-logo {
-  justify-content: flex-start;
-  color: #061426;
-  font-family: "Anton", Impact, sans-serif;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  transform: skew(-5deg);
-}
-
-.dashboard-theme.theme-invincible .home-app-logo img {
-  border: 2px solid #061426;
-  border-radius: 8px;
-  background: #fff7bf;
-  padding: 0.2rem;
-  filter: none;
-}
-
-.dashboard-theme.theme-invincible .home-user-button {
-  border-width: 3px;
-  background: #ed1c24;
-  color: #fff7bf;
-  box-shadow: 7px 7px 0 #061426;
-}
-
-.dashboard-theme.theme-invincible .home-user-button span {
-  background: #ffd51f;
-  color: #061426;
-}
-
-.dashboard-theme.theme-invincible .invincible-home-pack {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(16rem, 1.1fr);
-  gap: 1rem;
-  align-items: stretch;
-  margin-top: 1.65rem;
-}
-
-.dashboard-theme.theme-invincible .invincible-logo-strip {
-  position: relative;
-  min-height: 14rem;
-  overflow: hidden;
-  border: 4px solid #061426;
-  border-radius: 16px;
-  background:
-    repeating-linear-gradient(45deg, #ffd51f 0 20px, #ffe35a 20px 40px),
-    linear-gradient(135deg, #ffd51f 0%, #0ea5e9 100%);
-  box-shadow: 
-    0 0 0 2px #fff7bf,
-    0 0 0 6px #061426,
-    -12px 12px 0 0 #ed1c24,
-    -12px 12px 0 2px #061426;
-  transform: rotate(-2deg);
-  animation: invincible-logo-wobble 5s ease-in-out infinite;
-}
-
-@keyframes invincible-logo-wobble {
-  0%, 100% { transform: rotate(-2deg) translateX(0); }
-  50% { transform: rotate(-1.5deg) translateX(-3px); }
-}
-
-.dashboard-theme.theme-invincible .invincible-logo-strip::before,
-.dashboard-theme.theme-invincible .invincible-logo-strip::after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-}
-
-.dashboard-theme.theme-invincible .invincible-logo-strip::before {
-  inset: 0;
-  background: 
-    repeating-radial-gradient(circle at 25% 25%, rgba(6, 20, 38, 0.15) 0 2px, transparent 2px 12px),
-    repeating-radial-gradient(circle at 75% 75%, rgba(237, 28, 36, 0.1) 0 2px, transparent 2px 15px);
-  mix-blend-mode: multiply;
-  opacity: 0.6;
-}
-
-.dashboard-theme.theme-invincible .invincible-logo-strip::after {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  height: 90%;
-  background: 
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.3) 0 30%, transparent 30%);
-  animation: invincible-logo-glow 3s ease-in-out infinite;
-}
-
-@keyframes invincible-logo-glow {
-  0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
-  50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.05); }
-}
-
-.dashboard-theme.theme-invincible .invincible-logo-strip img {
-  position: relative;
-  z-index: 10;
-  width: min(85%, 24rem);
-  margin: 2.5rem 0 0 1.8rem;
-  filter: 
-    drop-shadow(5px 6px 0 #061426)
-    drop-shadow(0 0 20px rgba(237, 28, 36, 0.4));
-  animation: invincible-logo-shine 4s ease-in-out infinite;
-}
-
-@keyframes invincible-logo-shine {
-  0%, 100% { filter: drop-shadow(5px 6px 0 #061426) drop-shadow(0 0 20px rgba(237, 28, 36, 0.4)) brightness(1); }
-  50% { filter: drop-shadow(5px 6px 0 #061426) drop-shadow(0 0 30px rgba(237, 28, 36, 0.6)) brightness(1.1); }
-}
-
-.dashboard-theme.theme-invincible .invincible-logo-strip span {
-  position: absolute;
-  right: 1rem;
-  bottom: 1rem;
-  z-index: 15;
-  border: 4px solid #061426;
-  border-radius: 10px;
-  background: 
-    linear-gradient(135deg, #fff7bf 0%, #ffd51f 100%);
-  color: #061426;
-  padding: 0.6rem 0.8rem;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.7rem;
-  font-weight: 950;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  transform: rotate(3deg);
-  box-shadow: 
-    0 0 0 2px #ed1c24,
-    4px 4px 0 0 rgba(6, 20, 38, 0.3);
-  animation: invincible-badge-bounce 2s ease-in-out infinite;
-}
-
-@keyframes invincible-badge-bounce {
-  0%, 100% { transform: rotate(3deg) translateY(0); }
-  50% { transform: rotate(3deg) translateY(-4px); }
-}
-
-.dashboard-theme.theme-invincible .invincible-comic-stage {
-  position: relative;
-  min-height: 18rem;
-  overflow: hidden;
-  border: 5px solid #061426;
-  border-radius: 20px;
-  background:
-    linear-gradient(180deg, rgba(6, 20, 38, 0.4) 0%, rgba(6, 20, 38, 0.6) 100%),
-    url('https://images.alphacoders.com/132/1329730.png') center/cover;
-  box-shadow: 
-    0 0 0 3px #ffd51f,
-    0 0 0 8px #061426,
-    15px 15px 0 0 #ed1c24,
-    15px 15px 0 3px #061426,
-    0 20px 40px rgba(0, 0, 0, 0.5);
-  animation: invincible-stage-epic-float 5s ease-in-out infinite;
-}
-
-@keyframes invincible-stage-epic-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-8px) scale(1.01); }
-}
-
-.dashboard-theme.theme-invincible .invincible-comic-stage::before {
-  content: "";
-  position: absolute;
-  top: 10%;
-  right: 8%;
-  width: 80px;
-  height: 80px;
-  background: 
-    radial-gradient(ellipse at 30% 30%, #ed1c24 0 35%, transparent 35%),
-    radial-gradient(ellipse at 70% 70%, #ffd51f 0 25%, transparent 25%);
-  border: 3px solid #061426;
-  border-radius: 50%;
-  opacity: 0.3;
-  animation: invincible-impact-spin 3s linear infinite;
-  z-index: 0;
-  pointer-events: none;
-}
-
-@keyframes invincible-impact-spin {
-  0% { transform: rotate(0deg) scale(1); opacity: 0.3; }
-  50% { transform: rotate(180deg) scale(1.1); opacity: 0.5; }
-  100% { transform: rotate(360deg) scale(1); opacity: 0.3; }
-}
-
-.dashboard-theme.theme-invincible .invincible-comic-stage::after {
-  content: "";
-  position: absolute;
-  bottom: 12%;
-  left: 10%;
-  width: 0;
-  height: 0;
-  border-left: 30px solid transparent;
-  border-right: 30px solid transparent;
-  border-bottom: 50px solid rgba(14, 165, 233, 0.25);
-  border-radius: 8px;
-  z-index: 0;
-  pointer-events: none;
-  animation: invincible-shape-pulse 2.5s ease-in-out infinite;
-}
-
-@keyframes invincible-shape-pulse {
-  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.25; }
-  50% { transform: scale(1.15) rotate(10deg); opacity: 0.4; }
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  overflow: hidden;
-  border: 4px solid #061426;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
-  box-shadow: 
-    0 0 0 2px #fff7bf,
-    8px 8px 0 0 #ed1c24,
-    8px 8px 0 2px #061426;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  cursor: pointer;
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card:hover {
-  transform: translateY(-10px) rotate(-3deg) scale(1.08);
-  box-shadow: 
-    0 0 0 2px #fff7bf,
-    14px 14px 0 0 #ed1c24,
-    14px 14px 0 2px #061426,
-    0 0 40px rgba(237, 28, 36, 0.6);
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  z-index: 1;
-  filter: drop-shadow(0 6px 12px rgba(6, 20, 38, 0.5));
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-main::before {
-  background-image: url('https://images.alphacoders.com/132/1329732.png');
-  background-size: cover;
-  background-position: center;
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-side::before {
-  background-image: url('https://images2.alphacoders.com/132/1329733.png');
-  background-size: cover;
-  background-position: center;
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-third {
-  position: absolute;
-  left: 50%;
-  bottom: 2rem;
-  transform: translateX(-50%) rotate(2deg);
-  width: 9rem;
-  height: 10.5rem;
-  background: 
-    radial-gradient(ellipse at 50% 20%, rgba(236, 72, 153, 0.3) 0 40%, transparent 40%),
-    linear-gradient(180deg, #EC4899 0%, #DB2777 100%);
-  animation: invincible-hero-third-float 4s ease-in-out infinite;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  overflow: hidden;
-  border: 4px solid #061426;
-  border-radius: 12px;
-  box-shadow: 
-    0 0 0 2px #fff7bf,
-    8px 8px 0 0 #ed1c24,
-    8px 8px 0 2px #061426;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  cursor: pointer;
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-third:hover {
-  transform: translateX(-50%) rotate(2deg) translateY(-10px) scale(1.08);
-  box-shadow: 
-    0 0 0 2px #fff7bf,
-    14px 14px 0 0 #ed1c24,
-    14px 14px 0 2px #061426,
-    0 0 40px rgba(236, 72, 153, 0.6);
-}
-
-@keyframes invincible-hero-third-float {
-  0%, 100% { transform: translateX(-50%) rotate(2deg) translateY(0); }
-  50% { transform: translateX(-50%) rotate(2deg) translateY(-7px); }
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-third::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url('https://images3.alphacoders.com/132/1329734.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  z-index: 1;
-  filter: drop-shadow(0 8px 16px rgba(6, 20, 38, 0.6));
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-third strong {
-  position: relative;
-  z-index: 15;
-  width: 100%;
-  margin: 0;
-  border-top: 4px solid #061426;
-  border-radius: 0 0 8px 8px;
-  background: 
-    linear-gradient(135deg, #fff7bf 0%, #ffd51f 100%);
-  color: #061426;
-  padding: 0.6rem 0.7rem;
-  font-family: "Anton", Impact, sans-serif;
-  font-size: 1.2rem;
-  line-height: 1;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 
-    0 -3px 0 rgba(6, 20, 38, 0.2),
-    inset 0 2px 0 rgba(255, 255, 255, 0.4);
-  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-main {
-  left: 1.5rem;
-  bottom: 0.5rem;
-  width: 11rem;
-  height: 13rem;
-  transform: rotate(-5deg);
-  animation: invincible-hero-main-float 3s ease-in-out infinite;
-  background: 
-    radial-gradient(ellipse at 50% 20%, rgba(255, 213, 31, 0.3) 0 40%, transparent 40%),
-    linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
-}
-
-@keyframes invincible-hero-main-float {
-  0%, 100% { transform: rotate(-5deg) translateY(0); }
-  50% { transform: rotate(-5deg) translateY(-10px); }
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-side {
-  right: 1.5rem;
-  top: 1.5rem;
-  width: 9.5rem;
-  height: 11rem;
-  background: 
-    radial-gradient(ellipse at 50% 20%, rgba(237, 28, 36, 0.3) 0 40%, transparent 40%),
-    linear-gradient(180deg, #ed1c24 0%, #b91c1c 100%);
-  transform: rotate(6deg);
-  animation: invincible-hero-side-float 3.5s ease-in-out infinite;
-}
-
-@keyframes invincible-hero-side-float {
-  0%, 100% { transform: rotate(6deg) translateY(0); }
-  50% { transform: rotate(6deg) translateY(-8px); }
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-side::before {
-  display: none;
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-side::after {
-  display: none;
-}
-
-.dashboard-theme.theme-invincible .invincible-character-mask {
-  display: none;
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card-side .invincible-character-mask {
-  display: none;
-}
-
-.dashboard-theme.theme-invincible .invincible-character-card strong {
-  position: relative;
-  z-index: 15;
-  width: 100%;
-  margin: 0;
-  border-top: 4px solid #061426;
-  border-radius: 0 0 8px 8px;
-  background: 
-    linear-gradient(135deg, #fff7bf 0%, #ffd51f 100%);
-  color: #061426;
-  padding: 0.6rem 0.7rem;
-  font-family: "Anton", Impact, sans-serif;
-  font-size: 1.4rem;
-  line-height: 1;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 
-    0 -3px 0 rgba(6, 20, 38, 0.2),
-    inset 0 2px 0 rgba(255, 255, 255, 0.4);
-  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-.dashboard-theme.theme-invincible .invincible-action-word {
-  position: absolute;
-  left: 50%;
-  top: 45%;
-  z-index: 20;
-  border: 5px solid #061426;
-  border-radius: 16px;
-  background: 
-    radial-gradient(ellipse at 30% 30%, #ff4444 0 40%, #ed1c24 40% 100%);
-  color: #fff7bf;
-  padding: 0.8rem 1.5rem;
-  font-family: "Anton", Impact, sans-serif;
-  font-size: 3.5rem;
-  line-height: 1;
-  text-shadow: 
-    4px 4px 0 #061426,
-    0 0 40px rgba(255, 213, 31, 1);
-  transform: translate(-50%, -50%) rotate(-12deg);
-  box-shadow: 
-    0 0 0 4px #fff7bf,
-    0 0 0 9px #061426,
-    10px 10px 0 0 rgba(6, 20, 38, 0.4),
-    0 0 60px rgba(237, 28, 36, 0.6);
-  animation: invincible-action-mega-impact 0.8s ease-in-out infinite alternate;
-}
-
-@keyframes invincible-action-mega-impact {
-  0% { 
-    transform: translate(-50%, -50%) rotate(-12deg) scale(1); 
-    filter: brightness(1) contrast(1);
-  }
-  100% { 
-    transform: translate(-50%, -50%) rotate(-10deg) scale(1.08); 
-    filter: brightness(1.15) contrast(1.1);
-  }
-}
-
-.dashboard-theme.theme-invincible .invincible-speed-line {
-  position: absolute;
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, transparent 0%, #061426 50%, transparent 100%);
-  transform-origin: left center;
-  animation: invincible-speed-zoom 1.5s ease-out infinite;
-}
-
-@keyframes invincible-speed-zoom {
-  0% { 
-    opacity: 0;
-    transform: scaleX(0) rotate(-18deg);
-  }
-  50% {
-    opacity: 0.6;
-  }
-  100% { 
-    opacity: 0;
-    transform: scaleX(1) rotate(-18deg);
-  }
-}
-
-.dashboard-theme.theme-invincible .invincible-speed-line-one {
-  right: 2rem;
-  bottom: 3rem;
-  width: 10rem;
-  animation-delay: 0s;
-}
-
-.dashboard-theme.theme-invincible .invincible-speed-line-two {
-  left: 40%;
-  top: 2.5rem;
-  width: 8rem;
-  animation-delay: 0.3s;
-}
-
-.dashboard-theme.theme-invincible .invincible-speed-line-three {
-  right: 3rem;
-  top: 50%;
-  width: 7rem;
-  animation-delay: 0.6s;
-}
-
-.dashboard-theme.theme-invincible .home-app-title {
-  margin: 2rem auto 2rem;
-  max-width: 15ch;
-  color: #061426;
-  font-family: "Anton", Impact, sans-serif;
-  font-size: 5.8rem;
-  line-height: 0.88;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  text-shadow:
-    4px 4px 0 #fff7bf,
-    8px 8px 0 #ed1c24,
-    12px 12px 0 rgba(6, 20, 38, 0.3);
-  transform: rotate(-1.5deg);
-  animation: invincible-title-pulse 3s ease-in-out infinite;
-  position: relative;
-}
-
-@keyframes invincible-title-pulse {
-  0%, 100% { 
-    transform: rotate(-1.5deg) scale(1); 
-    filter: brightness(1);
-  }
-  50% { 
-    transform: rotate(-1deg) scale(1.02); 
-    filter: brightness(1.05);
-  }
-}
-
-.dashboard-theme.theme-invincible .home-app-title::before {
-  content: "";
-  position: absolute;
-  inset: -10px;
-  background: 
-    radial-gradient(circle at 20% 20%, rgba(255, 213, 31, 0.3) 0 30px, transparent 30px),
-    radial-gradient(circle at 80% 80%, rgba(237, 28, 36, 0.2) 0 40px, transparent 40px);
-  z-index: -1;
-  animation: invincible-title-glow 2s ease-in-out infinite;
-}
-
-@keyframes invincible-title-glow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
-}
-
-.dashboard-theme.theme-invincible .home-check-button,
-.dashboard-theme.theme-invincible .home-verse-card,
-.dashboard-theme.theme-invincible .home-metric-card,
-.dashboard-theme.theme-invincible .home-wide-card {
-  border: 4px solid #061426;
-  border-radius: 16px;
-  background:
-    linear-gradient(135deg, rgba(255, 247, 191, 0.95) 0%, rgba(255, 213, 31, 0.95) 100%);
-  box-shadow: 
-    0 0 0 3px #ffd51f,
-    12px 12px 0 0 #061426,
-    12px 12px 0 3px rgba(6, 20, 38, 0.3),
-    0 15px 30px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  backdrop-filter: blur(10px);
-}
-
-.dashboard-theme.theme-invincible .home-check-button:hover,
-.dashboard-theme.theme-invincible .home-verse-card:hover,
-.dashboard-theme.theme-invincible .home-metric-card:hover,
-.dashboard-theme.theme-invincible .home-wide-card:hover {
-  transform: translateY(-6px) scale(1.02);
-  box-shadow: 
-    0 0 0 3px #ffd51f,
-    15px 15px 0 0 #061426,
-    15px 15px 0 3px rgba(6, 20, 38, 0.3),
-    0 20px 40px rgba(0, 0, 0, 0.4),
-    0 0 50px rgba(255, 213, 31, 0.5);
-}
-
-.dashboard-theme.theme-invincible .home-check-button {
-  background:
-    repeating-linear-gradient(90deg, #0ea5e9 0 2px, #0284c7 2px 4px),
-    linear-gradient(90deg, #0ea5e9 0 32%, #fff7bf 32% 36%, #ffd51f 36% 100%);
-  box-shadow: 
-    0 0 0 2px #fff,
-    10px 10px 0 0 #ed1c24,
-    10px 10px 0 2px #061426;
-  position: relative;
-  overflow: hidden;
-}
-
-.dashboard-theme.theme-invincible .home-check-button::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    110deg, 
-    rgba(255, 255, 255, 0.3) 0 1rem, 
-    transparent 1rem 2rem
-  );
-  animation: invincible-shine-sweep 3s linear infinite;
-}
-
-@keyframes invincible-shine-sweep {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.dashboard-theme.theme-invincible .home-check-button.is-complete {
-  background:
-    repeating-linear-gradient(90deg, #ffd51f 0 2px, #f59e0b 2px 4px),
-    linear-gradient(90deg, #ffd51f 0 36%, #fff7bf 36% 40%, #0ea5e9 40% 100%);
-}
-
-.dashboard-theme.theme-invincible .home-check-flame,
-.dashboard-theme.theme-invincible .home-streak-badge {
-  border-width: 4px;
-  background: 
-    radial-gradient(ellipse at 30% 30%, #ff4444 0 40%, #ed1c24 40% 100%);
-  color: #fff7bf;
-  box-shadow: 
-    0 0 0 2px #ffd51f,
-    0 0 20px rgba(237, 28, 36, 0.5);
-  animation: invincible-flame-flicker 1.5s ease-in-out infinite;
-}
-
-@keyframes invincible-flame-flicker {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.2); }
-}
-
-.dashboard-theme.theme-invincible .home-streak-badge {
-  background: 
-    radial-gradient(ellipse at 30% 30%, #ffd51f 0 40%, #f59e0b 40% 100%);
-  color: #061426;
-  box-shadow: 
-    0 0 0 2px #ed1c24,
-    0 0 20px rgba(255, 213, 31, 0.6);
-}
-
-.dashboard-theme.theme-invincible .home-verse-icon,
-.dashboard-theme.theme-invincible .home-donut svg {
-  border: 3px solid #061426;
-  border-radius: 12px;
-  background: 
-    radial-gradient(ellipse at 30% 30%, #0ea5e9 0 50%, #0284c7 50% 100%);
-  color: #fff7bf;
-  box-shadow: 
-    0 0 0 2px #ffd51f,
-    4px 4px 0 0 rgba(6, 20, 38, 0.3);
-}
-
-.dashboard-theme.theme-invincible .home-donut {
-  background:
-    radial-gradient(circle, #fff7bf 55%, transparent 56%),
-    conic-gradient(
-      #ed1c24 0deg,
-      #ed1c24 calc(var(--progress) * 3.6deg),
-      #0ea5e9 calc(var(--progress) * 3.6deg),
-      #0ea5e9 360deg
-    );
-  border: 4px solid #061426;
-  box-shadow: 
-    0 0 0 2px #ffd51f,
-    6px 6px 0 0 rgba(6, 20, 38, 0.3);
-}
-
-.bible-app-shell {
-  position: relative;
-  min-height: 82svh;
-  overflow: hidden;
-  isolation: isolate;
-  border: 2px solid color-mix(in srgb, var(--theme-border) 38%, transparent);
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg) 88%, var(--theme-accent-soft)) 0%, var(--theme-bg) 42%),
-    var(--theme-bg);
-  color: var(--theme-ink);
-  box-shadow: 0 20px 60px color-mix(in srgb, var(--theme-border) 10%, transparent);
-}
-
-.bible-app-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 12;
-  border-bottom: 1px solid color-mix(in srgb, var(--theme-border) 14%, transparent);
-  background: color-mix(in srgb, var(--theme-panel) 86%, transparent);
-  padding: 0.8rem;
-  backdrop-filter: blur(22px) saturate(1.18);
-}
-
-.bible-app-primary-controls,
-.bible-app-secondary-controls {
-  display: grid;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.bible-app-primary-controls {
-  grid-template-columns: minmax(0, 1.5fr) minmax(5.2rem, 0.45fr) minmax(5.6rem, 0.45fr) 3.1rem 3.1rem;
-}
-
-.bible-app-secondary-controls {
-  grid-template-columns: minmax(0, 1fr) minmax(7rem, 0.28fr);
-  margin-top: 0.55rem;
-}
-
-.bible-app-select,
-.bible-app-verse-select,
-.bible-app-search {
-  position: relative;
-  display: grid;
-  min-width: 0;
-  align-items: center;
-  border: 1px solid color-mix(in srgb, var(--theme-border) 14%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-panel) 82%, var(--theme-panel-muted));
-  color: var(--theme-ink);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 26%, transparent);
-  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
-}
-
-.bible-app-select:focus-within,
-.bible-app-verse-select:focus-within,
-.bible-app-search:focus-within {
-  border-color: color-mix(in srgb, var(--theme-accent) 72%, var(--theme-border));
-  background: var(--theme-panel);
-}
-
-.bible-app-select,
-.bible-app-verse-select {
-  min-height: 3.45rem;
-}
-
-.bible-app-select span,
-.bible-app-verse-select span {
-  position: absolute;
-  left: 1.1rem;
-  top: 0.35rem;
-  color: color-mix(in srgb, var(--theme-ink) 46%, transparent);
-  font-family: var(--font-mono);
-  font-size: 0.54rem;
-  font-weight: 850;
-  text-transform: uppercase;
-}
-
-.bible-app-select select,
-.bible-app-verse-select select {
-  min-width: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  border-radius: inherit;
-  background: transparent;
-  color: var(--theme-ink);
-  padding: 1.16rem 2.15rem 0.45rem 1.05rem;
-  font-size: 1.25rem;
-  font-weight: 850;
-  outline: 0;
-}
-
-.bible-app-select option,
-.bible-app-verse-select option {
-  background: var(--theme-panel);
-  color: var(--theme-ink);
-}
-
-.bible-app-version,
-.bible-app-icon-button {
-  display: grid;
-  min-height: 3.45rem;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--theme-ink);
-  color: var(--theme-ink-contrast);
-  font-size: 1.25rem;
-  font-weight: 900;
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--theme-border) 10%, transparent);
-}
-
-.bible-app-icon-button {
-  border: 0;
-  transition: transform 0.18s ease, opacity 0.18s ease;
-}
-
-.bible-app-icon-button:active {
-  transform: scale(0.97);
-}
-
-.bible-app-search {
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.55rem;
-  min-height: 2.95rem;
-  padding: 0 0.95rem;
-}
-
-.bible-app-search input {
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: var(--theme-ink);
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  font-weight: 800;
-  outline: 0;
-}
-
-.bible-app-search input::placeholder {
-  color: color-mix(in srgb, var(--theme-ink) 36%, transparent);
-}
-
-.bible-app-verse-select {
-  min-height: 2.95rem;
-}
-
-.bible-app-verse-select select {
-  font-size: 0.95rem;
-  padding-top: 1.05rem;
-}
-
-.bible-app-results {
-  display: flex;
-  gap: 0.45rem;
-  margin-top: 0.65rem;
-  overflow-x: auto;
-  padding-bottom: 0.1rem;
-}
-
-.bible-app-results button,
-.bible-app-results span {
-  flex: 0 0 auto;
-  border: 1px solid color-mix(in srgb, var(--theme-border) 14%, transparent);
-  border-radius: 8px;
-  background: var(--theme-panel-muted);
-  color: color-mix(in srgb, var(--theme-ink) 74%, transparent);
-  padding: 0.5rem 0.85rem;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 850;
-  text-transform: uppercase;
-}
-
-.bible-app-results button.is-active {
-  background: var(--theme-ink);
-  color: var(--theme-ink-contrast);
-}
-
-.bible-app-page {
-  max-width: 58rem;
-  margin: 0 auto;
-  padding: 2.35rem clamp(1.2rem, 5%, 4.25rem) 8rem;
-}
-
-.bible-app-status {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  color: color-mix(in srgb, var(--theme-ink) 48%, transparent);
-  font-family: var(--font-mono);
-  font-size: 0.64rem;
-  font-weight: 850;
-  text-transform: uppercase;
-}
-
-.bible-app-error {
-  margin: 0.8rem 0 0;
-  color: var(--theme-accent);
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
-  font-weight: 850;
-  text-transform: uppercase;
-}
-
-.bible-app-page h2 {
-  margin: 1.15rem 0 1.6rem;
-  color: var(--theme-ink);
-  font-size: clamp(2.25rem, 7vw, 4.7rem);
-  font-weight: 950;
-  line-height: 0.98;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.bible-app-verses {
-  font-family: Georgia, "Times New Roman", serif;
-}
-
-.bible-app-verses p {
-  margin: 0 0 clamp(1.05rem, 4vw, 1.8rem);
-  border-radius: 8px;
-  color: color-mix(in srgb, var(--theme-ink) 90%, transparent);
-  font-size: clamp(1.45rem, 5.8vw, 2.5rem);
-  font-weight: 500;
-  line-height: 1.72;
-  padding: clamp(0.35rem, 1.7vw, 0.72rem) clamp(0.45rem, 2vw, 0.9rem);
-  transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
-}
-
-.bible-app-verses p.is-selected {
-  background: color-mix(in srgb, var(--theme-accent-soft) 54%, var(--theme-panel));
-  color: var(--theme-ink);
-  box-shadow: inset 4px 0 0 var(--theme-accent);
-}
-
-.bible-app-verses p.is-highlighted {
-  background: color-mix(in srgb, #FFD700 35%, var(--theme-panel));
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, #FFD700 60%, transparent);
-}
-
-.bible-app-verses p.is-highlighted.is-selected {
-  background: color-mix(in srgb, #FFD700 45%, var(--theme-accent-soft));
-  box-shadow: inset 4px 0 0 var(--theme-accent), inset 0 0 0 2px color-mix(in srgb, #FFD700 60%, transparent);
-}
-
-.bible-search-highlight {
-  background: color-mix(in srgb, var(--theme-accent) 25%, transparent);
-  color: var(--theme-ink);
-  font-weight: 600;
-  padding: 0.1em 0.2em;
-  border-radius: 3px;
-}
-
-.bible-app-verses sup {
-  margin-right: 0.35rem;
-  color: var(--theme-accent);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  vertical-align: super;
-}
-
-.bible-app-float-nav {
-  position: fixed;
-  z-index: 20;
-  bottom: 5.8rem;
-  display: grid;
-  width: 4.4rem;
-  height: 4.4rem;
-  place-items: center;
-  border: 0;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-ink) 94%, var(--theme-accent));
-  color: var(--theme-ink-contrast);
-  box-shadow: 0 18px 42px color-mix(in srgb, var(--theme-border) 18%, transparent);
-  transition: transform 0.18s ease, opacity 0.18s ease;
-}
-
-.bible-app-float-nav:active {
-  transform: scale(0.96);
-}
-
-.bible-app-float-nav:disabled {
-  opacity: 0.24;
-}
-
-.bible-app-float-prev {
-  left: max(1.25rem, calc((100vw - 58rem) / 2));
-}
-
-.bible-app-float-next {
-  right: max(1.25rem, calc((100vw - 58rem) / 2));
-}
-
-@media (max-width: 760px) {
-  .bible-app-shell {
-    min-height: calc(100svh - 7.8rem);
-    margin: -0.35rem -0.35rem 0;
-    border-width: 0;
-  }
-
-  .bible-app-topbar {
-    padding: 0.65rem 0.65rem 0.55rem;
-  }
-
-  .bible-app-primary-controls {
-    grid-template-columns: minmax(0, 1.45fr) minmax(4.6rem, 0.42fr) minmax(4.9rem, 0.42fr) 2.75rem 2.75rem;
-    gap: 0.4rem;
-  }
-
-  .bible-app-secondary-controls {
-    grid-template-columns: minmax(0, 1fr) minmax(5.8rem, 0.3fr);
-    gap: 0.4rem;
-  }
-
-  .bible-app-select,
-  .bible-app-version,
-  .bible-app-icon-button {
-    min-height: 3.1rem;
-  }
-
-  .bible-app-select span,
-  .bible-app-verse-select span {
-    left: 0.9rem;
-    font-size: 0.48rem;
-  }
-
-  .bible-app-select select {
-    padding-right: 1.55rem;
-    padding-left: 0.85rem;
-    font-size: 1rem;
-  }
-
-  .bible-app-version {
-    font-size: 0.95rem;
-  }
-
-  .bible-app-search,
-  .bible-app-verse-select {
-    min-height: 2.65rem;
-  }
-
-  .bible-app-search input {
-    font-size: 0.82rem;
-  }
-
-  .bible-app-verse-select select {
-    font-size: 0.82rem;
-    padding-left: 0.82rem;
-  }
-
-  .bible-app-page {
-    padding: 1.5rem 1.15rem 7rem;
-  }
-
-  .bible-app-page h2 {
-    font-size: 1.8rem;
-  }
-
-  .bible-app-verses p {
-    margin-bottom: 1.25rem;
-    font-size: 1.78rem;
-    line-height: 1.84;
-  }
-
-  .bible-app-float-nav {
-    bottom: 5.7rem;
-    width: 4rem;
-    height: 4rem;
-  }
-}
-
-@media (max-width: 430px) {
-  .bible-app-primary-controls {
-    grid-template-columns: minmax(0, 1fr) 4.1rem 4.45rem 2.35rem 2.35rem;
-  }
-
-  .bible-app-icon-button svg {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  .bible-app-select select {
-    font-size: 0.88rem;
-  }
-
-  .bible-app-verses p {
-    font-size: 1.62rem;
-  }
-}
-
-.bible-reader-shell {
-  display: grid;
-  grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.3fr);
-  gap: 1rem;
-  align-items: start;
-}
-
-.bible-reader-sidebar,
-.bible-page {
-  border: 2px solid var(--theme-border);
-  border-radius: 8px;
-  background: var(--theme-panel);
-  color: var(--theme-ink);
-  box-shadow: var(--theme-shadow);
-}
-
-.bible-reader-sidebar {
-  display: grid;
-  gap: 0.8rem;
-  padding: 0.85rem;
-}
-
-.bible-library-status {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 0.75rem;
-  border: 2px solid color-mix(in srgb, var(--theme-border) 20%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-ink) 5%, var(--theme-panel-muted));
-  padding: 0.75rem 0.85rem;
-}
-
-.bible-library-status strong {
-  color: var(--theme-ink);
-  font-size: clamp(2rem, 7vw, 3.6rem);
-  font-weight: 950;
-  line-height: 0.82;
-}
-
-.bible-library-status span,
-.bible-library-error,
-.bible-no-results {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0;
-}
-
-.bible-library-status span {
-  max-width: 8rem;
-  color: color-mix(in srgb, var(--theme-ink) 62%, transparent);
-  font-size: 0.62rem;
-  font-weight: 950;
-  line-height: 1.2;
-  text-align: right;
-}
-
-.bible-library-error,
-.bible-no-results {
-  margin: 0;
-  color: color-mix(in srgb, var(--theme-ink) 70%, var(--theme-accent));
-  font-size: 0.65rem;
-  font-weight: 900;
-  line-height: 1.4;
-}
-
-.bible-no-results {
-  border: 2px dashed color-mix(in srgb, var(--theme-border) 22%, transparent);
-  border-radius: 8px;
-  padding: 0.9rem;
-  text-align: center;
-}
-
-.bible-picker-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.8fr) minmax(0, 0.8fr);
-  gap: 0.55rem;
-  border: 2px solid var(--theme-border);
-  border-radius: 8px;
-  background: var(--theme-panel);
-  padding: 0.65rem;
-}
-
-.bible-picker-panel label {
-  display: grid;
-  min-width: 0;
-  gap: 0.35rem;
-}
-
-.bible-picker-panel span {
-  color: color-mix(in srgb, var(--theme-ink) 55%, transparent);
-  font-family: var(--font-mono);
-  font-size: 0.56rem;
-  font-weight: 950;
-  text-transform: uppercase;
-  letter-spacing: 0;
-}
-
-.bible-picker-panel select {
-  width: 100%;
-  min-width: 0;
-  border: 2px solid color-mix(in srgb, var(--theme-border) 18%, transparent);
-  border-radius: 8px;
-  background: var(--theme-panel-muted);
-  color: var(--theme-ink);
-  padding: 0.72rem 0.55rem;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 950;
-  outline: none;
-  text-transform: uppercase;
-}
-
-.bible-picker-panel select:focus {
-  border-color: var(--theme-accent);
-}
-
-.bible-search {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.55rem;
-  align-items: center;
-  border: 2px solid var(--theme-border);
-  border-radius: 8px;
-  background: var(--theme-panel-muted);
-  padding: 0.72rem 0.85rem;
-}
-
-.bible-search input {
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: var(--theme-ink);
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 900;
-  outline: none;
-}
-
-.bible-book-list {
-  display: grid;
-  gap: 0.65rem;
-  max-height: min(62dvh, 34rem);
-  overflow-y: auto;
-  padding-right: 0.2rem;
-}
-
-.bible-book-button {
-  display: grid;
-  gap: 0.25rem;
-  border: 2px solid color-mix(in srgb, var(--theme-border) 18%, transparent);
-  border-radius: 8px;
-  background: var(--theme-panel-muted);
-  padding: 0.8rem;
-  text-align: left;
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-}
-
-.bible-book-button:hover {
-  transform: translateY(-2px);
-  border-color: var(--theme-border);
-}
-
-.bible-book-button.is-active {
-  border-color: var(--theme-border);
-  background: var(--theme-ink);
-  color: var(--theme-ink-contrast);
-}
-
-.bible-book-button span,
-.bible-book-button small,
-.bible-page-head span,
-.bible-page-nav,
-.bible-page-head p {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0;
-}
-
-.bible-book-button span {
-  color: var(--theme-accent);
-  font-size: 0.56rem;
-  font-weight: 950;
-}
-
-.bible-book-button strong {
-  font-size: 1.25rem;
-  line-height: 1;
-  font-weight: 950;
-  text-transform: uppercase;
-}
-
-.bible-book-button small {
-  color: color-mix(in srgb, currentColor 60%, transparent);
-  font-size: 0.58rem;
-  font-weight: 800;
-  line-height: 1.35;
-}
-
-.bible-page {
-  min-height: min(70dvh, 48rem);
-  padding: clamp(1rem, 3vw, 1.6rem);
-}
-
-.bible-page-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.2rem;
-  border-bottom: 2px solid color-mix(in srgb, var(--theme-border) 14%, transparent);
-  padding-bottom: 1rem;
-}
-
-.bible-page-head span {
-  color: var(--theme-accent);
-  font-size: 0.66rem;
-  font-weight: 950;
-}
-
-.bible-page-head h3 {
-  margin-top: 0.35rem;
-  font-size: clamp(2.35rem, 6vw, 4.4rem);
-  font-weight: 950;
-  line-height: 0.9;
-  text-transform: uppercase;
-  letter-spacing: 0;
-}
-
-.bible-page-head p {
-  margin-top: 0.6rem;
-  color: color-mix(in srgb, var(--theme-ink) 56%, transparent);
-  font-size: 0.68rem;
-  font-weight: 850;
-}
-
-.bible-verses {
-  display: grid;
-  gap: 0.95rem;
-  counter-reset: verse;
-}
-
-.bible-verses p {
-  margin: 0;
-  border-radius: 8px;
-  color: var(--theme-ink);
-  font-size: clamp(1.08rem, 2.5vw, 1.32rem);
-  font-weight: 600;
-  line-height: 1.65;
-  padding: 0.18rem 0.35rem;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.bible-verses p.is-selected {
-  background: color-mix(in srgb, var(--theme-accent) 16%, var(--theme-panel-muted));
-  color: color-mix(in srgb, var(--theme-ink) 94%, black);
-}
-
-.bible-verses sup {
-  display: inline-grid;
-  min-width: 1.35rem;
-  height: 1.35rem;
-  place-items: center;
-  margin-right: 0.5rem;
-  border-radius: 9999px;
-  background: var(--theme-accent);
-  color: var(--theme-ink);
-  font-size: 0.62rem;
-  font-weight: 950;
-  vertical-align: middle;
-}
-
-.bible-page-nav {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 0.75rem;
-  align-items: center;
-  margin-top: 1.5rem;
-  border-top: 2px solid color-mix(in srgb, var(--theme-border) 14%, transparent);
-  padding-top: 1rem;
-  font-size: 0.66rem;
-  font-weight: 950;
-}
-
-.bible-page-nav button {
-  display: inline-flex;
-  min-height: 2.75rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  border: 2px solid var(--theme-border);
-  border-radius: 8px;
-  background: var(--theme-panel-muted);
-  color: var(--theme-ink);
-}
-
-.bible-page-nav button:disabled {
-  opacity: 0.42;
-}
-
-.bible-page-nav span {
-  color: color-mix(in srgb, var(--theme-ink) 52%, transparent);
-}
-
-@media (max-width: 860px) {
-  .bible-reader-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .bible-book-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-height: none;
-  }
-}
-
-@media (max-width: 520px) {
-  .home-verse-main {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .home-verse-read-button {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .bible-book-list {
-    grid-template-columns: 1fr;
-  }
-
-  .bible-picker-panel {
-    grid-template-columns: 1fr;
-  }
-
-  .bible-page-nav {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 780px) {
-  .dashboard-theme.theme-invincible .invincible-home-pack {
-    grid-template-columns: 1fr;
-    margin-top: 1.2rem;
-  }
-
-  .dashboard-theme.theme-invincible .invincible-logo-strip,
-  .dashboard-theme.theme-invincible .invincible-comic-stage {
-    min-height: 10.8rem;
-    box-shadow: 7px 7px 0 #061426;
-  }
-
-  .dashboard-theme.theme-invincible .invincible-logo-strip {
-    box-shadow: 7px 7px 0 #ed1c24;
-  }
-
-  .dashboard-theme.theme-invincible .home-app-title {
-    font-size: 3.2rem !important;
-    margin: 1.2rem auto 1.4rem;
-    text-shadow:
-      2px 2px 0 #fff7bf,
-      5px 5px 0 #ed1c24;
-  }
-
-  .dashboard-theme.theme-invincible .invincible-action-word {
-    font-size: 1.9rem;
-  }
-}
-
 .dashboard-theme.theme-blue .dashboard-brand,
 .dashboard-theme.theme-blue h1:not(.home-app-title),
 .dashboard-theme.theme-blue h2:not(.home-card-title) {
@@ -6666,6 +5151,14 @@
 .dashboard-theme.theme-blue .main-shell::before {
   background: radial-gradient(circle at top right, rgba(43, 89, 255, 0.2), transparent 26%);
 }
+
+.dashboard-theme .hover\:border-offwhite-orange:hover,
+.dashboard-theme .focus\:border-offwhite-orange:focus {
+  border-color: var(--theme-accent) !important;
+}
+
+
+/* ─── VERSE CHAT POPUP ────────────────────────────────────────────────── */
 
 .offwhite-quote::before {
   content: '"';
@@ -7010,107 +5503,6 @@
   }
 }
 
-/* ─── INVINCIBLE SELECTION PANEL ─────────────────────────────────────── */
-
-.invincible-selection-panel {
-  border: 3px solid #061426;
-  overflow: hidden;
-  box-shadow: 8px 8px 0 #ED1C24;
-}
-
-.invincible-sel-logo-bar {
-  background: #061426;
-}
-
-.invincible-sel-logo {
-  filter: brightness(0) invert(1);
-  image-rendering: -webkit-optimize-contrast;
-}
-
-.invincible-sel-badge {
-  color: #FFD51F;
-  font-size: 0.58rem;
-  letter-spacing: 0.22em;
-  animation: invincible-badge-bounce 2s ease-in-out infinite;
-}
-
-.invincible-sel-hero-stage {
-  background:
-    radial-gradient(ellipse at 20% 80%, rgba(237, 28, 36, 0.35) 0 120px, transparent 120px),
-    radial-gradient(ellipse at 80% 20%, rgba(14, 165, 233, 0.3) 0 100px, transparent 100px),
-    linear-gradient(160deg, #FFD51F 0%, #FFE870 40%, #77C9F2 100%);
-  min-height: 220px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  position: relative;
-}
-
-.invincible-sel-speed-bg {
-  position: absolute;
-  inset: 0;
-  background:
-    repeating-linear-gradient(
-      -65deg,
-      transparent 0,
-      transparent 18px,
-      rgba(6, 20, 38, 0.06) 18px,
-      rgba(6, 20, 38, 0.06) 20px
-    );
-  pointer-events: none;
-}
-
-.invincible-sel-hero-img {
-  height: 200px;
-  width: auto;
-  object-fit: contain;
-  object-position: bottom;
-  filter: drop-shadow(4px 0 0 #061426) drop-shadow(-4px 0 0 #061426) drop-shadow(0 4px 0 #061426);
-  animation: invincible-hero-main-float 3s ease-in-out infinite;
-}
-
-.invincible-sel-omni-img {
-  height: 140px;
-  width: auto;
-  object-fit: contain;
-  object-position: bottom;
-  opacity: 0.75;
-  filter: drop-shadow(-3px 0 0 #061426) saturate(0.85);
-  animation: invincible-hero-side-float 3.5s ease-in-out infinite;
-}
-
-.invincible-sel-impact {
-  background: rgba(6, 20, 38, 0.85);
-  padding: 2px 8px;
-  border: 1.5px solid #FFD51F;
-  letter-spacing: 0.22em;
-  font-size: 0.6rem;
-}
-
-.invincible-sel-stats {
-  background: #FFD51F;
-}
-
-.invincible-sel-stat {
-  color: #061426;
-}
-
-.invincible-sel-stat .font-black {
-  color: #061426;
-}
-
-@media (max-width: 767px) {
-  .invincible-sel-hero-img {
-    height: 160px;
-  }
-  .invincible-sel-omni-img {
-    height: 110px;
-  }
-  .invincible-sel-hero-stage {
-    min-height: 180px;
-  }
-}
-
 /* ─── VERSE CHAT POPUP ────────────────────────────────────────────────── */
 
 .verse-chat-overlay {
@@ -7318,3 +5710,1341 @@
   border-top: 1px solid var(--theme-border, #000);
   flex-shrink: 0;
 }
+
+
+/* ─── BIBLE APP ──────────────────────────────────────────────────────── */
+
+.bible-app-shell {
+  position: relative;
+  min-height: 82svh;
+  overflow: hidden;
+  isolation: isolate;
+  border: 2px solid color-mix(in srgb, var(--theme-border) 38%, transparent);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg) 88%, var(--theme-accent-soft)) 0%, var(--theme-bg) 42%),
+    var(--theme-bg);
+  color: var(--theme-ink);
+  box-shadow: 0 20px 60px color-mix(in srgb, var(--theme-border) 10%, transparent);
+}
+
+.bible-app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border) 14%, transparent);
+  background: color-mix(in srgb, var(--theme-panel) 86%, transparent);
+  padding: 0.8rem;
+  backdrop-filter: blur(22px) saturate(1.18);
+}
+
+.bible-app-primary-controls,
+.bible-app-secondary-controls {
+  display: grid;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.bible-app-primary-controls {
+  grid-template-columns: minmax(0, 1.5fr) minmax(5.2rem, 0.45fr) minmax(5.6rem, 0.45fr) 3.1rem 3.1rem;
+}
+
+.bible-app-secondary-controls {
+  grid-template-columns: minmax(0, 1fr) minmax(7rem, 0.28fr);
+  margin-top: 0.55rem;
+}
+
+.bible-app-select,
+.bible-app-verse-select,
+.bible-app-search {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--theme-border) 14%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-panel) 82%, var(--theme-panel-muted));
+  color: var(--theme-ink);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 26%, transparent);
+  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.bible-app-select:focus-within,
+.bible-app-verse-select:focus-within,
+.bible-app-search:focus-within {
+  border-color: color-mix(in srgb, var(--theme-accent) 72%, var(--theme-border));
+  background: var(--theme-panel);
+}
+
+.bible-app-select,
+.bible-app-verse-select {
+  min-height: 3.45rem;
+}
+
+.bible-app-select span,
+.bible-app-verse-select span {
+  position: absolute;
+  left: 1.1rem;
+  top: 0.35rem;
+  color: color-mix(in srgb, var(--theme-ink) 46%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.bible-app-select select,
+.bible-app-verse-select select {
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--theme-ink);
+  padding: 1.16rem 2.15rem 0.45rem 1.05rem;
+  font-size: 1.25rem;
+  font-weight: 850;
+  outline: 0;
+}
+
+.bible-app-select option,
+.bible-app-verse-select option {
+  background: var(--theme-panel);
+  color: var(--theme-ink);
+}
+
+.bible-app-version,
+.bible-app-icon-button {
+  display: grid;
+  min-height: 3.45rem;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--theme-ink);
+  color: var(--theme-ink-contrast);
+  font-size: 1.25rem;
+  font-weight: 900;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--theme-border) 10%, transparent);
+}
+
+.bible-app-icon-button {
+  border: 0;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.bible-app-icon-button:active {
+  transform: scale(0.97);
+}
+
+.bible-app-search {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.55rem;
+  min-height: 2.95rem;
+  padding: 0 0.95rem;
+}
+
+.bible-app-search input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--theme-ink);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 800;
+  outline: 0;
+}
+
+.bible-app-search input::placeholder {
+  color: color-mix(in srgb, var(--theme-ink) 36%, transparent);
+}
+
+.bible-app-verse-select {
+  min-height: 2.95rem;
+}
+
+.bible-app-verse-select select {
+  font-size: 0.95rem;
+  padding-top: 1.05rem;
+}
+
+.bible-app-results {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+  overflow-x: auto;
+  padding-bottom: 0.1rem;
+}
+
+.bible-app-results button,
+.bible-app-results span {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--theme-border) 14%, transparent);
+  border-radius: 8px;
+  background: var(--theme-panel-muted);
+  color: color-mix(in srgb, var(--theme-ink) 74%, transparent);
+  padding: 0.5rem 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.bible-app-results button.is-active {
+  background: var(--theme-ink);
+  color: var(--theme-ink-contrast);
+}
+
+.bible-app-page {
+  max-width: 58rem;
+  margin: 0 auto;
+  padding: 2.35rem clamp(1.2rem, 5%, 4.25rem) 8rem;
+}
+
+.bible-app-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: color-mix(in srgb, var(--theme-ink) 48%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.bible-app-error {
+  margin: 0.8rem 0 0;
+  color: var(--theme-accent);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.bible-app-page h2 {
+  margin: 1.15rem 0 1.6rem;
+  color: var(--theme-ink);
+  font-size: clamp(2.25rem, 7vw, 4.7rem);
+  font-weight: 950;
+  line-height: 0.98;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.bible-app-verses {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.bible-app-verses p {
+  margin: 0 0 clamp(1.05rem, 4vw, 1.8rem);
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--theme-ink) 90%, transparent);
+  font-size: clamp(1.45rem, 5.8vw, 2.5rem);
+  font-weight: 500;
+  line-height: 1.72;
+  padding: clamp(0.35rem, 1.7vw, 0.72rem) clamp(0.45rem, 2vw, 0.9rem);
+  transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.bible-app-verses p.is-selected {
+  background: color-mix(in srgb, var(--theme-accent-soft) 54%, var(--theme-panel));
+  color: var(--theme-ink);
+  box-shadow: inset 4px 0 0 var(--theme-accent);
+}
+
+.bible-app-verses p.is-highlighted {
+  background: color-mix(in srgb, #FFD700 35%, var(--theme-panel));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, #FFD700 60%, transparent);
+}
+
+.bible-app-verses p.is-highlighted.is-selected {
+  background: color-mix(in srgb, #FFD700 45%, var(--theme-accent-soft));
+  box-shadow: inset 4px 0 0 var(--theme-accent), inset 0 0 0 2px color-mix(in srgb, #FFD700 60%, transparent);
+}
+
+.bible-search-highlight {
+  background: color-mix(in srgb, var(--theme-accent) 25%, transparent);
+  color: var(--theme-ink);
+  font-weight: 600;
+  padding: 0.1em 0.2em;
+  border-radius: 3px;
+}
+
+.bible-app-verses sup {
+  margin-right: 0.35rem;
+  color: var(--theme-accent);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  vertical-align: super;
+}
+
+.bible-app-float-nav {
+  position: fixed;
+  z-index: 40;
+  bottom: 2rem;
+  display: grid;
+  width: 4.4rem;
+  height: 4.4rem;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme-ink) 94%, var(--theme-accent));
+  color: var(--theme-ink-contrast);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--theme-border) 18%, transparent);
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.bible-app-float-nav:active {
+  transform: scale(0.96);
+}
+
+.bible-app-float-nav:disabled {
+  opacity: 0.24;
+}
+
+/* Desktop: account for sidebar via --sidebar-w CSS var set in App.tsx */
+.bible-app-float-prev {
+  left: calc(var(--sidebar-w, 0px) + max(1.25rem, calc((100vw - var(--sidebar-w, 0px) - 58rem) / 2)));
+}
+
+.bible-app-float-next {
+  right: max(1.25rem, calc((100vw - var(--sidebar-w, 0px) - 58rem) / 2));
+}
+
+@media (max-width: 760px) {
+  .bible-app-shell {
+    min-height: calc(100svh - 7.8rem);
+    margin: -0.35rem -0.35rem 0;
+    border-width: 0;
+  }
+
+  .bible-app-topbar {
+    padding: 0.65rem 0.65rem 0.55rem;
+  }
+
+  .bible-app-primary-controls {
+    grid-template-columns: minmax(0, 1.45fr) minmax(4.6rem, 0.42fr) minmax(4.9rem, 0.42fr) 2.75rem 2.75rem;
+    gap: 0.4rem;
+  }
+
+  .bible-app-secondary-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(5.8rem, 0.3fr);
+    gap: 0.4rem;
+  }
+
+  .bible-app-select,
+  .bible-app-version,
+  .bible-app-icon-button {
+    min-height: 3.1rem;
+  }
+
+  .bible-app-select span,
+  .bible-app-verse-select span {
+    left: 0.9rem;
+    font-size: 0.48rem;
+  }
+
+  .bible-app-select select {
+    padding-right: 1.55rem;
+    padding-left: 0.85rem;
+    font-size: 1rem;
+  }
+
+  .bible-app-version {
+    font-size: 0.95rem;
+  }
+
+  .bible-app-search,
+  .bible-app-verse-select {
+    min-height: 2.65rem;
+  }
+
+  .bible-app-search input {
+    font-size: 0.82rem;
+  }
+
+  .bible-app-verse-select select {
+    font-size: 0.82rem;
+    padding-left: 0.82rem;
+  }
+
+  .bible-app-page {
+    padding: 1.5rem 1.15rem 7rem;
+  }
+
+  .bible-app-page h2 {
+    font-size: 1.8rem;
+  }
+
+  .bible-app-verses p {
+    margin-bottom: 1.25rem;
+    font-size: 1.78rem;
+    line-height: 1.84;
+  }
+
+  .bible-app-float-nav {
+    bottom: calc(6.2rem + env(safe-area-inset-bottom, 0px));
+    width: 3.8rem;
+    height: 3.8rem;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 430px) {
+  .bible-app-primary-controls {
+    grid-template-columns: minmax(0, 1fr) 4.1rem 4.45rem 2.35rem 2.35rem;
+  }
+
+  .bible-app-icon-button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .bible-app-select select {
+    font-size: 0.88rem;
+  }
+
+  .bible-app-verses p {
+    font-size: 1.62rem;
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+   SHARED THEME HELPER: ThemeStudio card backgrounds
+   ════════════════════════════════════════════════════════════════════ */
+.dashboard-theme .theme-card-theme-dark {
+  background: linear-gradient(160deg, #111111 0%, #1A1A1A 100%);
+}
+.dashboard-theme .theme-card-theme-forest {
+  background: linear-gradient(160deg, #E8F5E9 0%, #C8E6C9 100%);
+}
+.dashboard-theme .theme-card-theme-sunset {
+  background: linear-gradient(160deg, #FFF8F5 0%, #FFD4C2 100%);
+}
+.dashboard-theme .theme-card-theme-invincible-v2 {
+  background: linear-gradient(160deg, #030B15 0%, #0D1E33 100%);
+  border-color: #FFD400 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   THEME: MIDNIGHT  /  theme-dark
+   Strategy: dark surfaces, neon-green accent, all text light
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Root surface */
+.dashboard-theme.theme-dark { background-color: #0A0A0A !important; color: #E8E8E8 !important; }
+
+/* Sidebar */
+.dashboard-theme.theme-dark .sidebar-shell { background-color: #060606 !important; border-color: #1E1E1E !important; }
+.dashboard-theme.theme-dark .sidebar-shell .dashboard-brand { color: #00FF94 !important; }
+.dashboard-theme.theme-dark .sidebar-shell nav button { color: rgba(232,232,232,0.55) !important; background: transparent !important; }
+.dashboard-theme.theme-dark .sidebar-shell nav button:hover { background: rgba(0,255,148,0.08) !important; color: #00FF94 !important; }
+.dashboard-theme.theme-dark .sidebar-shell nav button.bg-black { background: #00FF94 !important; color: #0A0A0A !important; }
+.dashboard-theme.theme-dark .sidebar-shell .border-t-2 { border-color: #1E1E1E !important; }
+.dashboard-theme.theme-dark .sidebar-shell .text-gray-400 { color: rgba(232,232,232,0.35) !important; }
+.dashboard-theme.theme-dark .sidebar-shell .text-offwhite-orange { color: #00FF94 !important; }
+
+/* Main panels */
+.dashboard-theme.theme-dark .main-shell { background-color: #0A0A0A !important; }
+.dashboard-theme.theme-dark .offwhite-border,
+.dashboard-theme.theme-dark .offwhite-panel,
+.dashboard-theme.theme-dark .hero-panel { background-color: #111111 !important; border-color: #2A2A2A !important; }
+
+/* Mobile header */
+.dashboard-theme.theme-dark .sidebar-shell.md\:hidden { background-color: #060606 !important; border-color: #1E1E1E !important; }
+.dashboard-theme.theme-dark .sidebar-shell.md\:hidden .dashboard-brand { color: #E8E8E8 !important; }
+
+/* Text overrides — light-on-dark */
+.dashboard-theme.theme-dark .text-gray-500 { color: rgba(232,232,232,0.45) !important; }
+.dashboard-theme.theme-dark .text-gray-600 { color: rgba(232,232,232,0.55) !important; }
+.dashboard-theme.theme-dark .text-gray-400 { color: rgba(232,232,232,0.35) !important; }
+.dashboard-theme.theme-dark .text-black { color: #E8E8E8 !important; }
+.dashboard-theme.theme-dark .text-offwhite-orange { color: #00FF94 !important; }
+
+/* Borders */
+.dashboard-theme.theme-dark .border-black { border-color: #2A2A2A !important; }
+.dashboard-theme.theme-dark .border-black\/20 { border-color: rgba(232,232,232,0.12) !important; }
+.dashboard-theme.theme-dark .border-black\/30 { border-color: rgba(232,232,232,0.18) !important; }
+
+/* White BGs → dark panels */
+.dashboard-theme.theme-dark .bg-white { background-color: #111111 !important; }
+.dashboard-theme.theme-dark .bg-black { background-color: #00FF94 !important; }
+.dashboard-theme.theme-dark .text-white { color: #0A0A0A !important; }
+.dashboard-theme.theme-dark h1, .dashboard-theme.theme-dark h2, .dashboard-theme.theme-dark h3 { color: #E8E8E8 !important; }
+.dashboard-theme.theme-dark .dashboard-brand { color: #00FF94 !important; }
+
+/* Home HUD */
+.dashboard-theme.theme-dark .home-level-circle { border-color: #00FF94 !important; }
+.dashboard-theme.theme-dark .home-level-circle strong { color: #00FF94 !important; }
+.dashboard-theme.theme-dark .home-level-fill { background-color: #00FF94 !important; }
+.dashboard-theme.theme-dark .home-level-track { background-color: #1A1A1A !important; }
+.dashboard-theme.theme-dark .home-check-button { background: #111111 !important; border-color: #2A2A2A !important; color: #E8E8E8 !important; }
+.dashboard-theme.theme-dark .home-check-button.is-complete { background: #003D24 !important; border-color: #00FF94 !important; color: #00FF94 !important; }
+.dashboard-theme.theme-dark .home-metric-card,
+.dashboard-theme.theme-dark .home-wide-card { background: #111111 !important; border-color: #2A2A2A !important; color: #E8E8E8 !important; }
+.dashboard-theme.theme-dark .home-user-button { background: #111111 !important; border-color: #2A2A2A !important; color: #E8E8E8 !important; }
+
+/* Offwhite label */
+.dashboard-theme.theme-dark .offwhite-label { color: #00FF94 !important; border-color: #00FF94 !important; }
+
+/* Weekly goal cards */
+.dashboard-theme.theme-dark .weekly-goal-card { background: #111111 !important; border-color: #2A2A2A !important; color: #E8E8E8 !important; }
+.dashboard-theme.theme-dark .weekly-goal-card.is-active { border-color: #00FF94 !important; }
+.dashboard-theme.theme-dark .weekly-prize-panel { background: #111111 !important; border-color: #2A2A2A !important; }
+.dashboard-theme.theme-dark .weekly-prize-button:not(:disabled) { background: #00FF94 !important; color: #0A0A0A !important; border-color: #00FF94 !important; }
+
+/* ThemeStudio chips */
+.dashboard-theme.theme-dark .theme-chip-panel,
+.dashboard-theme.theme-dark .theme-live-preview,
+.dashboard-theme.theme-dark .theme-live-tile,
+.dashboard-theme.theme-dark .theme-card-preview { background: #1A1A1A !important; }
+.dashboard-theme.theme-dark .theme-live-banner { background: #00FF94 !important; color: #0A0A0A !important; }
+
+/* Inputs */
+.dashboard-theme.theme-dark input,
+.dashboard-theme.theme-dark textarea,
+.dashboard-theme.theme-dark select { background: #111111 !important; border-color: #2A2A2A !important; color: #E8E8E8 !important; }
+.dashboard-theme.theme-dark input::placeholder,
+.dashboard-theme.theme-dark textarea::placeholder { color: rgba(232,232,232,0.3) !important; }
+
+/* Scrollbar */
+.dashboard-theme.theme-dark ::-webkit-scrollbar-track { background: #111111; }
+.dashboard-theme.theme-dark ::-webkit-scrollbar-thumb { background: #2A2A2A; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   THEME: DEEP FOREST  /  theme-forest
+   Strategy: deep forest green sidebar, clean white content, green accents
+   ════════════════════════════════════════════════════════════════════ */
+
+.dashboard-theme.theme-forest { background-color: #F1F8F1 !important; color: #1B2E1B !important; }
+
+/* Sidebar — dark forest green */
+.dashboard-theme.theme-forest .sidebar-shell { background-color: #1B2E1B !important; border-color: #2D4A2D !important; }
+.dashboard-theme.theme-forest .sidebar-shell .dashboard-brand { color: #A8D5A2 !important; }
+.dashboard-theme.theme-forest .sidebar-shell nav button { color: rgba(200,230,201,0.65) !important; background: transparent !important; }
+.dashboard-theme.theme-forest .sidebar-shell nav button:hover { background: rgba(76,175,80,0.15) !important; color: #A8D5A2 !important; }
+.dashboard-theme.theme-forest .sidebar-shell nav button.bg-black { background: #4CAF50 !important; color: #1B2E1B !important; }
+.dashboard-theme.theme-forest .sidebar-shell .border-t-2 { border-color: #2D4A2D !important; }
+.dashboard-theme.theme-forest .sidebar-shell .text-gray-400 { color: rgba(200,230,201,0.4) !important; }
+.dashboard-theme.theme-forest .sidebar-shell .text-offwhite-orange { color: #81C784 !important; }
+
+/* Logout button inside sidebar */
+.dashboard-theme.theme-forest .sidebar-shell button.border-black { background: transparent !important; border-color: rgba(200,230,201,0.4) !important; color: rgba(200,230,201,0.7) !important; }
+.dashboard-theme.theme-forest .sidebar-shell button.border-black:hover { background: rgba(76,175,80,0.2) !important; color: #A8D5A2 !important; border-color: #81C784 !important; }
+
+/* Main content — stays light */
+.dashboard-theme.theme-forest .main-shell { background-color: #F1F8F1 !important; }
+.dashboard-theme.theme-forest .offwhite-border,
+.dashboard-theme.theme-forest .offwhite-panel,
+.dashboard-theme.theme-forest .hero-panel { background-color: #FFFFFF !important; border-color: #1B2E1B !important; }
+
+/* Accent */
+.dashboard-theme.theme-forest .text-offwhite-orange { color: #388E3C !important; }
+.dashboard-theme.theme-forest .offwhite-label { color: #388E3C !important; border-color: #388E3C !important; }
+
+/* HUD */
+.dashboard-theme.theme-forest .home-level-circle { border-color: #1B2E1B !important; }
+.dashboard-theme.theme-forest .home-level-circle strong { color: #2E7D32 !important; }
+.dashboard-theme.theme-forest .home-level-fill { background-color: #4CAF50 !important; }
+.dashboard-theme.theme-forest .home-check-button.is-complete { background: #4CAF50 !important; border-color: #1B2E1B !important; color: #fff !important; }
+
+/* Mobile header */
+.dashboard-theme.theme-forest .sidebar-shell.md\:hidden { background-color: #1B2E1B !important; border-color: #2D4A2D !important; color: #A8D5A2 !important; }
+.dashboard-theme.theme-forest .sidebar-shell.md\:hidden .dashboard-brand { color: #A8D5A2 !important; }
+.dashboard-theme.theme-forest .sidebar-shell.md\:hidden .text-black { color: #A8D5A2 !important; }
+.dashboard-theme.theme-forest .sidebar-shell.md\:hidden .text-offwhite-orange { color: #81C784 !important; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   THEME: GOLDEN HOUR  /  theme-sunset
+   Strategy: warm white content, burnt-orange accent, deep brown sidebar
+   ════════════════════════════════════════════════════════════════════ */
+
+.dashboard-theme.theme-sunset { background-color: #FFF8F5 !important; color: #2D1B10 !important; }
+
+/* Sidebar — deep warm brown */
+.dashboard-theme.theme-sunset .sidebar-shell { background-color: #2D1B10 !important; border-color: #4A2E1A !important; }
+.dashboard-theme.theme-sunset .sidebar-shell .dashboard-brand { color: #FFB085 !important; }
+.dashboard-theme.theme-sunset .sidebar-shell nav button { color: rgba(255,176,133,0.6) !important; background: transparent !important; }
+.dashboard-theme.theme-sunset .sidebar-shell nav button:hover { background: rgba(255,107,53,0.15) !important; color: #FFB085 !important; }
+.dashboard-theme.theme-sunset .sidebar-shell nav button.bg-black { background: #FF6B35 !important; color: #2D1B10 !important; }
+.dashboard-theme.theme-sunset .sidebar-shell .border-t-2 { border-color: #4A2E1A !important; }
+.dashboard-theme.theme-sunset .sidebar-shell .text-gray-400 { color: rgba(255,176,133,0.4) !important; }
+.dashboard-theme.theme-sunset .sidebar-shell .text-offwhite-orange { color: #FFB085 !important; }
+.dashboard-theme.theme-sunset .sidebar-shell button.border-black { background: transparent !important; border-color: rgba(255,176,133,0.35) !important; color: rgba(255,176,133,0.7) !important; }
+.dashboard-theme.theme-sunset .sidebar-shell button.border-black:hover { background: rgba(255,107,53,0.2) !important; color: #FFB085 !important; }
+
+/* Main content */
+.dashboard-theme.theme-sunset .main-shell { background-color: #FFF8F5 !important; }
+.dashboard-theme.theme-sunset .offwhite-border,
+.dashboard-theme.theme-sunset .offwhite-panel,
+.dashboard-theme.theme-sunset .hero-panel { background-color: #FFFFFF !important; border-color: #2D1B10 !important; }
+
+/* Accent */
+.dashboard-theme.theme-sunset .text-offwhite-orange { color: #E8521A !important; }
+.dashboard-theme.theme-sunset .offwhite-label { color: #E8521A !important; border-color: #E8521A !important; }
+
+/* HUD */
+.dashboard-theme.theme-sunset .home-level-circle { border-color: #2D1B10 !important; }
+.dashboard-theme.theme-sunset .home-level-circle strong { color: #E8521A !important; }
+.dashboard-theme.theme-sunset .home-level-fill { background-color: #FF6B35 !important; }
+.dashboard-theme.theme-sunset .home-check-button.is-complete { background: #FF6B35 !important; border-color: #2D1B10 !important; color: #fff !important; }
+
+/* Mobile header */
+.dashboard-theme.theme-sunset .sidebar-shell.md\:hidden { background-color: #2D1B10 !important; border-color: #4A2E1A !important; }
+.dashboard-theme.theme-sunset .sidebar-shell.md\:hidden .dashboard-brand { color: #FFB085 !important; }
+.dashboard-theme.theme-sunset .sidebar-shell.md\:hidden .text-black { color: #FFB085 !important; }
+.dashboard-theme.theme-sunset .sidebar-shell.md\:hidden .text-offwhite-orange { color: #FFB085 !important; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   THEME: INVINCIBLE V2  /  theme-invincible-v2
+   Professional game-quality: cosmic navy + stark yellow + red shadow
+   Bangers font, comic-panel borders, zero ambiguity on contrast
+   ════════════════════════════════════════════════════════════════════ */
+
+.theme-invincible-v2 {
+  --inv-bg:     #020911;
+  --inv-panel:  #071527;
+  --inv-panel2: #0C1D35;
+  --inv-yellow: #FFD400;
+  --inv-red:    #E8000D;
+  --inv-text:   #F0E6C8;
+  --inv-muted:  rgba(240,230,200,0.5);
+  --inv-border: rgba(255,212,0,0.55);
+  --font-inv:   'Bangers', 'Anton', cursive;
+}
+
+/* Root */
+.dashboard-theme.theme-invincible-v2 { background-color: var(--inv-bg) !important; color: var(--inv-text) !important; }
+
+/* ── SIDEBAR ─────────────────────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 .sidebar-shell {
+  background-color: #010609 !important;
+  border-right: 2px solid var(--inv-yellow) !important;
+  box-shadow: 4px 0 20px rgba(255,212,0,0.06);
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell .dashboard-brand {
+  color: var(--inv-yellow) !important;
+  font-family: var(--font-inv) !important;
+  letter-spacing: 0.06em !important;
+  text-shadow: 2px 2px 0 var(--inv-red);
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell nav button {
+  color: var(--inv-muted) !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell nav button:hover {
+  background: rgba(255,212,0,0.07) !important;
+  color: var(--inv-yellow) !important;
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell nav button.bg-black {
+  background: var(--inv-yellow) !important;
+  color: var(--inv-bg) !important;
+  box-shadow: 3px 0 0 var(--inv-red);
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell .border-t-2 {
+  border-color: rgba(255,212,0,0.25) !important;
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell .text-gray-400 {
+  color: rgba(240,230,200,0.3) !important;
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell .text-offwhite-orange {
+  color: var(--inv-yellow) !important;
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell button.border-black {
+  background: transparent !important;
+  border-color: rgba(255,212,0,0.3) !important;
+  color: var(--inv-muted) !important;
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell button.border-black:hover {
+  background: rgba(255,212,0,0.1) !important;
+  color: var(--inv-yellow) !important;
+  border-color: var(--inv-yellow) !important;
+}
+
+/* Mobile header */
+.dashboard-theme.theme-invincible-v2 .sidebar-shell.md\:hidden {
+  background-color: #010609 !important;
+  border-bottom-color: var(--inv-yellow) !important;
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell.md\:hidden .dashboard-brand {
+  color: var(--inv-yellow) !important;
+  font-family: var(--font-inv) !important;
+}
+.dashboard-theme.theme-invincible-v2 .sidebar-shell.md\:hidden .text-black { color: var(--inv-text) !important; }
+.dashboard-theme.theme-invincible-v2 .sidebar-shell.md\:hidden .text-offwhite-orange { color: var(--inv-yellow) !important; }
+
+/* ── MAIN SURFACE ────────────────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 .main-shell { background-color: var(--inv-bg) !important; }
+
+/* Halftone dots atmospheric overlay */
+.dashboard-theme.theme-invincible-v2 .main-shell::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,212,0,0.025) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── PANELS & BORDERS ────────────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 .offwhite-border,
+.dashboard-theme.theme-invincible-v2 .offwhite-panel,
+.dashboard-theme.theme-invincible-v2 .hero-panel {
+  background-color: var(--inv-panel) !important;
+  border-color: rgba(255,212,0,0.35) !important;
+  box-shadow: 4px 4px 0 rgba(232,0,13,0.3) !important;
+}
+
+.dashboard-theme.theme-invincible-v2 .border-black { border-color: rgba(255,212,0,0.4) !important; }
+.dashboard-theme.theme-invincible-v2 .border-black\/20 { border-color: rgba(255,212,0,0.12) !important; }
+.dashboard-theme.theme-invincible-v2 .border-black\/30 { border-color: rgba(255,212,0,0.18) !important; }
+.dashboard-theme.theme-invincible-v2 .bg-white { background-color: var(--inv-panel) !important; }
+.dashboard-theme.theme-invincible-v2 .bg-black { background-color: var(--inv-yellow) !important; }
+.dashboard-theme.theme-invincible-v2 .text-white { color: var(--inv-bg) !important; }
+
+/* ── TYPOGRAPHY ──────────────────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 h1,
+.dashboard-theme.theme-invincible-v2 h2,
+.dashboard-theme.theme-invincible-v2 h3,
+.dashboard-theme.theme-invincible-v2 .dashboard-brand {
+  font-family: var(--font-inv) !important;
+  color: var(--inv-yellow) !important;
+  text-shadow: 2px 2px 0 var(--inv-red);
+  letter-spacing: 0.05em;
+}
+.dashboard-theme.theme-invincible-v2 .text-black { color: var(--inv-text) !important; }
+.dashboard-theme.theme-invincible-v2 .text-gray-500 { color: var(--inv-muted) !important; }
+.dashboard-theme.theme-invincible-v2 .text-gray-600 { color: rgba(240,230,200,0.55) !important; }
+.dashboard-theme.theme-invincible-v2 .text-gray-400 { color: rgba(240,230,200,0.35) !important; }
+.dashboard-theme.theme-invincible-v2 .text-offwhite-orange { color: var(--inv-yellow) !important; }
+.dashboard-theme.theme-invincible-v2 .offwhite-label {
+  color: var(--inv-red) !important;
+  border-color: var(--inv-red) !important;
+  font-family: var(--font-inv) !important;
+  letter-spacing: 0.1em !important;
+}
+.dashboard-theme.theme-invincible-v2 .font-mono { color: var(--inv-muted) !important; }
+
+/* ── HOME HUD ────────────────────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 .home-level-circle {
+  border: 3px solid var(--inv-red) !important;
+  box-shadow: 2px 2px 0 var(--inv-red) !important;
+}
+.dashboard-theme.theme-invincible-v2 .home-level-circle strong {
+  font-family: var(--font-inv) !important;
+  font-size: 1.4rem !important;
+  color: var(--inv-yellow) !important;
+  text-shadow: 1px 1px 0 var(--inv-red);
+}
+.dashboard-theme.theme-invincible-v2 .home-level-track { background: var(--inv-panel2) !important; border-color: rgba(255,212,0,0.2) !important; }
+.dashboard-theme.theme-invincible-v2 .home-level-fill { background: linear-gradient(90deg, var(--inv-yellow), var(--inv-red)) !important; }
+.dashboard-theme.theme-invincible-v2 .home-user-button {
+  background: var(--inv-panel) !important;
+  border-color: var(--inv-yellow) !important;
+  color: var(--inv-yellow) !important;
+  box-shadow: 2px 2px 0 var(--inv-red) !important;
+  overflow: hidden;
+}
+.dashboard-theme.theme-invincible-v2 .home-wordmark-bottom {
+  font-family: var(--font-inv) !important;
+  color: var(--inv-yellow) !important;
+  text-shadow: 2px 2px 0 var(--inv-red) !important;
+}
+.dashboard-theme.theme-invincible-v2 .home-wordmark-top { color: rgba(255,212,0,0.6) !important; }
+
+/* Check button */
+.dashboard-theme.theme-invincible-v2 .home-check-button {
+  background: var(--inv-panel) !important;
+  border: 3px solid rgba(255,212,0,0.5) !important;
+  color: var(--inv-text) !important;
+  box-shadow: 4px 4px 0 rgba(232,0,13,0.25) !important;
+}
+.dashboard-theme.theme-invincible-v2 .home-check-button.is-complete {
+  background: var(--inv-yellow) !important;
+  border-color: var(--inv-yellow) !important;
+  color: var(--inv-bg) !important;
+  box-shadow: 4px 4px 0 var(--inv-red) !important;
+}
+.dashboard-theme.theme-invincible-v2 .home-check-flame { color: var(--inv-red) !important; }
+
+/* Metric cards */
+.dashboard-theme.theme-invincible-v2 .home-metric-card,
+.dashboard-theme.theme-invincible-v2 .home-wide-card {
+  background: var(--inv-panel) !important;
+  border-color: rgba(255,212,0,0.3) !important;
+  color: var(--inv-text) !important;
+  box-shadow: 3px 3px 0 rgba(232,0,13,0.2) !important;
+}
+.dashboard-theme.theme-invincible-v2 .home-card-title { color: var(--inv-yellow) !important; }
+
+/* ── SECTION HEADERS ─────────────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 .section-header-title {
+  font-family: var(--font-inv) !important;
+  color: var(--inv-yellow) !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* ── THEME STUDIO ────────────────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 .theme-chip-panel,
+.dashboard-theme.theme-invincible-v2 .theme-live-preview,
+.dashboard-theme.theme-invincible-v2 .theme-live-tile,
+.dashboard-theme.theme-invincible-v2 .theme-card-preview { background-color: var(--inv-panel2) !important; }
+.dashboard-theme.theme-invincible-v2 .theme-live-banner { background-color: var(--inv-yellow) !important; color: var(--inv-bg) !important; }
+.dashboard-theme.theme-invincible-v2 .theme-dot { background: linear-gradient(135deg, var(--inv-yellow), var(--inv-red)) !important; }
+.dashboard-theme.theme-invincible-v2 .theme-card {
+  background-color: var(--inv-panel) !important;
+  color: var(--inv-text) !important;
+}
+.dashboard-theme.theme-invincible-v2 .theme-card:hover {
+  box-shadow: 4px 4px 0 var(--inv-red) !important;
+}
+
+/* ── TROPHIES / WEEKLY GOALS ─────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 .weekly-goal-card {
+  background: var(--inv-panel) !important;
+  border-color: rgba(255,212,0,0.2) !important;
+  color: var(--inv-text) !important;
+}
+.dashboard-theme.theme-invincible-v2 .weekly-goal-card.is-active { border-color: var(--inv-yellow) !important; background: var(--inv-panel2) !important; }
+.dashboard-theme.theme-invincible-v2 .weekly-goal-card.is-complete { border-color: var(--inv-yellow) !important; }
+.dashboard-theme.theme-invincible-v2 .weekly-prize-panel { background: var(--inv-panel) !important; border-color: rgba(255,212,0,0.35) !important; }
+.dashboard-theme.theme-invincible-v2 .weekly-prize-button:not(:disabled) {
+  background: var(--inv-yellow) !important;
+  color: var(--inv-bg) !important;
+  border-color: var(--inv-yellow) !important;
+  font-family: var(--font-inv) !important;
+  letter-spacing: 0.06em !important;
+  box-shadow: 3px 3px 0 var(--inv-red) !important;
+}
+.dashboard-theme.theme-invincible-v2 .weekly-goal-preview { background: var(--inv-panel) !important; border-color: rgba(255,212,0,0.3) !important; }
+.dashboard-theme.theme-invincible-v2 .weekly-preview-reward { background: var(--inv-panel2) !important; color: var(--inv-yellow) !important; }
+.dashboard-theme.theme-invincible-v2 .weekly-prize-meter > div { background: var(--inv-panel2) !important; }
+.dashboard-theme.theme-invincible-v2 .weekly-prize-meter > div > i { background: linear-gradient(90deg, var(--inv-yellow), var(--inv-red)) !important; }
+
+/* ── MOBILE NAV ──────────────────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 .mobile-nav {
+  background: #010609 !important;
+  border-top: 2px solid var(--inv-yellow) !important;
+}
+
+/* ── INPUTS ──────────────────────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 input,
+.dashboard-theme.theme-invincible-v2 textarea,
+.dashboard-theme.theme-invincible-v2 select {
+  background: var(--inv-panel) !important;
+  border-color: rgba(255,212,0,0.3) !important;
+  color: var(--inv-text) !important;
+}
+.dashboard-theme.theme-invincible-v2 input::placeholder,
+.dashboard-theme.theme-invincible-v2 textarea::placeholder { color: var(--inv-muted) !important; }
+
+/* ── SCROLLBAR ───────────────────────────────────────────────────── */
+.dashboard-theme.theme-invincible-v2 ::-webkit-scrollbar-track { background: var(--inv-panel); }
+.dashboard-theme.theme-invincible-v2 ::-webkit-scrollbar-thumb { background: rgba(255,212,0,0.4); }
+
+/* ════════════════════════════════════════════════════════════════════
+   LEVEL MODAL
+   ════════════════════════════════════════════════════════════════════ */
+
+.level-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.level-modal {
+  background: var(--theme-panel, #fff);
+  border: 2px solid var(--theme-border, #090909);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90svh;
+  overflow-y: auto;
+  box-shadow: 8px 8px 0 rgba(0,0,0,0.15);
+}
+
+.level-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 0;
+}
+
+.level-modal-body { padding: 1.25rem 1.5rem 1.5rem; }
+
+.level-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.level-row:last-child { border-bottom: none; }
+
+.level-row-badge {
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid currentColor;
+  font-family: var(--font-mono);
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+.level-row-badge.is-current { background: var(--theme-accent,#FF5C00); color: #fff; border-color: var(--theme-accent,#FF5C00); }
+.level-row-badge.is-past { background: var(--theme-ink,#090909); color: #fff; border-color: var(--theme-ink,#090909); opacity: 0.4; }
+.level-row-badge.is-future { opacity: 0.3; }
+.level-row-info { flex: 1; min-width: 0; }
+
+.level-earn-table { margin-top: 1.25rem; border: 2px solid var(--theme-border,#090909); }
+.level-earn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.level-earn-row:last-child { border-bottom: none; }
+
+/* ════════════════════════════════════════════════════════════════════
+   AVATAR GRID (ThemeStudio)
+   ════════════════════════════════════════════════════════════════════ */
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.75rem;
+}
+
+.avatar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.4rem;
+  border: 2px solid rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: all 0.18s;
+  background: var(--theme-panel, #fff);
+}
+.avatar-card:hover:not(:disabled) { border-color: var(--theme-accent,#FF5C00); transform: translateY(-2px); }
+.avatar-card.is-active { border-color: var(--theme-ink,#090909); border-width: 2px; }
+.avatar-card.is-locked { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.5); }
+.avatar-card img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+
+.avatar-series-header {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: var(--theme-accent,#FF5C00);
+  padding: 0.4rem 0 0.25rem;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   AVATAR IMAGE IN HOME BUTTON
+   ════════════════════════════════════════════════════════════════════ */
+.home-user-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 9999px;
+  display: block;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   THEMESTUDIO: icon badge contrast fix for dark-background cards
+   ════════════════════════════════════════════════════════════════════ */
+.theme-card-theme-invincible-v2 .bg-white:not(.theme-card-preview) {
+  background-color: #0C1D35 !important;
+  color: #FFD400 !important;
+  border-color: rgba(255,212,0,0.5) !important;
+}
+.theme-card-theme-dark .bg-white:not(.theme-card-preview) {
+  background-color: #1A1A1A !important;
+  color: #00FF94 !important;
+  border-color: rgba(0,255,148,0.4) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   VELOCITY BLUE — stronger visual hierarchy
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Sidebar — distinct slate-blue instead of near-white */
+.dashboard-theme.theme-blue .sidebar-shell {
+  background-color: #1E2D6E !important;
+  border-right-color: #2B59FF !important;
+}
+.dashboard-theme.theme-blue .sidebar-shell .dashboard-brand { color: #C9D5FF !important; }
+.dashboard-theme.theme-blue .sidebar-shell nav button {
+  color: rgba(201,213,255,0.6) !important;
+  background: transparent !important;
+}
+.dashboard-theme.theme-blue .sidebar-shell nav button:hover {
+  background: rgba(43,89,255,0.15) !important;
+  color: #C9D5FF !important;
+}
+.dashboard-theme.theme-blue .sidebar-shell nav button.bg-black {
+  background: #2B59FF !important;
+  color: #F8FAFF !important;
+}
+.dashboard-theme.theme-blue .sidebar-shell .border-t-2 { border-color: rgba(201,213,255,0.2) !important; }
+.dashboard-theme.theme-blue .sidebar-shell .text-gray-400 { color: rgba(201,213,255,0.4) !important; }
+.dashboard-theme.theme-blue .sidebar-shell .text-offwhite-orange { color: #7B9FFF !important; }
+.dashboard-theme.theme-blue .sidebar-shell button.border-black {
+  background: transparent !important;
+  border-color: rgba(201,213,255,0.3) !important;
+  color: rgba(201,213,255,0.7) !important;
+}
+.dashboard-theme.theme-blue .sidebar-shell button.border-black:hover {
+  background: rgba(43,89,255,0.2) !important;
+  color: #C9D5FF !important;
+}
+
+/* Mobile header */
+.dashboard-theme.theme-blue .sidebar-shell.md\:hidden {
+  background-color: #1E2D6E !important;
+  border-bottom-color: #2B59FF !important;
+}
+.dashboard-theme.theme-blue .sidebar-shell.md\:hidden .dashboard-brand { color: #C9D5FF !important; }
+.dashboard-theme.theme-blue .sidebar-shell.md\:hidden .text-black { color: #C9D5FF !important; }
+.dashboard-theme.theme-blue .sidebar-shell.md\:hidden .text-offwhite-orange { color: #7B9FFF !important; }
+
+/* Home check button — more contrast on blue */
+.dashboard-theme.theme-blue .home-check-button {
+  background: linear-gradient(90deg, #F8FAFF, #EEF3FF) !important;
+  border-color: #0F172A !important;
+  color: #0F172A !important;
+  box-shadow: 8px 8px 0 rgba(15,23,42,0.15), 0 24px 48px rgba(43,89,255,0.12) !important;
+}
+.dashboard-theme.theme-blue .home-check-button.is-complete {
+  background: linear-gradient(90deg, #C9D5FF, #EEF3FF) !important;
+  border-color: #2B59FF !important;
+}
+.dashboard-theme.theme-blue .home-check-flame {
+  background: #0F172A !important;
+  color: #2B59FF !important;
+  border-color: #0F172A !important;
+}
+
+/* Level HUD */
+.dashboard-theme.theme-blue .home-level-circle {
+  border-color: #0F172A !important;
+  box-shadow: 0 5px 0 rgba(15,23,42,0.2), 0 16px 32px rgba(43,89,255,0.25) !important;
+}
+.dashboard-theme.theme-blue .home-level-circle strong {
+  color: #1a3bcc !important;
+}
+.dashboard-theme.theme-blue .home-level-fill { background: #2B59FF !important; }
+.dashboard-theme.theme-blue .home-level-track { background: #DCE6FF !important; }
+
+/* User button */
+.dashboard-theme.theme-blue .home-user-button {
+  background: linear-gradient(180deg, #C9D5FF, #EEF3FF) !important;
+  border-color: #0F172A !important;
+  color: #0F172A !important;
+}
+
+/* Panels: give them more border contrast */
+.dashboard-theme.theme-blue .offwhite-border,
+.dashboard-theme.theme-blue .offwhite-panel,
+.dashboard-theme.theme-blue .hero-panel {
+  background-color: #F8FAFF !important;
+  border-color: #0F172A !important;
+}
+.dashboard-theme.theme-blue .offwhite-label { color: #2B59FF !important; border-color: #2B59FF !important; }
+.dashboard-theme.theme-blue .text-offwhite-orange { color: #2B59FF !important; }
+
+/* Metric cards */
+.dashboard-theme.theme-blue .home-metric-card,
+.dashboard-theme.theme-blue .home-wide-card {
+  background: #F8FAFF !important;
+  border-color: #0F172A !important;
+  color: #0F172A !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   CONTRAST FIX PASS 2
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Rimuovi white glare overlay sui temi scuri */
+.dashboard-theme.theme-dark .home-check-button::before,
+.dashboard-theme.theme-invincible-v2 .home-check-button::before { opacity: 0 !important; }
+
+/* Dark: check button text visibile */
+.dashboard-theme.theme-dark .home-check-copy,
+.dashboard-theme.theme-dark .home-check-copy * { color: #E8E8E8 !important; }
+
+/* Invincible: check button text */
+.dashboard-theme.theme-invincible-v2 .home-check-copy,
+.dashboard-theme.theme-invincible-v2 .home-check-copy * { color: var(--inv-text) !important; }
+
+/* Dark: home-check-card-label */
+.dashboard-theme.theme-dark .home-check-card-label { color: rgba(232,232,232,0.55) !important; }
+.dashboard-theme.theme-dark .home-check-card-label strong { color: #00FF94 !important; }
+
+/* Invincible: check-card-label */
+.dashboard-theme.theme-invincible-v2 .home-check-card-label { color: var(--inv-muted) !important; }
+.dashboard-theme.theme-invincible-v2 .home-check-card-label strong { color: var(--inv-yellow) !important; }
+
+/* Dark: home-app-glow disabled */
+.dashboard-theme.theme-dark .home-app-glow { opacity: 0.06 !important; }
+
+/* Blue: home-check labels readable */
+.dashboard-theme.theme-blue .home-check-card-label { color: rgba(15,23,42,0.6) !important; }
+.dashboard-theme.theme-blue .home-check-card-label strong { color: #2B59FF !important; }
+
+/* Forest/Sunset: check-card-label accent */
+.dashboard-theme.theme-forest .home-check-card-label strong { color: #2E7D32 !important; }
+.dashboard-theme.theme-sunset .home-check-card-label strong { color: #E8521A !important; }
+
+/* Dark: main-shell bg strip residuo bianco */
+.dashboard-theme.theme-dark .home-main-surface { background: #0A0A0A !important; }
+.dashboard-theme.theme-invincible-v2 .home-main-surface { background: var(--inv-bg) !important; }
+
+/* Dark: bottom mobile nav */
+.dashboard-theme.theme-dark .mobile-nav { background: #060606 !important; border-top-color: #1E1E1E !important; }
+.dashboard-theme.theme-dark .mobile-nav-item { color: rgba(232,232,232,0.4) !important; }
+.dashboard-theme.theme-dark .mobile-nav-item.active,
+.dashboard-theme.theme-dark .mobile-nav-item[aria-current] { color: #00FF94 !important; }
+
+/* Invincible: bottom nav */
+.dashboard-theme.theme-invincible-v2 .mobile-nav { background: #010609 !important; border-top-color: var(--inv-yellow) !important; }
+.dashboard-theme.theme-invincible-v2 .mobile-nav-item { color: rgba(255,212,0,0.35) !important; }
+.dashboard-theme.theme-invincible-v2 .mobile-nav-item.active,
+.dashboard-theme.theme-invincible-v2 .mobile-nav-item[aria-current] { color: var(--inv-yellow) !important; }
+
+/* Forest: bottom nav */
+.dashboard-theme.theme-forest .mobile-nav { background: #1B2E1B !important; border-top-color: #2D4A2D !important; }
+.dashboard-theme.theme-forest .mobile-nav-item { color: rgba(200,230,201,0.45) !important; }
+.dashboard-theme.theme-forest .mobile-nav-item.active { color: #81C784 !important; }
+
+/* Sunset: bottom nav */
+.dashboard-theme.theme-sunset .mobile-nav { background: #2D1B10 !important; border-top-color: #4A2E1A !important; }
+.dashboard-theme.theme-sunset .mobile-nav-item { color: rgba(255,176,133,0.45) !important; }
+.dashboard-theme.theme-sunset .mobile-nav-item.active { color: #FFB085 !important; }
+
+/* Dark: SectionHeader separator + title */
+.dashboard-theme.theme-dark .section-header-title { color: #E8E8E8 !important; }
+.dashboard-theme.theme-dark [class*="border-black"]:not(.sidebar-shell):not(.home-check-button) {
+  border-color: #2A2A2A !important;
+}
+
+/* Dark: buttons inside offwhite panels */
+.dashboard-theme.theme-dark button:not(.sidebar-shell *):not(.home-check-button):not(.home-level-circle):not(.home-user-button):not(.weekly-prize-button) {
+  border-color: #2A2A2A !important;
+}
+
+/* Invincible: SectionHeader */
+.dashboard-theme.theme-invincible-v2 .section-header-title {
+  font-family: var(--font-inv) !important;
+  color: var(--inv-yellow) !important;
+  text-shadow: 1px 1px 0 var(--inv-red);
+}
+
+/* offwhite-border inner text — handled by individual selectors below */
+
+/* ════════════════════════════════════════════════════════════════════
+   THEME CARD ISOLATION
+   Light-bg cards always render dark text regardless of active theme.
+   Must come LAST to win specificity ties (same class count, later = wins).
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Force dark text on light-background cards */
+.theme-card-theme-offwhite,
+.theme-card-theme-blue,
+.theme-card-theme-forest,
+.theme-card-theme-sunset {
+  color: #090909 !important;
+}
+
+/* Gray text inside light cards */
+.theme-card-theme-offwhite .text-gray-500,
+.theme-card-theme-offwhite .text-gray-600,
+.theme-card-theme-offwhite .text-gray-400,
+.theme-card-theme-blue .text-gray-500,
+.theme-card-theme-blue .text-gray-600,
+.theme-card-theme-blue .text-gray-400,
+.theme-card-theme-forest .text-gray-500,
+.theme-card-theme-forest .text-gray-600,
+.theme-card-theme-forest .text-gray-400,
+.theme-card-theme-sunset .text-gray-500,
+.theme-card-theme-sunset .text-gray-600,
+.theme-card-theme-sunset .text-gray-400 { color: rgba(9,9,9,0.5) !important; }
+
+/* Font-mono text inside light cards */
+.theme-card-theme-offwhite .font-mono,
+.theme-card-theme-blue .font-mono,
+.theme-card-theme-forest .font-mono,
+.theme-card-theme-sunset .font-mono { color: rgba(9,9,9,0.6) !important; }
+
+/* Icon badge bg: always white on light cards */
+.theme-card-theme-offwhite .bg-white,
+.theme-card-theme-blue .bg-white,
+.theme-card-theme-forest .bg-white,
+.theme-card-theme-sunset .bg-white {
+  background-color: #ffffff !important;
+  color: #090909 !important;
+  border-color: #090909 !important;
+}
+
+/* Active icon badge: always black bg on light cards */
+.theme-card-theme-offwhite .bg-black,
+.theme-card-theme-blue .bg-black,
+.theme-card-theme-forest .bg-black,
+.theme-card-theme-sunset .bg-black {
+  background-color: #090909 !important;
+  color: #ffffff !important;
+}
+
+/* text-offwhite-orange inside these cards → use each theme's own accent */
+.theme-card-theme-offwhite .text-offwhite-orange { color: #FF5C00 !important; }
+.theme-card-theme-blue .text-offwhite-orange { color: #2B59FF !important; }
+.theme-card-theme-forest .text-offwhite-orange { color: #388E3C !important; }
+.theme-card-theme-sunset .text-offwhite-orange { color: #E8521A !important; }
+
+/* border-black inside light cards */
+.theme-card-theme-offwhite .border-black,
+.theme-card-theme-blue .border-black,
+.theme-card-theme-forest .border-black,
+.theme-card-theme-sunset .border-black { border-color: rgba(9,9,9,0.5) !important; }
+
+/* Dark Invincible card: explicit dark text override must NOT bleed — already isolated */
+.theme-card-theme-invincible-v2 { color: #F0E6C8 !important; }
+.theme-card-theme-invincible-v2 .text-gray-500,
+.theme-card-theme-invincible-v2 .text-gray-600 { color: rgba(240,230,200,0.55) !important; }
+.theme-card-theme-invincible-v2 .font-mono { color: rgba(240,230,200,0.6) !important; }
+.theme-card-theme-invincible-v2 .text-offwhite-orange { color: #FFD400 !important; }
+
+/* Dark card icon badge */
+.theme-card-theme-dark { color: #E8E8E8 !important; }
+.theme-card-theme-dark .text-gray-500,
+.theme-card-theme-dark .text-gray-600 { color: rgba(232,232,232,0.5) !important; }
+.theme-card-theme-dark .font-mono { color: rgba(232,232,232,0.6) !important; }
+.theme-card-theme-dark .text-offwhite-orange { color: #00FF94 !important; }
+.theme-card-theme-dark .bg-white {
+  background-color: #1A1A1A !important;
+  color: #E8E8E8 !important;
+  border-color: #2A2A2A !important;
+}
+.theme-card-theme-dark .bg-black {
+  background-color: #00FF94 !important;
+  color: #0A0A0A !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   MOBILE NAV ORBIT — dark theme overrides
+   Base .mobile-nav-orbit uses rgba(white,0.86) — wrong for dark themes
+   ════════════════════════════════════════════════════════════════════ */
+
+/* MIDNIGHT */
+.dashboard-theme.theme-dark .mobile-nav-orbit {
+  background: linear-gradient(180deg, #1C1C1C, #111111) !important;
+  border-color: #303030 !important;
+  box-shadow: 0 18px 36px rgba(0,0,0,0.5), 0 6px 16px rgba(0,255,148,0.06), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+}
+.dashboard-theme.theme-dark .mobile-nav-orbit-item {
+  color: rgba(232,232,232,0.45) !important;
+}
+.dashboard-theme.theme-dark .mobile-nav-orbit-item.is-active {
+  background: linear-gradient(180deg, rgba(0,255,148,0.22), rgba(0,255,148,0.10)) !important;
+  border-color: rgba(0,255,148,0.45) !important;
+  color: #00FF94 !important;
+  box-shadow: 0 8px 20px rgba(0,255,148,0.18) !important;
+}
+/* Override the text-white Tailwind class React adds on active */
+.dashboard-theme.theme-dark .mobile-nav-orbit-item.is-active.text-white { color: #00FF94 !important; }
+
+/* INVINCIBLE V2 */
+.dashboard-theme.theme-invincible-v2 .mobile-nav-orbit {
+  background: linear-gradient(180deg, #0C1D35, #071527) !important;
+  border-color: rgba(255,212,0,0.25) !important;
+  box-shadow: 0 18px 36px rgba(0,0,0,0.6), 0 6px 16px rgba(255,212,0,0.05), inset 0 1px 0 rgba(255,212,0,0.08) !important;
+}
+.dashboard-theme.theme-invincible-v2 .mobile-nav-orbit-item {
+  color: rgba(255,212,0,0.38) !important;
+}
+.dashboard-theme.theme-invincible-v2 .mobile-nav-orbit-item.is-active {
+  background: linear-gradient(180deg, rgba(255,212,0,0.22), rgba(255,212,0,0.08)) !important;
+  border-color: rgba(255,212,0,0.55) !important;
+  color: #FFD400 !important;
+  box-shadow: 0 6px 18px rgba(255,212,0,0.15) !important;
+}
+.dashboard-theme.theme-invincible-v2 .mobile-nav-orbit-item.is-active.text-white { color: #FFD400 !important; }
+
+/* FOREST — pill on light bg: slightly tinted dark-green */
+.dashboard-theme.theme-forest .mobile-nav-orbit {
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(232,245,233,0.88)) !important;
+  border-color: rgba(27,46,27,0.2) !important;
+}
+.dashboard-theme.theme-forest .mobile-nav-orbit-item { color: rgba(27,46,27,0.55) !important; }
+.dashboard-theme.theme-forest .mobile-nav-orbit-item.is-active {
+  background: linear-gradient(180deg, rgba(76,175,80,0.22), rgba(76,175,80,0.10)) !important;
+  border-color: rgba(76,175,80,0.5) !important;
+  color: #2E7D32 !important;
+}
+.dashboard-theme.theme-forest .mobile-nav-orbit-item.is-active.text-white { color: #2E7D32 !important; }
+
+/* SUNSET — warm tint */
+.dashboard-theme.theme-sunset .mobile-nav-orbit {
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,240,234,0.88)) !important;
+  border-color: rgba(45,27,16,0.18) !important;
+}
+.dashboard-theme.theme-sunset .mobile-nav-orbit-item { color: rgba(45,27,16,0.5) !important; }
+.dashboard-theme.theme-sunset .mobile-nav-orbit-item.is-active {
+  background: linear-gradient(180deg, rgba(255,107,53,0.2), rgba(255,107,53,0.08)) !important;
+  border-color: rgba(255,107,53,0.5) !important;
+  color: #C84010 !important;
+}
+.dashboard-theme.theme-sunset .mobile-nav-orbit-item.is-active.text-white { color: #C84010 !important; }
+
+/* BLUE — keep white pill but strengthen active */
+.dashboard-theme.theme-blue .mobile-nav-orbit {
+  background: linear-gradient(180deg, rgba(248,250,255,0.95), rgba(220,230,255,0.88)) !important;
+  border-color: rgba(15,23,42,0.15) !important;
+}
+.dashboard-theme.theme-blue .mobile-nav-orbit-item { color: rgba(15,23,42,0.5) !important; }
+.dashboard-theme.theme-blue .mobile-nav-orbit-item.is-active {
+  background: linear-gradient(180deg, rgba(43,89,255,0.2), rgba(43,89,255,0.08)) !important;
+  border-color: rgba(43,89,255,0.5) !important;
+  color: #1a3bcc !important;
+}
+.dashboard-theme.theme-blue .mobile-nav-orbit-item.is-active.text-white { color: #1a3bcc !important; }
+
+/* ════════════════════════════════════════════════════════════════════
+   CARD DESCRIPTION TEXT — stronger opacity for readability
+   ════════════════════════════════════════════════════════════════════ */
+.theme-card-theme-forest .font-mono,
+.theme-card-theme-forest p { color: rgba(9,9,9,0.65) !important; }
+.theme-card-theme-sunset .font-mono,
+.theme-card-theme-sunset p { color: rgba(9,9,9,0.65) !important; }
+.theme-card-theme-blue .font-mono,
+.theme-card-theme-blue p { color: rgba(15,23,42,0.65) !important; }
+.theme-card-theme-offwhite .font-mono,
+.theme-card-theme-offwhite p { color: rgba(9,9,9,0.6) !important; }
+
+/* Dark/Invincible card description text */
+.theme-card-theme-dark .font-mono,
+.theme-card-theme-dark p { color: rgba(232,232,232,0.6) !important; }
+.theme-card-theme-invincible-v2 .font-mono,
+.theme-card-theme-invincible-v2 p { color: rgba(240,230,200,0.6) !important; }
