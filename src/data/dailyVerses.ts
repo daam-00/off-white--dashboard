@@ -1,0 +1,81 @@
+type DailyVerse = { text: string; reference: string };
+
+const VERSES: DailyVerse[] = [
+  { reference: 'Giovanni 3:16', text: 'Perché Dio ha tanto amato il mondo, che ha dato il suo unigenito Figlio, affinché chiunque crede in lui non perisca, ma abbia vita eterna.' },
+  { reference: 'Salmi 23:1', text: 'Il Signore è il mio pastore: nulla mi mancherà.' },
+  { reference: 'Filippesi 4:13', text: 'Posso ogni cosa in Cristo che mi fortifica.' },
+  { reference: 'Geremia 29:11', text: 'Perché io conosco i pensieri che ho concepito per voi, dice il Signore; pensieri di pace e non di male, per darvi un avvenire e una speranza.' },
+  { reference: 'Romani 8:28', text: 'Or sappiamo che tutte le cose cooperano al bene di quelli che amano Dio, di quelli che sono stati chiamati secondo il suo disegno.' },
+  { reference: 'Proverbi 3:5-6', text: 'Confida nel Signore con tutto il cuore e non ti appoggiare sulla tua intelligenza; riconoscilo in tutte le tue vie, ed egli appianerà i tuoi sentieri.' },
+  { reference: 'Matteo 11:28', text: 'Venite a me, voi tutti che siete affaticati e oppressi, e io vi darò riposo.' },
+  { reference: 'Isaia 40:31', text: 'Ma quelli che sperano nel Signore riacquistano le forze, si alzano a volo come aquile; corrono e non si stancano, camminano e non si affaticano.' },
+  { reference: 'Salmi 46:1', text: 'Dio è il nostro rifugio e la nostra forza, un aiuto sempre pronto nelle difficoltà.' },
+  { reference: '2 Timoteo 1:7', text: 'Poiché Dio non ci ha dato uno spirito di timidezza, ma di forza, di amore e di autodominio.' },
+  { reference: 'Romani 8:38-39', text: 'Perché io sono persuaso che né morte né vita, né angeli né principati né potenze, né cose presenti né cose future, né altezze né profondità, né qualsiasi altra creatura, potrà separarci dall\'amore di Dio che è in Cristo Gesù, Signore nostro.' },
+  { reference: 'Matteo 6:33', text: 'Cercate prima il regno di Dio e la sua giustizia, e tutte queste cose vi saranno date in aggiunta.' },
+  { reference: 'Salmi 119:105', text: 'La tua parola è una lampada al mio piede e una luce al mio sentiero.' },
+  { reference: 'Isaia 41:10', text: 'Non temere, perché io sono con te; non ti smarrire, perché io sono il tuo Dio; ti fortifico, ti vengo anche in aiuto, ti sostengo con la destra della mia giustizia.' },
+  { reference: 'Efesini 2:8-9', text: 'Poiché è per grazia che siete stati salvati, mediante la fede; e ciò non viene da voi: è il dono di Dio. Non è in base alle opere, affinché nessuno si vanti.' },
+  { reference: 'Giosuè 1:9', text: 'Non te l\'ho io comandato? Sii forte e coraggioso; non ti spaventare e non ti sgomentare, perché il Signore, il tuo Dio, è con te dovunque tu vada.' },
+  { reference: 'Salmi 37:4', text: 'Trova le tue delizie nel Signore, ed egli ti darà quello che il tuo cuore desidera.' },
+  { reference: '1 Corinzi 13:13', text: 'Ora dunque queste tre cose durano: la fede, la speranza e la carità; ma la più grande di esse è la carità.' },
+  { reference: 'Matteo 28:20', text: 'Ed ecco, io sono con voi tutti i giorni, sino alla fine dell\'età presente.' },
+  { reference: 'Salmi 27:1', text: 'Il Signore è la mia luce e la mia salvezza; di chi mi dovrò temere? Il Signore è la forza della mia vita; di chi mi spaventerò?' },
+  { reference: 'Romani 12:2', text: 'Non conformatevi a questo mondo, ma siate trasformati mediante il rinnovamento della vostra mente, affinché conosciate per esperienza quale sia la volontà di Dio, la buona, gradita e perfetta volontà.' },
+  { reference: 'Luca 1:37', text: 'Perché nessuna parola di Dio è impossibile.' },
+  { reference: 'Salmi 91:1', text: 'Colui che abita al riparo dell\'Altissimo dimorerà all\'ombra dell\'Onnipotente.' },
+  { reference: 'Proverbi 16:3', text: 'Affida al Signore le tue opere, e i tuoi progetti riusciranno.' },
+  { reference: 'Filippesi 4:6-7', text: 'Non angustiatevi di nulla, ma in ogni cosa fate conoscere le vostre richieste a Dio in preghiere e suppliche, con rendimento di grazie. E la pace di Dio, che supera ogni intelligenza, guarderà i vostri cuori e i vostri pensieri in Cristo Gesù.' },
+  { reference: 'Giovanni 14:6', text: 'Gesù gli disse: «Io sono la via, la verità e la vita; nessuno viene al Padre se non per mezzo di me.»' },
+  { reference: 'Salmi 16:8', text: 'Io pongo sempre il Signore dinanzi a me; poiché egli è alla mia destra, io non potrò vacillare.' },
+  { reference: '2 Cronache 7:14', text: 'Se il mio popolo sul quale è invocato il mio nome si umilia, prega, cerca la mia faccia e si converte dalle sue vie malvagie, io lo ascolterò dal cielo, perdonerò il suo peccato e guarirò il suo paese.' },
+  { reference: 'Isaia 26:3', text: 'Tu manterrai in perfetta pace colui il cui animo è fisso su di te, perché egli confida in te.' },
+  { reference: 'Efesini 3:20', text: 'Or a colui che mediante la potenza che opera in noi è in grado di fare infinitamente di più di quanto chiediamo o pensiamo, a lui sia la gloria nella chiesa e in Cristo Gesù per tutte le generazioni, nei secoli dei secoli. Amen.' },
+  { reference: 'Matteo 5:16', text: 'Così risplenda la vostra luce davanti agli uomini, affinché vedano le vostre opere buone e glorifichino il Padre vostro che è nei cieli.' },
+  { reference: 'Salmi 121:1-2', text: 'Alzo gli occhi verso i monti; da dove mi verrà l\'aiuto? Il mio aiuto viene dal Signore, che ha fatto il cielo e la terra.' },
+  { reference: 'Romani 15:13', text: 'Or il Dio della speranza vi riempia di ogni gioia e pace nel credere, affinché abbondiate in speranza mediante la potenza dello Spirito Santo.' },
+  { reference: 'Giacomo 1:17', text: 'Ogni buon regalo e ogni dono perfetto viene dall\'alto e discende dal Padre delle luci, presso il quale non c\'è variazione né ombra di cambiamento.' },
+  { reference: 'Giovanni 10:10', text: 'Il ladro viene soltanto per rubare, ammazzare e distruggere; io sono venuto perché abbiano la vita e l\'abbiano in abbondanza.' },
+  { reference: 'Numeri 6:24-26', text: 'Il Signore ti benedica e ti protegga! Il Signore faccia risplendere il suo volto su di te e ti sia propizio! Il Signore rivolga il suo volto verso di te e ti dia la pace!' },
+  { reference: '1 Giovanni 4:19', text: 'Noi lo amiamo perché egli ci ha amati per primo.' },
+  { reference: 'Matteo 22:37-39', text: '«Ama il Signore Dio tuo con tutto il tuo cuore, con tutta la tua anima e con tutta la tua mente». Questo è il grande e il primo comandamento. Il secondo, simile a questo, è: «Ama il tuo prossimo come te stesso».' },
+  { reference: 'Salmi 34:18', text: 'Il Signore è vicino a quelli che hanno il cuore spezzato e salva quelli che hanno lo spirito contrito.' },
+  { reference: 'Galati 5:22-23', text: 'Il frutto dello Spirito invece è: amore, gioia, pace, pazienza, benevolenza, bontà, fedeltà, mansuetudine, autodominio; contro tali cose non c\'è legge.' },
+  { reference: 'Ebrei 11:1', text: 'Or la fede è la certezza delle cose che si sperano, la dimostrazione delle cose che non si vedono.' },
+  { reference: 'Romani 8:1', text: 'Non vi è quindi ora alcuna condanna per quelli che sono in Cristo Gesù.' },
+  { reference: 'Salmi 103:1', text: 'Anima mia, benedici il Signore! Tutto quello che è in me, benedica il suo santo nome!' },
+  { reference: 'Isaia 43:2', text: 'Quando attraverserai le acque, sarò con te; quando passerai per i fiumi, non ti sommergeranno; quando camminerai tra il fuoco, non sarai bruciato e la fiamma non ti brucerà.' },
+  { reference: 'Proverbi 22:6', text: 'Educa il fanciullo nella via che deve percorrere, ed anche quando sarà vecchio non se ne allontanerà.' },
+  { reference: '1 Pietro 5:7', text: 'Gettando su di lui ogni vostra preoccupazione, poiché egli ha cura di voi.' },
+  { reference: 'Deuteronomio 31:8', text: 'Il Signore è colui che cammina davanti a te; egli sarà con te, non ti lascerà e non ti abbandonerà; non temere e non spaventarti.' },
+  { reference: 'Giovanni 8:32', text: 'Conoscerete la verità e la verità vi farà liberi.' },
+  { reference: 'Matteo 7:7', text: 'Chiedete e vi sarà dato; cercate e troverete; bussate e vi sarà aperto.' },
+  { reference: 'Salmi 1:1-2', text: 'Beato l\'uomo che non cammina secondo il consiglio degli empi, non si ferma nella via dei peccatori e non siede in compagnia degli schernitori; ma si compiace della legge del Signore e medita la sua legge giorno e notte.' },
+  { reference: '2 Corinzi 12:9', text: 'Ti basta la mia grazia; la potenza si dimostra perfetta nella debolezza.' },
+  { reference: 'Salmi 139:14', text: 'Ti lodo perché sono stato fatto in modo stupendo e meraviglioso. Le tue opere sono meravigliose, e la mia anima lo sa molto bene.' },
+  { reference: 'Marco 11:24', text: 'Perciò vi dico: tutto quello che chiederete in preghiera, credete di averlo ricevuto, e lo otterrete.' },
+  { reference: 'Colossesi 3:23', text: 'Qualunque cosa facciate, fatela di cuore, come per il Signore e non per gli uomini.' },
+  { reference: 'Lamentazioni 3:22-23', text: 'Le misericordie del Signore non sono finite; le sue compassioni non sono esaurite; si rinnovano ogni mattina. Grande è la tua fedeltà!' },
+  { reference: 'Ebrei 4:16', text: 'Accostiamoci dunque con piena fiducia al trono della grazia, per ottenere misericordia e trovare grazia in momento opportuno.' },
+  { reference: 'Salmi 56:3', text: 'Quando sono spaventato, confido in te.' },
+  { reference: 'Romani 5:8', text: 'Ma Dio dimostra il suo amore verso di noi in questo: che mentre eravamo ancora peccatori, Cristo è morto per noi.' },
+  { reference: 'Apocalisse 21:4', text: 'Egli asciugherà ogni lacrima dai loro occhi, e non vi sarà più la morte, né cordoglio, né grido, né dolore, perché le cose di prima sono passate.' },
+  { reference: 'Proverbi 18:10', text: 'Il nome del Signore è una torre fortissima; il giusto vi corre dentro e si trova al sicuro.' },
+  { reference: 'Romani 8:37', text: 'Anzi, in tutte queste cose noi siamo più che vincitori per mezzo di colui che ci ha amati.' },
+  { reference: 'Salmi 32:8', text: 'Io ti ammaestrerò e ti insegnerò la via che devi percorrere; ti darò consiglio con gli occhi fissi su di te.' },
+  { reference: '1 Tessalonicesi 5:16-18', text: 'Siate sempre allegri, pregate senza cessare, in ogni cosa rendete grazie; poiché questa è la volontà di Dio in Cristo Gesù verso di voi.' },
+  { reference: 'Giovanni 15:5', text: 'Io sono la vite, voi siete i tralci. Chi rimane in me e in lui io rimango, porta molto frutto; perché senza di me non potete fare nulla.' },
+  { reference: 'Salmi 145:18', text: 'Il Signore è vicino a tutti quelli che lo invocano, a tutti quelli che lo invocano in verità.' },
+  { reference: 'Michea 6:8', text: 'Egli ti ha fatto conoscere, o uomo, che cosa è bene; e che cosa richiede il Signore da te: che tu agisca con giustizia, che tu ami la misericordia e che tu cammini umilmente con il tuo Dio.' },
+];
+
+function getDayOfYear(date: Date): number {
+  const start = new Date(date.getFullYear(), 0, 0);
+  const diff = date.getTime() - start.getTime();
+  return Math.floor(diff / 86400000);
+}
+
+export function getDailyVerse(date: Date): DailyVerse {
+  const idx = getDayOfYear(date) % VERSES.length;
+  return VERSES[idx];
+}

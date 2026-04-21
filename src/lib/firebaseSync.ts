@@ -149,3 +149,21 @@ export async function initializeFirebaseSync() {
     console.error('Firebase sync initialization failed', error);
   }
 }
+
+export function markDashboardStateChanged() {
+  dispatchStorageSyncEvent();
+}
+
+export function resetFirebaseSync() {
+  if (syncTimeout) window.clearTimeout(syncTimeout);
+  syncTimeout = undefined;
+  window.removeEventListener(SYNC_EVENT, scheduleFirestoreSync);
+}
+
+export async function syncDashboardStateNow() {
+  try {
+    await pushStateToFirestore();
+  } catch (error) {
+    console.error('Sync failed', error);
+  }
+}
