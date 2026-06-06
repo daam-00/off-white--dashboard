@@ -132,8 +132,8 @@ const LEGACY_THEME_MAP: Record<string, DashboardThemeId> = {
   'theme-forest': 'theme-forest',
   'theme-sunset': 'theme-sunset',
   'theme-invincible-v2': 'theme-invincible-v2',
-  'theme-invincible': 'theme-offwhite',
-  'theme-invincible-hero': 'theme-offwhite',
+  'theme-invincible': 'theme-invincible-v2',
+  'theme-invincible-hero': 'theme-invincible-v2',
   'theme-offwhite': 'theme-offwhite',
 };
 
