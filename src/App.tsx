@@ -23,8 +23,9 @@ const Trophies = lazy(() => import('./components/Trophies').then((module) => ({ 
 const DailyRoutine = lazy(() => import('./components/DailyRoutine').then((module) => ({ default: module.DailyRoutine })));
 const ThemeStudio = lazy(() => import('./components/ThemeStudio').then((module) => ({ default: module.ThemeStudio })));
 const Bible = lazy(() => import('./components/Bible').then((module) => ({ default: module.Bible })));
+const AICoach = lazy(() => import('./components/AICoach').then((module) => ({ default: module.AICoach })));
 
-type Tab = 'dashboard' | 'finance' | 'fitness' | 'diet' | 'shopping' | 'trophies' | 'routine' | 'themes' | 'bible';
+type Tab = 'dashboard' | 'finance' | 'fitness' | 'diet' | 'shopping' | 'trophies' | 'routine' | 'themes' | 'bible' | 'ai-coach';
 type SectionTab = Exclude<Tab, 'dashboard'>;
 type AuthMode = 'login' | 'register';
 
@@ -47,6 +48,7 @@ const SECTION_CHOICES: Array<{
   { id: 'trophies', label: 'Obiettivi', description: 'Missioni settimanali e premi.', icon: Trophy },
   { id: 'themes', label: 'Temi', description: 'Personalizzazione visuale.', icon: SwatchBook },
   { id: 'bible', label: 'Bibbia', description: 'Versetto, lettura e riflessioni personali.', icon: BookOpen },
+  { id: 'ai-coach', label: 'Coach IA', description: 'Consigli e analisi personalizzate basate su Gemini.', icon: Sparkles },
 ];
 
 const DEFAULT_ENABLED_SECTIONS = SECTION_CHOICES.map((section) => section.id);
@@ -1019,6 +1021,7 @@ export default function App() {
     { id: 'trophies', label: 'OBIETTIVI', icon: Trophy },
     { id: 'themes', label: 'TEMI', icon: SwatchBook },
     { id: 'bible', label: 'BIBBIA', icon: BookOpen },
+    { id: 'ai-coach', label: 'COACH IA', icon: Sparkles },
   ];
 
   const navItems = allNavItems.filter((item) => item.id === 'dashboard' || enabledSections.includes(item.id as SectionTab));
@@ -1751,6 +1754,12 @@ export default function App() {
             {activeTab === 'bible' && enabledSections.includes('bible') && (
               <TabPanel panelKey="bible">
                 <Bible />
+              </TabPanel>
+            )}
+
+            {activeTab === 'ai-coach' && enabledSections.includes('ai-coach') && (
+              <TabPanel panelKey="ai-coach">
+                <AICoach />
               </TabPanel>
             )}
           </AnimatePresence>
