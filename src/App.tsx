@@ -3,18 +3,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { Suspense, lazy, useState } from 'react';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, type User } from 'firebase/auth';
-import { addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, type Timestamp, updateDoc, where } from 'firebase/firestore';
-import { BookOpen, Moon, Sun, Calendar, Check, CircleHelp, Dumbbell, Flame, Heart, LayoutDashboard, LogOut, Mail, Menu, MessageCircle, PencilLine, Send, ShoppingBag, Sparkles, SwatchBook, Trophy, Utensils, UserRound, Wallet, X } from 'lucide-react';
+import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { Moon, Sun, Menu, LogOut, Sparkles, Trophy, Calendar, Utensils, BookOpen, Dumbbell, Wallet, ShoppingBag, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getThemeCssClass, getThemeDefinition, isThemeDark, toggleThemeDark, normalizeThemeId, DASHBOARD_THEMES } from './lib/themes';
-import { getDailyVerse } from './data/dailyVerses';
-import { auth, db } from './lib/firebase';
+import { getThemeCssClass, getThemeDefinition, isThemeDark, toggleThemeDark } from './lib/themes';
+import { auth } from './lib/firebase';
 import { initializeFirebaseSync, markDashboardStateChanged, resetFirebaseSync, syncDashboardStateNow } from './lib/firebaseSync';
-import { ACCOUNT_LEVELS, awardUserPoints, getAccountLevelInfo, getStoredUserStats, saveUserStats } from './lib/account';
+import { awardUserPoints, getAccountLevelInfo, getStoredUserStats, saveUserStats } from './lib/account';
 import { PROFILE_AVATARS } from './lib/avatars';
 
+// Shared Utilities & Components
+import { getLocalDateKey, getCurrentMonthKey, parseStoredArray } from './lib/utils';
+import { DashboardContext, type Tab, type SectionTab, type UserProfile, type HomeMetrics, SECTION_CHOICES } from './context/DashboardContext';
+import { AuthScreen } from './components/AuthScreen';
+import { UserPanel } from './components/UserPanel';
+import { OnboardingTutorial } from './components/OnboardingTutorial';
+import { DashboardView } from './components/DashboardView';
+
+// Lazy Loaded Sections
 const Diet = lazy(() => import('./components/Diet').then((module) => ({ default: module.Diet })));
 const Finance = lazy(() => import('./components/Finance').then((module) => ({ default: module.Finance })));
 const Shopping = lazy(() => import('./components/Shopping').then((module) => ({ default: module.Shopping })));
@@ -24,64 +31,10 @@ const DailyRoutine = lazy(() => import('./components/DailyRoutine').then((module
 const Bible = lazy(() => import('./components/Bible').then((module) => ({ default: module.Bible })));
 const AICoach = lazy(() => import('./components/AICoach').then((module) => ({ default: module.AICoach })));
 
-type Tab = 'dashboard' | 'ai-coach' | 'trophies' | 'routine' | 'diet' | 'bible' | 'finance' | 'shopping' | 'fitness';
-type SectionTab = Exclude<Tab, 'dashboard'>;
-type AuthMode = 'login' | 'register';
-
 const TUTORIAL_SEEN_KEY = 'offwhite_tutorial_seen';
 const LOCAL_TUTORIAL_SEEN_KEY = 'betterme_tutorial_seen_local';
 const ENABLED_SECTIONS_KEY = 'offwhite_enabled_sections';
-const VERSE_REACTIONS_KEY = 'offwhite_verse_reactions';
-
-const SECTION_CHOICES: Array<{
-  id: SectionTab;
-  label: string;
-  description: string;
-  icon: React.ComponentType<{ size?: number }>;
-}> = [
-  { id: 'ai-coach', label: 'Produttività', description: 'Coach IA e task.', icon: Sparkles },
-  { id: 'trophies', label: 'Rafforzamento', description: 'Obiettivi e statistiche.', icon: Trophy },
-  { id: 'routine', label: 'Abitudini', description: 'Ritmo e tracker.', icon: Calendar },
-  { id: 'diet', label: 'Alimentazione', description: 'Ricette e macro.', icon: Utensils },
-  { id: 'bible', label: 'Fede', description: 'Bibbia e preghiera.', icon: BookOpen },
-  { id: 'fitness', label: 'Allenamento', description: 'Schede e workout.', icon: Dumbbell },
-  { id: 'finance', label: 'Finanza', description: 'Spese e budget.', icon: Wallet },
-  { id: 'shopping', label: 'Spesa', description: 'Lista supermercato.', icon: ShoppingBag },
-];
-
 const DEFAULT_ENABLED_SECTIONS = SECTION_CHOICES.map((section) => section.id);
-
-type UserProfile = {
-  name?: string;
-};
-
-type HomeMetrics = {
-  caloriesConsumed: number;
-  caloriesTarget: number;
-  mealsCompleted: number;
-  mealsTarget: number;
-  monthlySpent: number;
-  monthlyBudget: number;
-  shoppingPending: number;
-  shoppingTotal: number;
-  workoutsCompleted: number;
-  workoutsTarget: number;
-};
-
-type VerseComment = {
-  id: string;
-  text: string;
-  createdAt: string;
-  authorName?: string;
-  userId?: string;
-};
-
-type VerseReaction = {
-  liked: boolean;
-  likes: number;
-};
-
-type VerseReactionMap = Record<string, VerseReaction>;
 
 function getStoredStats() {
   return getStoredUserStats();
@@ -93,9 +46,7 @@ function awardPoints(points: number) {
 
 function getStoredProfile(): UserProfile {
   const saved = localStorage.getItem('offwhite_user_profile');
-
   if (!saved) return {};
-
   try {
     const parsed = JSON.parse(saved) as UserProfile;
     return typeof parsed.name === 'string' ? parsed : {};
@@ -107,14 +58,12 @@ function getStoredProfile(): UserProfile {
 function getStoredEnabledSections(): SectionTab[] {
   const saved = localStorage.getItem(ENABLED_SECTIONS_KEY);
   if (!saved) return DEFAULT_ENABLED_SECTIONS;
-
   try {
     const parsed = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return DEFAULT_ENABLED_SECTIONS;
+    if (!ariaIsArray(parsed)) return DEFAULT_ENABLED_SECTIONS;
     let enabled = parsed.filter((section): section is SectionTab =>
-      SECTION_CHOICES.some((choice) => choice.id === section),
+      SECTION_CHOICES.some((choice) => choice.id === section)
     );
-    // Force include finance, shopping, fitness if they were excluded by the previous cache
     const forceInclude: SectionTab[] = ['finance', 'shopping', 'fitness'];
     forceInclude.forEach(sec => {
         if (!enabled.includes(sec)) enabled.push(sec);
@@ -138,45 +87,8 @@ function saveEnabledSections(sections: SectionTab[]) {
   return nextSections;
 }
 
-function getStoredVerseReactions(): VerseReactionMap {
-  try {
-    const raw = localStorage.getItem(VERSE_REACTIONS_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw) as VerseReactionMap;
-  } catch {
-    return {};
-  }
-}
-
-function getEmptyVerseReaction(): VerseReaction {
-  return {
-    liked: false,
-    likes: 0,
-  };
-}
-
-function buildVerseReactionId(reference: string, dateKey: string) {
-  return `${dateKey}:${reference}`;
-}
-
-function parseStoredArray<T>(key: string): T[] {
-  const saved = localStorage.getItem(key);
-  if (!saved) return [];
-
-  try {
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? (parsed as T[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function getCurrentMonthKey(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function getLocalDateKey(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+function ariaIsArray(val: unknown): val is unknown[] {
+  return Array.isArray(val);
 }
 
 function getHomeMetrics(): HomeMetrics {
@@ -212,7 +124,6 @@ function getHomeMetrics(): HomeMetrics {
 function getStoredCheckins() {
   const saved = localStorage.getItem('offwhite_checkins');
   if (!saved) return [];
-
   try {
     const parsed = JSON.parse(saved);
     return Array.isArray(parsed) ? (parsed as string[]) : [];
@@ -227,7 +138,6 @@ function hasSeenTutorial() {
 
 function calculateCheckinStreak(dates: string[], now = new Date()) {
   if (dates.length === 0) return 0;
-
   const dateSet = new Set(dates);
   const cursor = new Date(now);
   cursor.setHours(0, 0, 0, 0);
@@ -238,179 +148,20 @@ function calculateCheckinStreak(dates: string[], now = new Date()) {
   }
 
   let streak = 0;
-
   while (dateSet.has(getLocalDateKey(cursor))) {
     streak += 1;
     cursor.setDate(cursor.getDate() - 1);
   }
-
   return streak;
-}
-
-function formatCurrencyCompact(value: number) {
-  return new Intl.NumberFormat('it-IT', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function SectionFallback() {
-  return (
-    <div className="offwhite-border min-h-[280px] animate-pulse">
-      <div className="mb-6 md:mb-8">
-        <div className="offwhite-label bg-gray-100 text-transparent">LOADING</div>
-        <div className="mt-3 h-10 bg-gray-100" />
-      </div>
-      <div className="space-y-4">
-        <div className="h-24 border-2 border-gray-100 bg-gray-50" />
-        <div className="h-24 border-2 border-gray-100 bg-gray-50" />
-        <div className="h-24 border-2 border-gray-100 bg-gray-50" />
-      </div>
-    </div>
-  );
 }
 
 function FullScreenStatus({ label, detail }: { label: string; detail?: string }) {
   return (
-    <div className="auth-shell">
-      <div className="auth-panel">
-        <img src="/better-me-logo.png" alt="better me" className="auth-logo" />
-        <div className="auth-kicker">{label}</div>
-        {detail ? <div className="auth-copy">{detail}</div> : null}
+    <div className="launch-screen fixed inset-0 flex items-center justify-center p-4">
+      <div className="text-center">
+        <h2 className="text-xl font-black uppercase tracking-widest animate-pulse">{label}</h2>
+        {detail ? <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-gray-500 mt-2">{detail}</p> : null}
       </div>
-    </div>
-  );
-}
-
-function getAuthErrorMessage(error: unknown) {
-  const code = typeof error === 'object' && error && 'code' in error ? String((error as { code?: string }).code) : '';
-
-  if (code.includes('auth/invalid-credential') || code.includes('auth/wrong-password')) {
-    return 'Email o password non corretti.';
-  }
-  if (code.includes('auth/email-already-in-use')) {
-    return 'Esiste gia un account con questa email.';
-  }
-  if (code.includes('auth/weak-password')) {
-    return 'Usa una password di almeno 6 caratteri.';
-  }
-  if (code.includes('auth/invalid-email')) {
-    return 'Inserisci una email valida.';
-  }
-
-  return 'Accesso non riuscito. Riprova tra poco.';
-}
-
-function AuthScreen() {
-  const authTheme = getThemeDefinition('theme-offwhite');
-  const [mode, setMode] = useState<AuthMode>('register');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isRegister = mode === 'register';
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
-    try {
-      if (isRegister) {
-        await createUserWithEmailAndPassword(auth, email.trim(), password);
-      } else {
-        await signInWithEmailAndPassword(auth, email.trim(), password);
-      }
-    } catch (submitError) {
-      setError(getAuthErrorMessage(submitError));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div
-      className="auth-shell"
-      style={{
-        '--theme-accent': authTheme.accent,
-        '--theme-accent-soft': authTheme.accentSoft,
-        '--theme-bg': authTheme.background,
-        '--theme-panel': authTheme.panel,
-        '--theme-panel-muted': authTheme.panelMuted,
-        '--theme-ink': authTheme.ink,
-        '--theme-ink-contrast': authTheme.inkContrast,
-        '--theme-border': authTheme.border,
-      } as React.CSSProperties}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="auth-panel"
-      >
-        <div className="auth-brand-row">
-          <img src="/better-me-logo.png" alt="better me" className="auth-logo" />
-          <div>
-            <div className="auth-kicker">BETTER_ME_OS</div>
-            <h1 className="auth-title">{isRegister ? 'Crea il tuo spazio' : 'Accedi alla dashboard'}</h1>
-          </div>
-        </div>
-
-        <p className="auth-copy">
-          Registrati per usare la dashboard, partire da uno spazio pulito e far crescere il tuo livello account con i tuoi progressi.
-        </p>
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <label className="auth-field">
-            <span>Email</span>
-            <div className="auth-input-shell">
-              <Mail size={16} />
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="nome@email.com"
-                autoComplete="email"
-                required
-              />
-            </div>
-          </label>
-
-          <label className="auth-field">
-            <span>Password</span>
-            <div className="auth-input-shell">
-              <UserRound size={16} />
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Minimo 6 caratteri"
-                autoComplete={isRegister ? 'new-password' : 'current-password'}
-                minLength={6}
-                required
-              />
-            </div>
-          </label>
-
-          {error ? <div className="auth-error">{error}</div> : null}
-
-          <button type="submit" className="auth-submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Attendi...' : isRegister ? 'Registrati' : 'Entra'}
-          </button>
-        </form>
-
-        <button
-          type="button"
-          onClick={() => {
-            setMode(isRegister ? 'login' : 'register');
-            setError('');
-          }}
-          className="auth-mode-button"
-        >
-          {isRegister ? 'Hai gia un account? Accedi' : 'Nuovo utente? Crea account'}
-        </button>
-      </motion.div>
     </div>
   );
 }
@@ -419,393 +170,15 @@ function TabPanel({ children, panelKey }: { children: React.ReactNode; panelKey:
   return (
     <motion.div
       key={panelKey}
-      initial={{ opacity: 0, y: 16, scale: 0.99 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10, scale: 0.99 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.22, ease: 'easeInOut' }}
+      className="w-full h-full"
     >
-      <Suspense fallback={<SectionFallback />}>{children}</Suspense>
-    </motion.div>
-  );
-}
-
-function UserPanel({
-  email,
-  displayName,
-  points,
-  accountLevelLabel,
-  accountLevelNumber,
-  accountLevelProgress,
-  nextLevelCopy,
-  checkinStreak,
-  enabledSections,
-  avatarId,
-  activeThemeId,
-  onProfileSave,
-  onSectionsSave,
-  onThemeChange,
-  onAvatarChange,
-  onClose,
-  onLogout,
-}: {
-  email?: string | null;
-  displayName: string;
-  points: number;
-  accountLevelLabel: string;
-  accountLevelNumber: number;
-  accountLevelProgress: number;
-  nextLevelCopy: string;
-  checkinStreak: number;
-  enabledSections: SectionTab[];
-  avatarId?: string | null;
-  activeThemeId: string;
-  onProfileSave: (profile: UserProfile) => void;
-  onSectionsSave: (sections: SectionTab[]) => void;
-  onThemeChange: (themeId: string) => void;
-  onAvatarChange: (avatarId: string) => void;
-  onClose: () => void;
-  onLogout: () => void;
-}) {
-  const [nameInput, setNameInput] = useState(displayName);
-  const [sectionDraft, setSectionDraft] = useState<SectionTab[]>(enabledSections);
-  const [isNameSaved, setIsNameSaved] = useState(false);
-  const [areSectionsSaved, setAreSectionsSaved] = useState(false);
-
-  React.useEffect(() => {
-    setNameInput(displayName);
-  }, [displayName]);
-
-  React.useEffect(() => {
-    setSectionDraft(enabledSections);
-  }, [enabledSections]);
-
-  const handleProfileSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const nextName = nameInput.trim();
-    if (!nextName) return;
-
-    onProfileSave({ name: nextName });
-    setIsNameSaved(true);
-    window.setTimeout(() => setIsNameSaved(false), 1400);
-  };
-
-  const toggleSection = (section: SectionTab) => {
-    setSectionDraft((current) => {
-      if (current.includes(section)) {
-        return current.length > 1 ? current.filter((item) => item !== section) : current;
-      }
-
-      return [...current, section];
-    });
-  };
-
-  const selectOnlySection = (section: SectionTab) => {
-    setSectionDraft([section]);
-  };
-
-  const handleSectionsSubmit = () => {
-    onSectionsSave([...sectionDraft]);
-    setAreSectionsSaved(true);
-    window.setTimeout(() => setAreSectionsSaved(false), 1400);
-  };
-
-  return (
-    <motion.div
-      className="user-panel-backdrop"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-    >
-      <motion.section
-        className="user-panel"
-        initial={{ opacity: 0, y: 20, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 16, scale: 0.98 }}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="user-panel-head">
-          <div className="user-avatar-large">
-            {avatarId ? (
-              (() => {
-                const av = PROFILE_AVATARS.find(a => a.id === avatarId);
-                return av ? (
-                  <img src={av.imageUrl} alt={av.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', borderRadius: '9999px', backgroundColor: av.bgColor }} />
-                ) : displayName.slice(0, 1).toUpperCase();
-              })()
-            ) : displayName.slice(0, 1).toUpperCase()}
-          </div>
-          <div>
-            <div className="offwhite-label">AREA_UTENTE</div>
-            <h2>{displayName}</h2>
-            <p>{email}</p>
-          </div>
-          <button type="button" onClick={onClose} className="user-panel-close" aria-label="Chiudi">
-            <X size={18} />
-          </button>
-        </div>
-
-        <form onSubmit={handleProfileSubmit} className="user-profile-form">
-          <label>
-            <span>Nome visualizzato</span>
-            <div>
-              <PencilLine size={16} />
-              <input
-                value={nameInput}
-                onChange={(event) => setNameInput(event.target.value)}
-                placeholder="Il tuo nome"
-                maxLength={32}
-              />
-            </div>
-          </label>
-          <button type="submit" disabled={!nameInput.trim()}>
-            {isNameSaved ? <Check size={16} /> : <PencilLine size={16} />}
-            {isNameSaved ? 'Salvato' : 'Aggiorna'}
-          </button>
-        </form>
-
-        <div className="user-panel-stats">
-          <div>
-            <span>{points}</span>
-            <p>Better Credits</p>
-          </div>
-          <div>
-            <span>L{accountLevelNumber}</span>
-            <p>{accountLevelLabel}</p>
-          </div>
-          <div>
-            <span>{checkinStreak}</span>
-            <p>Giorni di serie</p>
-          </div>
-        </div>
-
-        <section className="offwhite-border bg-white p-4">
-          <div className="user-tutorial-title">
-            <Sparkles size={18} />
-            <span>Livello account</span>
-          </div>
-          <p className="mt-3 font-mono text-[10px] uppercase leading-relaxed tracking-[0.18em] text-gray-500">
-            {nextLevelCopy}
-          </p>
-          <div className="mt-3 h-2 overflow-hidden border-2 border-black bg-gray-100">
-            <div className="h-full bg-black transition-all" style={{ width: `${accountLevelProgress}%` }} />
-          </div>
-        </section>
-
-        <section className="user-sections-editor">
-          <div className="user-tutorial-title">
-            <LayoutDashboard size={18} />
-            <span>Sezioni attive</span>
-          </div>
-          <div className="section-choice-grid is-compact">
-            {SECTION_CHOICES.map((section) => {
-              const Icon = section.icon;
-              const active = sectionDraft.includes(section.id);
-
-              return (
-                <div key={section.id} className={`section-choice-card section-card-${section.id} ${active ? 'is-selected' : ''}`}>
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => toggleSection(section.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        toggleSection(section.id);
-                      }
-                    }}
-                    className="section-choice-main cursor-pointer"
-                  >
-                    <div className="section-card-icon-wrapper">
-                      <Icon size={18} />
-                    </div>
-                    <div className="section-card-info">
-                      <span>{section.label}</span>
-                      <small>{active ? 'Attiva' : 'Nascosta'}</small>
-                    </div>
-                  </div>
-                  <button type="button" onClick={() => selectOnlySection(section.id)} className="section-only-action">
-                    Solo questa
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-          <button type="button" onClick={handleSectionsSubmit} className="section-save-button">
-            {areSectionsSaved ? <Check size={16} /> : <LayoutDashboard size={16} />}
-            {areSectionsSaved ? 'Sezioni salvate' : 'Salva sezioni'}
-          </button>
-        </section>
-
-        <section className="user-sections-editor mt-6">
-          <div className="user-tutorial-title">
-            <SwatchBook size={18} />
-            <span>Tema Attivo</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-3">
-            {DASHBOARD_THEMES.map((theme) => {
-              const active = theme.id === activeThemeId;
-              return (
-                <button
-                  key={theme.id}
-                  type="button"
-                  onClick={() => onThemeChange(theme.id)}
-                  className={`flex flex-col items-start p-3 border-2 text-left rounded-xl transition-all ${
-                    active 
-                      ? 'border-black bg-black/5 dark:bg-white/5' 
-                      : 'border-black/10 hover:border-black'
-                  }`}
-                  style={{
-                    borderColor: active ? 'var(--theme-accent)' : 'rgba(255,255,255,0.08)'
-                  }}
-                >
-                  <span className="text-xs font-bold font-mono tracking-wide">{theme.name}</span>
-                  <span className="text-[8px] opacity-60 uppercase mt-0.5">{theme.badge}</span>
-                  <div className="flex gap-1.5 mt-2">
-                    <span className="h-3.5 w-3.5 rounded-full border border-black/20" style={{ backgroundColor: theme.accent }} />
-                    <span className="h-3.5 w-3.5 rounded-full border border-black/20" style={{ backgroundColor: theme.background }} />
-                    <span className="h-3.5 w-3.5 rounded-full border border-black/20" style={{ backgroundColor: theme.ink }} />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="user-sections-editor mt-6">
-          <div className="user-tutorial-title">
-            <UserRound size={18} />
-            <span>Scegli Avatar</span>
-          </div>
-          <div className="flex gap-3 overflow-x-auto py-2.5 px-0.5 scrollbar-thin">
-            {PROFILE_AVATARS.map((av) => {
-              const active = av.id === avatarId;
-              return (
-                <button
-                  key={av.id}
-                  type="button"
-                  onClick={() => onAvatarChange(av.id)}
-                  className={`shrink-0 h-12 w-12 rounded-full border-2 transition-all flex items-center justify-center overflow-hidden ${
-                    active ? 'border-black' : 'border-black/10 hover:border-black'
-                  }`}
-                  style={{
-                    borderColor: active ? 'var(--theme-accent)' : 'rgba(255,255,255,0.1)',
-                    backgroundColor: av.bgColor
-                  }}
-                  title={av.name}
-                >
-                  <img src={av.imageUrl} alt={av.name} className="h-full w-full object-cover object-top" />
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <div className="user-tutorial">
-          <div className="user-tutorial-title">
-            <CircleHelp size={18} />
-            <span>Come funziona Better Me</span>
-          </div>
-          <ol>
-            <li>Fai check-in una volta al giorno: aumenta la serie e ricevi +10 credits.</li>
-            <li>Crea i tuoi to-do giornalieri nella Routine. Ogni to-do completato vale +25 credits.</li>
-            <li>Completa tutti i to-do del giorno per ricevere un bonus +50 credits.</li>
-            <li>Usa i credits per sbloccare nuovi temi e salire di livello account.</li>
-            <li>Dieta, spesa, finanze, routine e preferenze vengono salvate nel tuo account.</li>
-          </ol>
-        </div>
-
-        <button type="button" onClick={onLogout} className="user-panel-logout">
-          <LogOut size={16} />
-          Esci
-        </button>
-      </motion.section>
-    </motion.div>
-  );
-}
-
-function OnboardingTutorial({ onComplete }: { onComplete: (sections: SectionTab[]) => void }) {
-  const [selectedSections, setSelectedSections] = useState<SectionTab[]>(DEFAULT_ENABLED_SECTIONS);
-
-  const toggleSection = (section: SectionTab) => {
-    setSelectedSections((current) => {
-      if (current.includes(section)) {
-        return current.length > 1 ? current.filter((item) => item !== section) : current;
-      }
-
-      return [...current, section];
-    });
-  };
-
-  return (
-    <motion.div className="user-panel-backdrop onboarding-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <div className="onboarding-bg-orbs" aria-hidden="true">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-      </div>
-      <motion.section
-        className="onboarding-panel"
-        initial={{ opacity: 0, y: 24, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 16, scale: 0.98 }}
-      >
-        <div className="onboarding-icon">
-          <Sparkles size={28} />
-        </div>
-        <div className="offwhite-label">PRIMO_ACCESSO</div>
-        <h2>Costruisci la tua dashboard</h2>
-        <p>
-          Better Me parte pulita: nessun dato pre-caricato, solo il tuo account, i tuoi obiettivi e la tua progressione.
-        </p>
-        <div className="onboarding-steps">
-          <div><strong>1</strong><span>Check-in giornaliero per mantenere la serie.</span></div>
-          <div><strong>2</strong><span>To-do personali: +25 credits ciascuno.</span></div>
-          <div><strong>3</strong><span>Bonus +50 quando completi tutta la routine.</span></div>
-          <div><strong>4</strong><span>I Better Credits fanno salire anche il livello account.</span></div>
-        </div>
-
-        <div className="section-picker">
-          <div className="user-tutorial-title">
-            <LayoutDashboard size={18} />
-            <span>Scegli le sezioni</span>
-          </div>
-          <div className="section-choice-grid">
-            {SECTION_CHOICES.map((section) => {
-              const Icon = section.icon;
-              const active = selectedSections.includes(section.id);
-
-              return (
-                <div
-                  key={section.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => toggleSection(section.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      toggleSection(section.id);
-                    }
-                  }}
-                  className={`section-choice-card cursor-pointer section-card-${section.id} ${active ? 'is-selected' : ''}`}
-                >
-                  <div className="section-card-icon-wrapper">
-                    <Icon size={18} />
-                  </div>
-                  <div className="section-card-info">
-                    <span>{section.label}</span>
-                    <small>{section.description}</small>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <button type="button" onClick={() => onComplete(selectedSections)} className="auth-submit onboarding-submit">
-          Inizia
-        </button>
-      </motion.section>
+      <Suspense fallback={<FullScreenStatus label="Caricamento modulo" detail={`${panelKey.toUpperCase()}_STAGE`} />}>
+        {children}
+      </Suspense>
     </motion.div>
   );
 }
@@ -818,30 +191,30 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [stats, setStats] = useState(() => getStoredStats());
   const isDarkMode = isThemeDark(stats.activeTheme);
+
   const toggleDarkMode = () => {
     const nextThemeId = toggleThemeDark(stats.activeTheme);
     const nextStats = saveUserStats({ ...stats, activeTheme: nextThemeId });
     setStats({ ...nextStats });
   };
+
   const [profile, setProfile] = useState(() => getStoredProfile());
   const [homeMetrics, setHomeMetrics] = useState(() => getHomeMetrics());
   const [showLaunchScreen, setShowLaunchScreen] = useState(true);
-  const [now, setNow] = useState(() => new Date());
   const [checkins, setCheckins] = useState<string[]>(() => getStoredCheckins());
-  const [showCheckinBurst, setShowCheckinBurst] = useState(false);
   const [isUserPanelOpen, setIsUserPanelOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [enabledSections, setEnabledSections] = useState<SectionTab[]>(() => getStoredEnabledSections());
-  const [verseReactions, setVerseReactions] = useState<VerseReactionMap>(() => getStoredVerseReactions());
-  const [verseCommentDraft, setVerseCommentDraft] = useState('');
-  const [sharedVerseComments, setSharedVerseComments] = useState<VerseComment[]>([]);
-  const [verseCommentError, setVerseCommentError] = useState('');
-  const [verseReactionReady, setVerseReactionReady] = useState<Record<string, boolean>>({});
-  const [showVerseChat, setShowVerseChat] = useState(false);
-
   const [showDailyReward, setShowDailyReward] = useState(false);
-  
-  React.useEffect(() => {
+  const [levelUpCelebration, setLevelUpCelebration] = useState<{ level: number; title: string } | null>(null);
+
+  const didHydrateLevelRef = useRef(false);
+  const lastKnownLevelRef = useRef(1);
+  const isFinanceFullscreen = activeTab === 'finance';
+  const ADMIN_EMAIL = 'thsedici@gmail.com';
+  const isAdmin = authUser?.email === ADMIN_EMAIL;
+
+  useEffect(() => {
     const today = getLocalDateKey();
     const lastRewardDate = localStorage.getItem('betterme_last_reward_date');
     if (lastRewardDate !== today) {
@@ -855,37 +228,23 @@ export default function App() {
     setShowDailyReward(false);
   };
 
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editingCommentText, setEditingCommentText] = useState('');
-  const [levelUpCelebration, setLevelUpCelebration] = useState<{ level: number; title: string } | null>(null);
-  const [streakCelebration, setStreakCelebration] = useState<number | null>(null);
-  const [showLevelModal, setShowLevelModal] = useState(false);
-  const didHydrateLevelRef = React.useRef(false);
-  const lastKnownLevelRef = React.useRef(1);
-  const isFinanceFullscreen = activeTab === 'finance';
-  const dailyVerse = getDailyVerse(now);
-  const today = getLocalDateKey();
-  const dailyVerseReactionId = buildVerseReactionId(dailyVerse.reference, today);
-
-  React.useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+  // Auth observer
+  useEffect(() => {
+    return onAuthStateChanged(auth, (user) => {
       setAuthUser(user);
       setIsAuthReady(true);
-      setIsSyncReady(false);
-
-      if (!user) {
-        resetFirebaseSync();
-      }
     });
-
-    return unsubscribe;
   }, []);
 
-  React.useEffect(() => {
-    if (!authUser) return;
-
-    let isActive = true;
+  // Firebase Sync manager
+  useEffect(() => {
+    if (!authUser) {
+      setIsSyncReady(true);
+      return;
+    }
+    setIsSyncReady(false);
     let stopSync: (() => void) | undefined;
+    let isActive = true;
 
     const startSync = async () => {
       stopSync = await initializeFirebaseSync(authUser);
@@ -893,12 +252,9 @@ export default function App() {
         stopSync?.();
         return;
       }
-
-      const syncedStats = getStoredStats();
-      setStats(syncedStats);
+      setStats(getStoredStats());
       setProfile(getStoredProfile());
       setEnabledSections(getStoredEnabledSections());
-      setVerseReactions(getStoredVerseReactions());
       setHomeMetrics(getHomeMetrics());
       setCheckins(getStoredCheckins());
       setShowOnboarding(!hasSeenTutorial() && getStoredCheckins().length === 0);
@@ -906,47 +262,32 @@ export default function App() {
     };
 
     void startSync();
-
     return () => {
       isActive = false;
       stopSync?.();
     };
   }, [authUser]);
 
-  React.useEffect(() => {
-    localStorage.setItem(VERSE_REACTIONS_KEY, JSON.stringify(verseReactions));
-  }, [verseReactions]);
-
-  React.useEffect(() => {
-    const handleStatsUpdate = () => {
-      setStats(getStoredStats());
-    };
+  // Global update listeners
+  useEffect(() => {
+    const handleStatsUpdate = () => setStats(getStoredStats());
+    const handleSectionsUpdate = () => setEnabledSections(getStoredEnabledSections());
+    const handleProfileUpdate = () => setProfile(getStoredProfile());
+    
     window.addEventListener('stats-update', handleStatsUpdate);
-    return () => window.removeEventListener('stats-update', handleStatsUpdate);
-  }, []);
-
-  React.useEffect(() => {
-    const handleSectionsUpdate = () => {
-      setEnabledSections(getStoredEnabledSections());
-    };
-
     window.addEventListener('sections-update', handleSectionsUpdate);
-    return () => window.removeEventListener('sections-update', handleSectionsUpdate);
-  }, []);
-
-  React.useEffect(() => {
-    const handleProfileUpdate = () => {
-      setProfile(getStoredProfile());
-    };
     window.addEventListener('profile-update', handleProfileUpdate);
-    return () => window.removeEventListener('profile-update', handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener('stats-update', handleStatsUpdate);
+      window.removeEventListener('sections-update', handleSectionsUpdate);
+      window.removeEventListener('profile-update', handleProfileUpdate);
+    };
   }, []);
 
-  React.useEffect(() => {
-    const handleMetricsUpdate = () => {
-      setHomeMetrics(getHomeMetrics());
-    };
-
+  // Metrics update listeners
+  useEffect(() => {
+    const handleMetricsUpdate = () => setHomeMetrics(getHomeMetrics());
     window.addEventListener('checkin-update', handleMetricsUpdate);
     window.addEventListener('dashboard-data-update', handleMetricsUpdate);
     window.addEventListener('shopping-update', handleMetricsUpdate);
@@ -962,154 +303,19 @@ export default function App() {
     };
   }, []);
 
-  React.useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = window.setTimeout(() => setShowLaunchScreen(false), 1400);
     return () => window.clearTimeout(timer);
   }, []);
 
-  React.useEffect(() => {
-    if (!authUser) {
-      setSharedVerseComments([]);
-      setVerseReactionReady({});
-      return;
-    }
-
-    const commentsQuery = query(
-      collection(db, 'dailyVerseComments', dailyVerseReactionId, 'comments'),
-      orderBy('createdAt', 'asc'),
-    );
-    const likesCollection = collection(db, 'dailyVerseReactions', dailyVerseReactionId, 'likes');
-    const legacyLikesQuery = query(collection(db, 'dailyVerseLikes'), where('verseId', '==', dailyVerseReactionId));
-    let nestedLikeUserIds = new Set<string>();
-    let legacyLikeUserIds = new Set<string>();
-
-    const publishLikes = () => {
-      const combined = new Set<string>([...legacyLikeUserIds, ...nestedLikeUserIds]);
-      setVerseReactions((current) => ({
-        ...current,
-        [dailyVerseReactionId]: {
-          liked: combined.has(authUser.uid),
-          likes: combined.size,
-        },
-      }));
-      setVerseReactionReady((current) => ({ ...current, [dailyVerseReactionId]: true }));
-    };
-
-    void Promise.all([getDocs(likesCollection), getDocs(legacyLikesQuery)])
-      .then(([nestedSnapshot, legacySnapshot]) => {
-        nestedLikeUserIds = new Set(nestedSnapshot.docs.map((likeDoc) => likeDoc.id));
-        legacyLikeUserIds = new Set(
-          legacySnapshot.docs
-            .map((likeDoc) => {
-              const data = likeDoc.data() as { userId?: string };
-              return data.userId ?? '';
-            })
-            .filter(Boolean),
-        );
-        publishLikes();
-      })
-      .catch(() => {
-        setVerseReactionReady((current) => ({ ...current, [dailyVerseReactionId]: true }));
-      });
-
-    const unsubscribeComments = onSnapshot(
-      commentsQuery,
-      (snapshot) => {
-        setSharedVerseComments(
-          snapshot.docs.map((commentDoc) => {
-            const data = commentDoc.data() as {
-              text?: string;
-              authorName?: string;
-              userId?: string;
-              createdAt?: Timestamp;
-            };
-
-            return {
-              id: commentDoc.id,
-              text: data.text ?? '',
-              authorName: data.authorName ?? 'Utente',
-              userId: data.userId,
-              createdAt: data.createdAt?.toDate().toISOString() ?? new Date().toISOString(),
-            };
-          }),
-        );
-        setVerseCommentError('');
-      },
-      () => {
-        setVerseCommentError('Commenti condivisi non disponibili al momento.');
-      },
-    );
-    const unsubscribeLikes = onSnapshot(
-      likesCollection,
-      (snapshot) => {
-        nestedLikeUserIds = new Set(snapshot.docs.map((likeDoc) => likeDoc.id));
-        publishLikes();
-      },
-      () => {
-        setVerseCommentError('Like condivisi non disponibili al momento.');
-      },
-    );
-    const unsubscribeLegacyLikes = onSnapshot(
-      legacyLikesQuery,
-      (snapshot) => {
-        legacyLikeUserIds = new Set(
-          snapshot.docs
-            .map((likeDoc) => {
-              const data = likeDoc.data() as { userId?: string };
-              return data.userId ?? '';
-            })
-            .filter(Boolean),
-        );
-        publishLikes();
-      },
-      () => {
-        setVerseCommentError('Like condivisi non disponibili al momento.');
-      },
-    );
-
-    return () => {
-      unsubscribeComments();
-      unsubscribeLikes();
-      unsubscribeLegacyLikes();
-    };
-  }, [authUser, dailyVerseReactionId]);
-
-  React.useEffect(() => {
+  useEffect(() => {
     if (activeTab !== 'dashboard' && !enabledSections.includes(activeTab as SectionTab)) {
       setActiveTab('dashboard');
     }
   }, [activeTab, enabledSections]);
 
-  React.useEffect(() => {
-    if (!isSyncReady) return;
-
-    const currentLevel = getAccountLevelInfo(stats.points).level;
-
-    if (!didHydrateLevelRef.current) {
-      didHydrateLevelRef.current = true;
-      lastKnownLevelRef.current = currentLevel;
-      return;
-    }
-
-    if (currentLevel > lastKnownLevelRef.current) {
-      setLevelUpCelebration({
-        level: currentLevel,
-        title: getAccountLevelInfo(stats.points).title,
-      });
-      window.setTimeout(() => setLevelUpCelebration(null), 3200);
-    }
-
-    lastKnownLevelRef.current = currentLevel;
-  }, [isSyncReady, stats.points]);
-
-  // Admin: keep points at 99999 and unlock all themes/avatars
-  const ADMIN_EMAIL = 'thsedici@gmail.com';
-  React.useEffect(() => {
+  // Admin and limits check
+  useEffect(() => {
     if (!isSyncReady || authUser?.email !== ADMIN_EMAIL) return;
     const current = getStoredUserStats();
     if (current.points < 99999) {
@@ -1117,6 +323,53 @@ export default function App() {
       setStats(boosted);
     }
   }, [isSyncReady, authUser?.email]);
+
+  const triggerRefreshHomeMetrics = () => {
+    setHomeMetrics(getHomeMetrics());
+  };
+
+  const handleProfileSave = (nextProfile: UserProfile) => {
+    const cleanProfile = { ...profile, ...nextProfile, name: nextProfile.name?.trim() };
+    localStorage.setItem('offwhite_user_profile', JSON.stringify(cleanProfile));
+    markDashboardStateChanged();
+    setProfile(cleanProfile);
+    window.dispatchEvent(new CustomEvent('profile-update'));
+    void syncDashboardStateNow();
+  };
+
+  const handleSectionsSave = (sections: SectionTab[]) => {
+    const nextSections = saveEnabledSections(sections);
+    setEnabledSections(nextSections);
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    resetFirebaseSync();
+    setActiveTab('dashboard');
+  };
+
+  const handleCheckIn = () => {
+    const today = getLocalDateKey();
+    if (!hasCheckedInToday) {
+      const updated = Array.from(new Set([...getStoredCheckins(), today])).sort();
+      setCheckins(updated);
+      localStorage.setItem('offwhite_checkins', JSON.stringify(updated));
+      markDashboardStateChanged();
+      awardPoints(10);
+      window.dispatchEvent(new CustomEvent('checkin-update'));
+      void syncDashboardStateNow();
+    }
+  };
+
+  const completeOnboarding = (sections: SectionTab[]) => {
+    const nextSections = saveEnabledSections(sections);
+    setEnabledSections(nextSections);
+    localStorage.setItem(TUTORIAL_SEEN_KEY, 'true');
+    localStorage.setItem(LOCAL_TUTORIAL_SEEN_KEY, 'true');
+    markDashboardStateChanged();
+    setShowOnboarding(false);
+    void syncDashboardStateNow();
+  };
 
   if (!isAuthReady) {
     return <FullScreenStatus label="Avvio dashboard" detail="Preparo lo spazio personale." />;
@@ -1132,7 +385,6 @@ export default function App() {
 
   const activeTheme = getThemeDefinition(stats.activeTheme);
   const displayName = profile.name?.trim() || authUser.email?.split('@')[0] || 'Utente';
-  const isAdmin = authUser?.email === ADMIN_EMAIL;
   const accountLevel = getAccountLevelInfo(stats.points);
   const displayPoints = isAdmin ? '∞' : String(stats.points);
   const displayLevel = isAdmin ? 7 : accountLevel.level;
@@ -1143,6 +395,9 @@ export default function App() {
     : accountLevel.nextLevelAt
     ? `${Math.max(0, accountLevel.nextLevelAt - stats.points)} credits al livello ${accountLevel.level + 1}`
     : 'Livello massimo attuale raggiunto';
+
+  const hasCheckedInToday = checkins.includes(getLocalDateKey());
+  const checkinStreak = calculateCheckinStreak(checkins);
 
   const allNavItems = [
     { id: 'dashboard', label: 'Hub', icon: LayoutDashboard },
@@ -1159,939 +414,439 @@ export default function App() {
   const navItems = allNavItems.filter((item) => item.id === 'dashboard' || enabledSections.includes(item.id as SectionTab));
   const mobileNavItems = navItems;
 
-  const hasCheckedInToday = checkins.includes(today);
-  const checkinStreak = calculateCheckinStreak(checkins);
-  const dailyVerseReaction = verseReactions[dailyVerseReactionId] ?? getEmptyVerseReaction();
-  const isDailyVerseReactionReady = verseReactionReady[dailyVerseReactionId] ?? false;
-  const visibleVerseComments = sharedVerseComments;
-
-  const toggleDailyVerseLike = () => {
-    const current = verseReactions[dailyVerseReactionId] ?? getEmptyVerseReaction();
-    setVerseReactions((prev) => ({
-      ...prev,
-      [dailyVerseReactionId]: {
-        liked: !current.liked,
-        likes: Math.max(0, current.likes + (current.liked ? -1 : 1)),
-      },
-    }));
-    const likeDoc = doc(db, 'dailyVerseReactions', dailyVerseReactionId, 'likes', authUser.uid);
-    if (current.liked) {
-      void deleteDoc(likeDoc);
-    } else {
-      void setDoc(likeDoc, { userId: authUser.uid, createdAt: serverTimestamp() });
-    }
-  };
-
-  const addDailyVerseComment = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const text = verseCommentDraft.trim();
-    if (!text) return;
-
-    const optimisticId = `optimistic-${Date.now()}`;
-    const optimisticComment: VerseComment = {
-      id: optimisticId,
-      text,
-      authorName: displayName,
-      userId: authUser.uid,
-      createdAt: new Date().toISOString(),
-    };
-
-    setVerseCommentDraft('');
-    setVerseCommentError('');
-    setSharedVerseComments((prev) => [...prev, optimisticComment]);
-
-    try {
-      await addDoc(collection(db, 'dailyVerseComments', dailyVerseReactionId, 'comments'), {
-        text,
-        authorName: displayName,
-        userId: authUser.uid,
-        createdAt: serverTimestamp(),
-      });
-    } catch {
-      setVerseCommentDraft(text);
-      setVerseCommentError('Non riesco a pubblicare il commento condiviso adesso.');
-      setSharedVerseComments((prev) => prev.filter((c) => c.id !== optimisticId));
-    }
-  };
-
-  const deleteVerseComment = async (commentId: string) => {
-    setSharedVerseComments((prev) => prev.filter((c) => c.id !== commentId));
-    try {
-      await deleteDoc(doc(db, 'dailyVerseComments', dailyVerseReactionId, 'comments', commentId));
-    } catch {
-      // silently ignore
-    }
-  };
-
-  const saveEditComment = async (commentId: string) => {
-    const text = editingCommentText.trim();
-    if (!text) return;
-    setSharedVerseComments((prev) => prev.map((c) => c.id === commentId ? { ...c, text } : c));
-    setEditingCommentId(null);
-    setEditingCommentText('');
-    try {
-      await updateDoc(doc(db, 'dailyVerseComments', dailyVerseReactionId, 'comments', commentId), { text });
-    } catch {
-      // onSnapshot ripristina stato corretto
-    }
-  };
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    resetFirebaseSync();
-    setActiveTab('dashboard');
-  };
-
-  const handleCheckIn = () => {
-    if (!hasCheckedInToday) {
-      const updated = Array.from(new Set([...getStoredCheckins(), today])).sort();
-      const nextStreak = calculateCheckinStreak(updated);
-      setCheckins(updated);
-      localStorage.setItem('offwhite_checkins', JSON.stringify(updated));
-      markDashboardStateChanged();
-      awardPoints(10);
-      setShowCheckinBurst(true);
-      window.setTimeout(() => setShowCheckinBurst(false), 1800);
-      if (nextStreak >= 5 && nextStreak % 5 === 0) {
-        setStreakCelebration(nextStreak);
-        window.setTimeout(() => setStreakCelebration(null), 3000);
-      }
-      window.dispatchEvent(new CustomEvent('checkin-update'));
-      void syncDashboardStateNow();
-    }
-  };
-
-  const completeOnboarding = (sections: SectionTab[]) => {
-    const nextSections = saveEnabledSections(sections);
-    setEnabledSections(nextSections);
-    localStorage.setItem(TUTORIAL_SEEN_KEY, 'true');
-    localStorage.setItem(LOCAL_TUTORIAL_SEEN_KEY, 'true');
-    markDashboardStateChanged();
-    setShowOnboarding(false);
-    void syncDashboardStateNow();
-  };
-
-  const handleProfileSave = (nextProfile: UserProfile) => {
-    const cleanProfile = {
-      ...profile,
-      ...nextProfile,
-      name: nextProfile.name?.trim(),
-    };
-
-    localStorage.setItem('offwhite_user_profile', JSON.stringify(cleanProfile));
-    markDashboardStateChanged();
-    setProfile(cleanProfile);
-    window.dispatchEvent(new CustomEvent('profile-update'));
-    void syncDashboardStateNow();
-  };
-
-  const handleSectionsSave = (sections: SectionTab[]) => {
-    const nextSections = saveEnabledSections(sections);
-    setEnabledSections(nextSections);
-  };
-
-  const caloriesPercent = Math.min(100, Math.round((homeMetrics.caloriesConsumed / homeMetrics.caloriesTarget) * 100) || 0);
-  const workoutPercent = Math.min(100, Math.round((homeMetrics.workoutsCompleted / homeMetrics.workoutsTarget) * 100) || 0);
-  const vaultRecipeCount = (() => { try { return (JSON.parse(localStorage.getItem('offwhite_recipes') || '[]') as unknown[]).length; } catch { return 0; } })();
-  const vaultRecipePercent = Math.min(100, Math.round((vaultRecipeCount / 20) * 100));
-
   return (
-    <div 
-      className={`dashboard-theme ${getThemeCssClass(stats.activeTheme)} flex min-h-svh flex-col overflow-x-hidden md:h-dvh md:min-h-dvh md:overflow-hidden`}
-      style={{
-        '--color-offwhite-orange': activeTheme.accent,
-        '--theme-accent': activeTheme.accent,
-        '--theme-accent-soft': activeTheme.accentSoft,
-        '--theme-bg': activeTheme.background,
-        '--theme-panel': activeTheme.panel,
-        '--theme-panel-muted': activeTheme.panelMuted,
-        '--theme-ink': activeTheme.ink,
-        '--theme-ink-contrast': activeTheme.inkContrast,
-        '--theme-border': activeTheme.border,
-        '--theme-grid': activeTheme.grid,
-        '--theme-shadow': activeTheme.shadow,
-        '--sidebar-w': isSidebarOpen ? '280px' : '80px',
-      } as React.CSSProperties}
+    <DashboardContext.Provider
+      value={{
+        authUser,
+        profile,
+        setProfile,
+        stats,
+        setStats,
+        enabledSections,
+        setEnabledSections,
+        activeTab,
+        setActiveTab,
+        homeMetrics,
+        setHomeMetrics,
+        checkins,
+        setCheckins,
+        hasCheckedInToday,
+        checkinStreak,
+        handleCheckIn,
+        handleProfileSave,
+        handleSectionsSave,
+        handleLogout,
+        triggerRefreshHomeMetrics,
+      }}
     >
-      {/* Scrolling caution marquee */}
-      <div className="offwhite-marquee shrink-0">
-        <div className="offwhite-marquee-content">
-          <span className="offwhite-marquee-text">
-            <span>[ SYSTEM STATUS: ACTIVE ]</span>
-            <span>[ BETTER CREDITS: {displayPoints} ]</span>
-            <span>[ LEVEL: {displayLevel} · {displayLevelTitle.toUpperCase()} ]</span>
-            <span>[ DAILY STREAK: {checkinStreak} DAYS ]</span>
-            <span>[ SYSTEM VERSION: RELEASE_V2.5 ]</span>
-            <span>[ ACTIVE THEME: {activeTheme.name.toUpperCase()} ]</span>
-            <span>[ USER IDENTIFICATION: {displayName.toUpperCase()} ]</span>
-          </span>
-          <span className="offwhite-marquee-text">
-            <span>[ SYSTEM STATUS: ACTIVE ]</span>
-            <span>[ BETTER CREDITS: {displayPoints} ]</span>
-            <span>[ LEVEL: {displayLevel} · {displayLevelTitle.toUpperCase()} ]</span>
-            <span>[ DAILY STREAK: {checkinStreak} DAYS ]</span>
-            <span>[ SYSTEM VERSION: RELEASE_V2.5 ]</span>
-            <span>[ ACTIVE THEME: {activeTheme.name.toUpperCase()} ]</span>
-            <span>[ USER IDENTIFICATION: {displayName.toUpperCase()} ]</span>
-          </span>
-        </div>
-      </div>
-      
-      {/* Inner layout row container */}
-      <div className="flex flex-1 flex-col overflow-x-hidden md:h-full md:overflow-hidden md:flex-row">
-      <AnimatePresence>
-        {showLaunchScreen && (
-          <motion.div
-            key="launch-screen"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.45, ease: 'easeOut' }}
-            className="launch-screen fixed inset-0 z-[120] flex items-center justify-center"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.94 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="launch-screen-card"
-            >
-              <img src="/better-me-logo.png" alt="better me" className="launch-screen-logo" />
-              <div className="launch-screen-name">better me</div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showOnboarding && <OnboardingTutorial onComplete={completeOnboarding} />}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {isUserPanelOpen && (
-          <UserPanel
-            email={authUser.email}
-            displayName={displayName}
-            points={stats.points}
-            accountLevelLabel={displayLevelTitle}
-            accountLevelNumber={displayLevel}
-            accountLevelProgress={isAdmin ? 100 : accountLevel.progressPercent}
-            nextLevelCopy={nextLevelCopy}
-            checkinStreak={checkinStreak}
-            enabledSections={enabledSections}
-            avatarId={stats.avatarId}
-            activeThemeId={stats.activeTheme}
-            onProfileSave={handleProfileSave}
-            onSectionsSave={handleSectionsSave}
-            onThemeChange={(themeId) => {
-              const nextStats = saveUserStats({ ...stats, activeTheme: themeId });
-              setStats({ ...nextStats });
-              markDashboardStateChanged();
-              void syncDashboardStateNow();
-            }}
-            onAvatarChange={(avatarId) => {
-              const av = PROFILE_AVATARS.find(a => a.id === avatarId);
-              if (!av) return;
-              const nextStats = saveUserStats({ ...stats, avatarId, avatarUrl: av.imageUrl });
-              setStats({ ...nextStats });
-              markDashboardStateChanged();
-              void syncDashboardStateNow();
-            }}
-            onClose={() => setIsUserPanelOpen(false)}
-            onLogout={handleLogout}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {levelUpCelebration && (
-          <motion.div
-            className="level-up-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="level-up-burst"
-              initial={{ scale: 0.68, opacity: 0, rotate: -6 }}
-              animate={{ scale: 1, opacity: 1, rotate: 0 }}
-              exit={{ scale: 1.08, opacity: 0 }}
-              transition={{ duration: 0.42, ease: 'easeOut' }}
-            >
-              <div className="level-up-ring level-up-ring-outer" />
-              <div className="level-up-ring level-up-ring-inner" />
-              <div className="level-up-stars" aria-hidden="true">
-                {Array.from({ length: 12 }).map((_, index) => (
-                  <span key={index} style={{ '--level-star-index': index } as React.CSSProperties} />
-                ))}
-              </div>
-              <div className="level-up-copy">
-                <div className="level-up-kicker">Level Up</div>
-                <strong>LVL {levelUpCelebration.level}</strong>
-                <span>{levelUpCelebration.title}</span>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {streakCelebration && (
-          <motion.div
-            className="streak-up-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="streak-up-burst"
-              initial={{ scale: 0.7, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 1.06, opacity: 0 }}
-              transition={{ duration: 0.38, ease: 'easeOut' }}
-            >
-              <div className="streak-up-flames" aria-hidden="true">
-                {Array.from({ length: 8 }).map((_, index) => (
-                  <span key={index}>
-                    <Flame size={28} fill="currentColor" />
-                  </span>
-                ))}
-              </div>
-              <div className="streak-up-copy">
-                <div className="streak-up-kicker">Daily Streak</div>
-                <strong>{streakCelebration}</strong>
-                <span>giorni di fuoco</span>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* LEVEL MODAL */}
-      <AnimatePresence>
-        {showLevelModal && (
-          <motion.div
-            className="level-modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowLevelModal(false)}
-          >
-            <motion.div
-              className="level-modal"
-              initial={{ scale: 0.92, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.92, opacity: 0, y: 20 }}
-              transition={{ duration: 0.22 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="level-modal-header">
-                <div>
-                  <div className="font-mono text-[9px] uppercase tracking-[0.3em] text-offwhite-orange">PROGRESSIONE</div>
-                  <h2 className="text-3xl font-black uppercase tracking-tight mt-1">Livelli Account</h2>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-gray-500 mt-1">
-                    Sei al Livello {displayLevel} · {displayLevelTitle} · {displayPoints} credits totali
-                  </p>
-                </div>
-                <button type="button" onClick={() => setShowLevelModal(false)} className="p-1 hover:text-offwhite-orange">
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="level-modal-body">
-                {/* Progress bar */}
-                <div className="mb-5">
-                  <div className="flex justify-between font-mono text-[9px] uppercase tracking-widest mb-1.5">
-                    <span>{displayLevelTitle}</span>
-                    <span>{isAdmin ? '∞ ADMIN' : accountLevel.nextLevelAt ? `${Math.max(0, accountLevel.nextLevelAt - stats.points)} mancanti` : 'LIVELLO MAX'}</span>
-                  </div>
-                  <div className="h-2 w-full bg-black/10 border border-black/20">
-                    <div className="h-full bg-black transition-all" style={{ width: levelProgressWidth }} />
-                  </div>
-                </div>
-
-                {/* All levels */}
-                <div className="border-t-2 border-black/10">
-                  {ACCOUNT_LEVELS.map((lvl, idx) => {
-                    const lvlNumber = idx + 1;
-                    const isCurrent = lvlNumber === displayLevel;
-                    const isPast = lvlNumber < displayLevel;
-                    const badgeClass = isCurrent ? 'is-current' : isPast ? 'is-past' : 'is-future';
-                    return (
-                      <div key={lvl.tier} className={`level-row ${isCurrent ? 'bg-black/[0.03]' : ''}`}>
-                        <div className={`level-row-badge ${badgeClass}`}>
-                          {isPast ? '✓' : lvlNumber}
-                        </div>
-                        <div className="level-row-info">
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-sm font-black uppercase tracking-tight">{lvl.title}</span>
-                            <span className="font-mono text-[9px] text-gray-400">{lvl.minPoints} pts</span>
-                            {isCurrent && <span className="font-mono text-[8px] bg-black text-white px-1.5 py-0.5 uppercase tracking-widest">ATTUALE</span>}
-                          </div>
-                          <ul className="mt-1 space-y-0.5">
-                            {lvl.perks.map((perk) => (
-                              <li key={perk} className="font-mono text-[9px] uppercase tracking-[0.15em] text-gray-500 flex gap-1.5">
-                                <span className="text-offwhite-orange">›</span>{perk}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* How to earn */}
-                <div className="mt-5">
-                  <div className="font-mono text-[9px] uppercase tracking-[0.3em] text-offwhite-orange mb-2">Come guadagnare credits</div>
-                  <div className="level-earn-table">
-                    {[
-                      ['Check-in giornaliero', '+10 credits'],
-                      ['Completa obiettivo settimanale', '+70–90 credits'],
-                      ['Completa tutti gli obiettivi', '+300 credits'],
-                      ['Salva una ricetta nel vault', '+5 credits'],
-                      ['Giornata routine perfetta', '+20 credits'],
-                      ['Serie 7+ giorni check-in', '+50 bonus'],
-                    ].map(([action, reward]) => (
-                      <div key={action} className="level-earn-row">
-                        <span>{action}</span>
-                        <span className="font-black text-offwhite-orange">{reward}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* DESKTOP SIDEBAR */}
-      <motion.aside 
-        initial={false}
-        animate={{ width: isSidebarOpen ? 280 : 80 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="sidebar-shell hidden h-full flex-shrink-0 flex-col border-r-2 border-black relative z-50 md:flex"
+      <div 
+        className={`dashboard-theme ${getThemeCssClass(stats.activeTheme)} flex min-h-svh flex-col overflow-x-hidden md:h-dvh md:min-h-dvh md:overflow-hidden`}
+        style={{
+          '--color-offwhite-orange': activeTheme.accent,
+          '--theme-accent': activeTheme.accent,
+          '--theme-accent-soft': activeTheme.accentSoft,
+          '--theme-bg': activeTheme.background,
+          '--theme-panel': activeTheme.panel,
+          '--theme-panel-muted': activeTheme.panelMuted,
+          '--theme-ink': activeTheme.ink,
+          '--theme-ink-contrast': activeTheme.inkContrast,
+          '--theme-border': activeTheme.border,
+          '--theme-grid': activeTheme.grid,
+          '--theme-shadow': activeTheme.shadow,
+          '--sidebar-w': isSidebarOpen ? '280px' : '80px',
+        } as React.CSSProperties}
       >
-        <div className="p-6 mb-8 flex items-center justify-between">
-          <div className={`dashboard-brand font-black text-2xl tracking-tighter transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
-            BETTER ME
-          </div>
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="text-black hover:text-offwhite-orange transition-colors"
-          >
-            {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-
-        <nav className="flex-1 px-4 space-y-2">
-          {navItems.map((item) => {
-            const active = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id as Tab)}
-                className={`w-full flex items-center p-3 transition-all group relative rounded-xl overflow-hidden active-press-scale ${
-                  active ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
-                }`}
-              >
-                {active && (
-                  <motion.div
-                    layoutId="sidebar-active-pill"
-                    className="sidebar-active-pill"
-                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                  />
-                )}
-                <span className="relative z-10 flex items-center">
-                  <item.icon size={20} />
-                  <AnimatePresence>
-                    {isSidebarOpen && (
-                      <motion.span 
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        className="ml-4 font-mono text-[10px] font-bold uppercase tracking-widest"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </span>
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="p-6 border-t-2 border-black">
-          <div className={`mb-4 ${isSidebarOpen ? 'block' : 'hidden'}`}>
-            <div className="font-mono text-[8px] uppercase tracking-widest text-gray-400">Account</div>
-            <div className="truncate font-mono text-[10px] font-black uppercase tracking-widest">
-              {authUser.email}
-            </div>
-            <div className="mt-2 font-mono text-[9px] uppercase tracking-widest text-offwhite-orange">
-              Livello {displayLevel} · {displayLevelTitle}{isAdmin ? ' · ADMIN' : ''}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={toggleDarkMode}
-            className="mb-2 flex w-full items-center gap-3 border-2 border-black bg-white dark:bg-black dark:border-white dark:text-white p-3 font-mono text-[10px] font-black uppercase tracking-widest transition-all hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
-          >
-            {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-            {isSidebarOpen ? <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span> : null}
-          </button>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="mb-5 flex w-full items-center gap-3 border-2 border-black bg-white p-3 font-mono text-[10px] font-black uppercase tracking-widest transition-all hover:bg-black hover:text-white"
-            aria-label="Esci"
-          >
-            <LogOut size={16} />
-            {isSidebarOpen ? <span>Esci</span> : null}
-          </button>
-          <div className="font-mono text-[8px] text-gray-400 uppercase leading-tight">
-            © 2026 BETTER_ME_OS<br />
-            PERSONAL_SYSTEM
-          </div>
-        </div>
-      </motion.aside>
-
-      {/* MOBILE HEADER */}
-      <header className={`sidebar-shell md:hidden border-b-2 border-black p-4 justify-between items-center z-50 shrink-0 ${isFinanceFullscreen || activeTab === 'dashboard' ? 'hidden' : 'flex'}`}>
-        <div className="dashboard-brand font-black text-xl tracking-tighter">Better Me</div>
-        <div className="flex items-center gap-3">
-          <div className="font-mono text-[10px] font-black text-offwhite-orange">{displayPoints} PTS</div>
-          <div className="font-mono text-[10px] font-black uppercase tracking-widest opacity-50">L{displayLevel}</div>
-          <button type="button" onClick={toggleDarkMode} className="text-black dark:text-white" aria-label="Toggle Dark Mode">
-            {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
-          </button>
-          <button type="button" onClick={handleLogout} className="text-black dark:text-white" aria-label="Esci">
-            <LogOut size={17} />
-          </button>
-          <div className="font-mono text-[10px] uppercase tracking-widest opacity-50">
-            {navItems.find(n => n.id === activeTab)?.label}
-          </div>
-        </div>
-      </header>
-
-      {/* MAIN CONTENT */}
-      <main className={`main-shell relative flex-1 min-h-0 overflow-y-auto md:p-8 md:pb-8 ${isFinanceFullscreen ? 'p-0 pb-0' : activeTab === 'dashboard' ? 'home-main-surface p-0 pb-24 md:p-0 md:pb-0' : 'p-4 pb-24'}`}>
-        <div className="absolute top-0 right-0 p-4 flex items-center gap-4 pointer-events-none select-none hidden sm:flex">
-          <div className="font-mono text-[10px] font-black text-offwhite-orange">{displayPoints} BETTER-CREDITS</div>
-          <div className="font-mono text-[10px] font-black uppercase tracking-widest text-black/45">LIVELLO {displayLevel}</div>
-          <div className="font-mono text-[8px] md:text-[10px] text-gray-300">
-            "IL_PROGRESSO_E_UN_PERCORSO" // V1.0
+        {/* Scrolling caution marquee */}
+        <div className="offwhite-marquee shrink-0">
+          <div className="offwhite-marquee-content">
+            <span className="offwhite-marquee-text">
+              <span>[ SYSTEM STATUS: ACTIVE ]</span>
+              <span>[ BETTER CREDITS: {displayPoints} ]</span>
+              <span>[ LEVEL: {displayLevel} · {displayLevelTitle.toUpperCase()} ]</span>
+              <span>[ DAILY STREAK: {checkinStreak} DAYS ]</span>
+              <span>[ SYSTEM VERSION: RELEASE_V2.5 ]</span>
+              <span>[ ACTIVE THEME: {activeTheme.name.toUpperCase()} ]</span>
+              <span>[ USER IDENTIFICATION: {displayName.toUpperCase()} ]</span>
+            </span>
+            <span className="offwhite-marquee-text">
+              <span>[ SYSTEM STATUS: ACTIVE ]</span>
+              <span>[ BETTER CREDITS: {displayPoints} ]</span>
+              <span>[ LEVEL: {displayLevel} · {displayLevelTitle.toUpperCase()} ]</span>
+              <span>[ DAILY STREAK: {checkinStreak} DAYS ]</span>
+              <span>[ SYSTEM VERSION: RELEASE_V2.5 ]</span>
+              <span>[ ACTIVE THEME: {activeTheme.name.toUpperCase()} ]</span>
+              <span>[ USER IDENTIFICATION: {displayName.toUpperCase()} ]</span>
+            </span>
           </div>
         </div>
         
-        <div className={activeTab === 'finance' ? "w-full h-full" : "mx-auto w-full max-w-7xl min-w-0 overflow-x-clip"}>
-          <AnimatePresence mode="wait">
-            {activeTab === 'dashboard' && (
-              <motion.div 
-                key="dashboard"
-                initial={{ opacity: 0, y: 16, scale: 0.99 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.99 }}
-                transition={{ duration: 0.22 }}
-                className="home-app-stage relative"
+        {/* Inner layout row container */}
+        <div className="flex flex-1 flex-col overflow-x-hidden md:h-full md:overflow-hidden md:flex-row">
+          <AnimatePresence>
+            {showLaunchScreen && (
+              <motion.div
+                key="launch-screen"
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0, scale: 1.02 }}
+                transition={{ duration: 0.45, ease: 'easeOut' }}
+                className="launch-screen fixed inset-0 z-[120] flex items-center justify-center"
               >
-                <section className="home-app-shell">
-                  <div className="home-top-rail">
-                    <div className="home-level-hud">
-                      <button
-                        type="button"
-                        className="home-level-circle"
-                        onClick={() => setShowLevelModal(true)}
-                        aria-label={`Livello ${displayLevel} — clicca per dettagli`}
-                        title="Vedi progressione livelli"
-                      >
-                        <strong>{isAdmin ? '∞' : displayLevel}</strong>
-                      </button>
-                    </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 16, scale: 0.94 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className="launch-screen-card"
+                >
+                  <img src="/better-me-logo.png" alt="better me" className="launch-screen-logo" />
+                  <div className="launch-screen-name">better me</div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                    <div className="home-identity-stack">
-                      <div className="home-app-logo">
-                        <div className="home-wordmark" aria-label="Better Me">
-                          <span className="home-wordmark-top">BETTER</span>
-                          <span className="home-wordmark-bottom">ME</span>
-                        </div>
-                      </div>
-                      <div className="home-level-track" aria-label={`Progresso livello ${accountLevel.level}`}>
-                        <div className="home-level-fill" style={{ width: levelProgressWidth }} />
-                      </div>
-                    </div>
+          <AnimatePresence>
+            {showOnboarding && <OnboardingTutorial onComplete={completeOnboarding} defaultEnabledSections={DEFAULT_ENABLED_SECTIONS} />}
+          </AnimatePresence>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsUserPanelOpen(true)}
-                      className="home-user-button active-press-scale"
-                      aria-label="Apri area utente"
-                    >
+          <AnimatePresence>
+            {isUserPanelOpen && (
+              <UserPanel
+                email={authUser.email}
+                displayName={displayName}
+                points={stats.points}
+                accountLevelLabel={displayLevelTitle}
+                accountLevelNumber={displayLevel}
+                accountLevelProgress={isAdmin ? 100 : accountLevel.progressPercent}
+                nextLevelCopy={nextLevelCopy}
+                checkinStreak={checkinStreak}
+                enabledSections={enabledSections}
+                avatarId={stats.avatarId}
+                activeThemeId={stats.activeTheme}
+                onProfileSave={handleProfileSave}
+                onSectionsSave={handleSectionsSave}
+                onThemeChange={(themeId) => {
+                  const nextStats = saveUserStats({ ...stats, activeTheme: themeId });
+                  setStats({ ...nextStats });
+                  markDashboardStateChanged();
+                  void syncDashboardStateNow();
+                }}
+                onAvatarChange={(avatarId) => {
+                  const av = PROFILE_AVATARS.find(a => a.id === avatarId);
+                  if (!av) return;
+                  const nextStats = saveUserStats({ ...stats, avatarId, avatarUrl: av.imageUrl });
+                  setStats({ ...nextStats });
+                  markDashboardStateChanged();
+                  void syncDashboardStateNow();
+                }}
+                onClose={() => setIsUserPanelOpen(false)}
+                onLogout={handleLogout}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* DESKTOP SIDEBAR */}
+          <motion.aside
+            className={`sidebar-shell hidden md:flex flex-col h-full overflow-y-auto border-r-2 border-black/10 shrink-0 transition-all duration-300 relative z-30`}
+            style={{ width: 'var(--sidebar-w)' }}
+          >
+            <div className="p-6 flex items-center justify-between border-b-2 border-black/5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="text-black hover:opacity-70 dark:text-white"
+                aria-label={isSidebarOpen ? 'Riduci sidebar' : 'Espandi sidebar'}
+              >
+                <Menu size={18} />
+              </button>
+              {isSidebarOpen && (
+                <div className="font-mono text-[9px] uppercase tracking-widest text-offwhite-orange">
+                  V2.5 PERSONAL OS
+                </div>
+              )}
+            </div>
+
+            <nav className="flex-1 p-4 space-y-1">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id as Tab)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 font-mono text-[10px] uppercase tracking-widest transition-all rounded-xl relative overflow-hidden active-press-scale ${
+                    activeTab === item.id
+                      ? 'text-white'
+                      : 'text-[color:var(--theme-ink)] hover:bg-black/5 dark:hover:bg-white/5'
+                  }`}
+                >
+                  {activeTab === item.id && (
+                    <motion.div
+                      layoutId="sidebar-active-pill"
+                      className="absolute inset-0 bg-black dark:bg-white/10 z-0"
+                      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10 shrink-0">
+                    <item.icon size={16} />
+                  </span>
+                  {isSidebarOpen && (
+                    <span className="relative z-10 truncate">{item.label}</span>
+                  )}
+                </button>
+              ))}
+            </nav>
+
+            <div className="p-4 border-t-2 border-black/5 shrink-0">
+              {isSidebarOpen ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 flex items-center justify-center overflow-hidden shrink-0">
                       {stats.avatarId ? (
                         (() => {
                           const av = PROFILE_AVATARS.find(a => a.id === stats.avatarId);
                           return av ? (
-                            <img
-                              src={av.imageUrl}
-                              alt={av.name}
-                              className="w-full h-full object-cover"
-                              style={{ backgroundColor: av.bgColor }}
-                            />
+                            <img src={av.imageUrl} alt={av.name} className="h-full w-full object-cover object-top" style={{ backgroundColor: av.bgColor }} />
                           ) : <span>{displayName.slice(0, 1).toUpperCase()}</span>;
                         })()
                       ) : <span>{displayName.slice(0, 1).toUpperCase()}</span>}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-mono text-[10px] font-black uppercase tracking-wider truncate">
+                        {displayName}
+                      </div>
+                      <div className="font-mono text-[8px] uppercase tracking-widest text-gray-500 truncate">
+                        L{displayLevel} · {displayLevelTitle}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={toggleDarkMode}
+                      className="flex-1 flex justify-center items-center py-2.5 border border-black/15 hover:border-black rounded-lg transition-all text-black dark:text-white"
+                      title={isDarkMode ? 'Attiva Tema Chiaro' : 'Attiva Tema Scuro'}
+                    >
+                      {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsUserPanelOpen(true)}
+                      className="flex-1 font-mono text-[8px] uppercase tracking-widest text-center border border-black/15 hover:border-black rounded-lg transition-all"
+                    >
+                      Profilo
                     </button>
                   </div>
-
-                  <div className="home-app-glow home-app-glow-mint" />
-                  <div className="home-app-glow home-app-glow-blue" />
-
-                  <div className="home-check-zone">
-                    <div className="home-check-card-label">
-                      <span>Daily rhythm</span>
-                      <strong>{hasCheckedInToday ? 'completato' : checkinStreak >= 5 ? `serie ${checkinStreak}` : 'da fare'}</strong>
-                    </div>
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      animate={showCheckinBurst ? { y: [0, -6, 0], scale: [1, 1.02, 1] } : { y: 0, scale: 1 }}
-                      transition={{ duration: 0.65, ease: 'easeOut' }}
-                      onClick={handleCheckIn}
-                      disabled={hasCheckedInToday}
-                      className={`home-check-button active-press-scale ${hasCheckedInToday ? 'is-complete' : ''} ${showCheckinBurst ? 'is-celebrating' : ''}`}
-                    >
-                      <span className="home-check-flame" aria-hidden="true">
-                        <Flame size={24} fill="currentColor" />
-                      </span>
-                      <span className="home-check-copy">
-                        <span>{hasCheckedInToday ? 'Check-in fatto' : 'Fai check-in'}</span>
-                        <span className="home-check-reward">
-                          {hasCheckedInToday
-                            ? 'torna domani per continuare'
-                            : checkinStreak > 0 && (checkinStreak + 1) % 5 === 0
-                              ? `domani chiudi serie ${checkinStreak + 1}`
-                              : '+10 credits oggi'}
-                        </span>
-                      </span>
-                      <span className="home-streak-badge" aria-label={`${checkinStreak} giorni di serie`}>
-                        <small>serie</small>
-                        <strong>{checkinStreak}</strong>
-                      </span>
-                    </motion.button>
-
-                    <AnimatePresence>
-                      {showCheckinBurst && (
-                        <motion.div
-                          className="home-check-burst"
-                          initial={{ opacity: 0, scale: 0.78 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 1.08 }}
-                          transition={{ duration: 0.32 }}
-                          aria-hidden="true"
-                        >
-                          {Array.from({ length: 10 }).map((_, index) => (
-                            <span key={index} style={{ '--burst-index': index } as React.CSSProperties} />
-                          ))}
-                          <strong>+1</strong>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <article className="home-verse-card home-verse-card-enhanced shimmer-sweep active-press-scale">
-                    <div className="home-verse-main">
-                      <div className="home-verse-icon">
-                        <BookOpen size={20} strokeWidth={2.1} />
-                      </div>
-                      <div>
-                        <p className="home-card-kicker">Verse of the day</p>
-                        <blockquote>{dailyVerse.text}</blockquote>
-                        <cite>{dailyVerse.reference} · NR2006</cite>
-                      </div>
-                    </div>
-
-                    <div className="home-verse-actions" aria-label="Azioni versetto giornaliero">
-                      <button
-                        type="button"
-                        onClick={toggleDailyVerseLike}
-                        className={`home-verse-action active-press-scale ${dailyVerseReaction.liked ? 'is-liked' : ''}`}
-                      >
-                        <Heart size={16} fill={dailyVerseReaction.liked ? 'currentColor' : 'none'} />
-                        <span>{isDailyVerseReactionReady ? dailyVerseReaction.likes : '...'}</span>
-                      </button>
-                      <button type="button" className="home-verse-action active-press-scale" onClick={() => setShowVerseChat(true)}>
-                        <MessageCircle size={16} />
-                        <span>{visibleVerseComments.length}</span>
-                      </button>
-                      {enabledSections.includes('bible') ? (
-                        <button type="button" onClick={() => setActiveTab('bible')} className="home-verse-read-button active-press-scale">
-                          Leggi Bibbia
-                        </button>
-                      ) : null}
-                    </div>
-
-                    <form onSubmit={addDailyVerseComment} className="home-verse-comment-form">
-                      <input
-                        value={verseCommentDraft}
-                        onChange={(event) => setVerseCommentDraft(event.target.value)}
-                        placeholder="Condividi una riflessione..."
-                        maxLength={180}
-                      />
-                      <button type="submit" disabled={!verseCommentDraft.trim()} aria-label="Salva commento">
-                        <Send size={15} />
-                      </button>
-                    </form>
-
-                    {verseCommentError ? <p className="home-verse-comment-error">{verseCommentError}</p> : null}
-                  </article>
-
-                  <div className="home-metric-grid">
-                    {enabledSections.includes('diet') && (
-                      <button onClick={() => setActiveTab('diet')} className="home-metric-card home-metric-diet shimmer-sweep active-press-scale">
-                        <div className="home-card-title">Diet</div>
-                        <div className="home-donut" style={{ '--progress': `${vaultRecipePercent}%` } as React.CSSProperties}>
-                          <span>{vaultRecipeCount}</span>
-                          <Utensils size={16} strokeWidth={2.2} />
-                        </div>
-                        <p>Vault ricette:</p>
-                        <strong>{vaultRecipeCount} salvate</strong>
-                      </button>
-                    )}
-
-                    {enabledSections.includes('finance') && (
-                      <button onClick={() => setActiveTab('finance')} className="home-metric-card home-metric-expenses shimmer-sweep active-press-scale">
-                        <div className="home-card-title">Expenses</div>
-                        <svg viewBox="0 0 180 92" className="home-sparkline" aria-hidden="true">
-                          <path d="M18 62 L58 38 L94 50 L132 24 L162 10" />
-                          <circle cx="18" cy="62" r="6" />
-                          <circle cx="58" cy="38" r="6" />
-                          <circle cx="94" cy="50" r="6" />
-                          <circle cx="132" cy="24" r="6" />
-                          <circle cx="162" cy="10" r="6" />
-                          <path className="home-down-arrow" d="M150 60 v28 m-12-12 12 12 12-12" />
-                        </svg>
-                        <p>Spent:</p>
-                        <strong>{formatCurrencyCompact(homeMetrics.monthlySpent)}/{formatCurrencyCompact(homeMetrics.monthlyBudget)}</strong>
-                      </button>
-                    )}
-
-                    {enabledSections.includes('shopping') && (
-                      <button onClick={() => setActiveTab('shopping')} className="home-wide-card home-shopping-card shimmer-sweep active-press-scale">
-                        <div>
-                          <div className="home-card-title">Shopping</div>
-                          <p>Pending items</p>
-                          <strong>{homeMetrics.shoppingPending}/{homeMetrics.shoppingTotal || 0}</strong>
-                        </div>
-                        <div className="home-ripple">
-                          <span />
-                          <span />
-                          <span />
-                        </div>
-                      </button>
-                    )}
-
-                    {enabledSections.includes('fitness') && (
-                      <button onClick={() => setActiveTab('fitness')} className="home-metric-card home-workout-card shimmer-sweep active-press-scale">
-                        <div className="home-card-title">Workouts</div>
-                        <div className="home-workout-visual">
-                          <Dumbbell size={42} strokeWidth={2.1} />
-                          <span style={{ height: `${Math.max(24, workoutPercent * 0.45)}px` }} />
-                          <span style={{ height: `${Math.max(34, workoutPercent * 0.65)}px` }} />
-                          <span style={{ height: `${Math.max(46, workoutPercent * 0.85)}px` }} />
-                        </div>
-                        <p>Completed:</p>
-                        <strong>{homeMetrics.workoutsCompleted}/{homeMetrics.workoutsTarget} sessions</strong>
-                      </button>
-                    )}
-                  </div>
-                </section>
-              </motion.div>
-            )}
-
-            {activeTab === 'routine' && enabledSections.includes('routine') && (
-              <TabPanel panelKey="routine">
-                <DailyRoutine />
-              </TabPanel>
-            )}
-
-            {activeTab === 'diet' && enabledSections.includes('diet') && (
-              <TabPanel panelKey="diet">
-                <Diet ownerEmail={authUser?.email ?? null} />
-              </TabPanel>
-            )}
-
-            {activeTab === 'trophies' && enabledSections.includes('trophies') && (
-              <TabPanel panelKey="trophies">
-                <Trophies />
-              </TabPanel>
-            )}
-
-            {activeTab === 'bible' && enabledSections.includes('bible') && (
-              <TabPanel panelKey="bible">
-                <Bible />
-              </TabPanel>
-            )}
-
-            {activeTab === 'ai-coach' && enabledSections.includes('ai-coach') && (
-              <TabPanel panelKey="ai-coach">
-                <AICoach />
-              </TabPanel>
-            )}
-
-            {activeTab === 'finance' && (
-              <TabPanel panelKey="finance">
-                <Finance />
-              </TabPanel>
-            )}
-
-            {activeTab === 'shopping' && (
-              <TabPanel panelKey="shopping">
-                <Shopping />
-              </TabPanel>
-            )}
-
-            {activeTab === 'fitness' && (
-              <TabPanel panelKey="fitness">
-                <Fitness ownerEmail={authUser?.email ?? null} />
-              </TabPanel>
-            )}
-          </AnimatePresence>
-        </div>
-
-        </main>
-
-      {/* MOBILE BOTTOM NAVIGATION */}
-      <nav className="mobile-nav-shell mobile-safe-area md:hidden fixed bottom-0 left-0 right-0 z-50 px-3 py-2">
-        <div className="mobile-nav-scroll mobile-nav-orbit flex items-center gap-1.5 overflow-x-auto">
-        {mobileNavItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id as Tab)}
-            className={`mobile-nav-orbit-item relative flex min-w-[76px] flex-none flex-col items-center justify-center gap-1.5 px-2 py-3 transition-all active-press-scale ${
-              activeTab === item.id
-                ? 'is-active text-white'
-                : 'text-[color:var(--theme-ink)]/78'
-            }`}
-          >
-            {activeTab === item.id && (
-              <motion.div
-                layoutId="mobile-nav-indicator"
-                className="mobile-nav-active-pill"
-                transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-              />
-            )}
-            <span className="flex h-5 items-center justify-center">
-              <item.icon size={20} strokeWidth={2.1} />
-            </span>
-            <span className="text-center font-mono text-[8px] uppercase leading-tight tracking-[0.16em]">
-              {item.label.split(' ')[0]}
-            </span>
-          </button>
-        ))}
-        </div>
-      </nav>
-
-      {showVerseChat && (
-        <div className="verse-chat-overlay" onClick={() => { setShowVerseChat(false); setEditingCommentId(null); }}>
-          <div className="verse-chat-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="verse-chat-header">
-              <span className="font-mono text-[10px] uppercase tracking-widest">Riflessioni del giorno</span>
-              <button type="button" onClick={() => { setShowVerseChat(false); setEditingCommentId(null); }} className="verse-chat-close">
-                <X size={18} />
-              </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsUserPanelOpen(true)}
+                    className="h-9 w-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 flex items-center justify-center overflow-hidden"
+                  >
+                    {stats.avatarId ? (
+                      (() => {
+                        const av = PROFILE_AVATARS.find(a => a.id === stats.avatarId);
+                        return av ? (
+                          <img src={av.imageUrl} alt={av.name} className="h-full w-full object-cover object-top" style={{ backgroundColor: av.bgColor }} />
+                        ) : displayName.slice(0, 1).toUpperCase();
+                      })()
+                    ) : <span>{displayName.slice(0, 1).toUpperCase()}</span>}
+                  </button>
+                  <button type="button" onClick={toggleDarkMode} className="text-black dark:text-white">
+                    {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
+                  </button>
+                </div>
+              )}
             </div>
+          </motion.aside>
 
-            <div className="verse-chat-scroll">
-              {visibleVerseComments.length === 0 ? (
-                <p className="verse-chat-empty">Nessuna riflessione ancora. Scrivi la prima!</p>
-              ) : visibleVerseComments.map((comment) => (
-                editingCommentId === comment.id ? (
-                  <div key={comment.id} className="verse-chat-msg verse-chat-msg-editing">
-                    <textarea
-                      className="verse-chat-edit-input"
-                      value={editingCommentText}
-                      onChange={(e) => setEditingCommentText(e.target.value)}
-                      maxLength={180}
-                      autoFocus
+          {/* MOBILE HEADER */}
+          <header className={`sidebar-shell md:hidden border-b-2 border-black p-4 justify-between items-center z-50 shrink-0 ${isFinanceFullscreen || activeTab === 'dashboard' ? 'hidden' : 'flex'}`}>
+            <div className="dashboard-brand font-black text-xl tracking-tighter">Better Me</div>
+            <div className="flex items-center gap-3">
+              <div className="font-mono text-[10px] font-black text-offwhite-orange">{displayPoints} PTS</div>
+              <div className="font-mono text-[10px] font-black uppercase tracking-widest opacity-50">L{displayLevel}</div>
+              <button type="button" onClick={toggleDarkMode} className="text-black dark:text-white" aria-label="Cambia tema chiaro/scuro">
+                {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
+              </button>
+              <button type="button" onClick={handleLogout} className="text-black dark:text-white" aria-label="Esci">
+                <LogOut size={17} />
+              </button>
+              <div className="font-mono text-[10px] uppercase tracking-widest opacity-50">
+                {navItems.find(n => n.id === activeTab)?.label}
+              </div>
+            </div>
+          </header>
+
+          {/* MAIN CONTENT */}
+          <main className={`main-shell relative flex-1 min-h-0 overflow-y-auto md:p-8 md:pb-8 ${isFinanceFullscreen ? 'p-0 pb-0' : activeTab === 'dashboard' ? 'home-main-surface p-0 pb-24 md:p-0 md:pb-0' : 'p-4 pb-24'}`}>
+            <div className="absolute top-0 right-0 p-4 flex items-center gap-4 pointer-events-none select-none hidden sm:flex">
+              <div className="font-mono text-[10px] font-black text-offwhite-orange">{displayPoints} BETTER-CREDITS</div>
+              <div className="font-mono text-[10px] font-black uppercase tracking-widest text-black/45">LIVELLO {displayLevel}</div>
+              <div className="font-mono text-[8px] md:text-[10px] text-gray-300">
+                "IL_PROGRESSO_E_UN_PERCORSO" // V1.0
+              </div>
+            </div>
+            
+            <div className={activeTab === 'finance' ? "w-full h-full" : "mx-auto w-full max-w-7xl min-w-0 overflow-x-clip"}>
+              <AnimatePresence mode="wait">
+                {activeTab === 'dashboard' && (
+                  <TabPanel panelKey="dashboard">
+                    <DashboardView onOpenUserPanel={() => setIsUserPanelOpen(true)} />
+                  </TabPanel>
+                )}
+
+                {activeTab === 'routine' && enabledSections.includes('routine') && (
+                  <TabPanel panelKey="routine">
+                    <DailyRoutine />
+                  </TabPanel>
+                )}
+
+                {activeTab === 'diet' && enabledSections.includes('diet') && (
+                  <TabPanel panelKey="diet">
+                    <Diet ownerEmail={authUser?.email ?? null} />
+                  </TabPanel>
+                )}
+
+                {activeTab === 'trophies' && enabledSections.includes('trophies') && (
+                  <TabPanel panelKey="trophies">
+                    <Trophies />
+                  </TabPanel>
+                )}
+
+                {activeTab === 'bible' && enabledSections.includes('bible') && (
+                  <TabPanel panelKey="bible">
+                    <Bible />
+                  </TabPanel>
+                )}
+
+                {activeTab === 'ai-coach' && enabledSections.includes('ai-coach') && (
+                  <TabPanel panelKey="ai-coach">
+                    <AICoach />
+                  </TabPanel>
+                )}
+
+                {activeTab === 'finance' && (
+                  <TabPanel panelKey="finance">
+                    <Finance />
+                  </TabPanel>
+                )}
+
+                {activeTab === 'shopping' && (
+                  <TabPanel panelKey="shopping">
+                    <Shopping />
+                  </TabPanel>
+                )}
+
+                {activeTab === 'fitness' && (
+                  <TabPanel panelKey="fitness">
+                    <Fitness ownerEmail={authUser?.email ?? null} />
+                  </TabPanel>
+                )}
+              </AnimatePresence>
+            </div>
+          </main>
+
+          {/* MOBILE BOTTOM NAVIGATION */}
+          <nav className="mobile-nav-shell mobile-safe-area md:hidden fixed bottom-0 left-0 right-0 z-50 px-3 py-2">
+            <div className="mobile-nav-scroll mobile-nav-orbit flex items-center gap-1.5 overflow-x-auto">
+              {mobileNavItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id as Tab)}
+                  className={`mobile-nav-orbit-item relative flex min-w-[76px] flex-none flex-col items-center justify-center gap-1.5 px-2 py-3 transition-all active-press-scale ${
+                    activeTab === item.id
+                      ? 'is-active text-white'
+                      : 'text-[color:var(--theme-ink)]/78'
+                  }`}
+                >
+                  {activeTab === item.id && (
+                    <motion.div
+                      layoutId="mobile-nav-indicator"
+                      className="mobile-nav-active-pill"
+                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                     />
-                    <div className="verse-chat-edit-actions">
-                      <button type="button" className="verse-chat-btn-save" onClick={() => saveEditComment(comment.id)}>Salva</button>
-                      <button type="button" className="verse-chat-btn-cancel" onClick={() => setEditingCommentId(null)}>Annulla</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div key={comment.id} className="verse-chat-msg">
-                    <div className="verse-chat-msg-meta">
-                      <strong>{comment.authorName ?? 'Utente'}</strong>
-                      <span className="verse-chat-msg-time">{comment.createdAt ? new Date(comment.createdAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}</span>
-                    </div>
-                    <p className="verse-chat-msg-text">{comment.text}</p>
-                    {comment.userId === authUser?.uid && (
-                      <div className="verse-chat-msg-actions">
-                        <button type="button" onClick={() => { setEditingCommentId(comment.id); setEditingCommentText(comment.text); }} className="verse-chat-action-btn">
-                          <PencilLine size={13} />
-                        </button>
-                        <button type="button" onClick={() => deleteVerseComment(comment.id)} className="verse-chat-action-btn verse-chat-action-delete">
-                          <X size={13} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )
+                  )}
+                  <span className="flex h-5 items-center justify-center">
+                    <item.icon size={20} strokeWidth={2.1} />
+                  </span>
+                  <span className="text-center font-mono text-[8px] uppercase leading-tight tracking-[0.16em]">
+                    {item.label.split(' ')[0]}
+                  </span>
+                </button>
               ))}
             </div>
+          </nav>
 
-            <form onSubmit={addDailyVerseComment} className="verse-chat-form">
-              <input
-                value={verseCommentDraft}
-                onChange={(e) => setVerseCommentDraft(e.target.value)}
-                placeholder="Scrivi una riflessione…"
-                maxLength={180}
-                className="verse-chat-input"
-              />
-              <button type="submit" disabled={!verseCommentDraft.trim()} className="verse-chat-send">
-                <Send size={15} />
-              </button>
-            </form>
-            {verseCommentError ? <p className="verse-chat-error">{verseCommentError}</p> : null}
-          </div>
-        </div>
-      )}
-      
-      <AnimatePresence>
-        {showDailyReward && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              style={{
-                backgroundColor: 'var(--theme-panel)',
-                borderColor: 'var(--theme-accent)',
-                color: 'var(--theme-ink)',
-              }}
-              className="border-2 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden"
-            >
-              <div className="absolute inset-0 opacity-15 pointer-events-none" style={{ background: `radial-gradient(circle at center, var(--theme-accent), transparent 70%)` }} />
-              <div className="relative z-10">
-                <div className="w-16 h-16 mx-auto mb-5 rounded-full flex items-center justify-center" style={{ background: `color-mix(in srgb, var(--theme-accent) 15%, transparent)`, border: `1.5px solid color-mix(in srgb, var(--theme-accent) 25%, transparent)` }}>
-                  <Sparkles size={32} style={{ color: 'var(--theme-accent)' }} />
-                </div>
-                <h2 className="text-2xl font-black mb-2" style={{ color: 'var(--theme-ink)' }}>Bentornato!</h2>
-                <p className="text-sm font-medium mb-6" style={{ color: `color-mix(in srgb, var(--theme-ink) 65%, transparent)` }}>
-                  La costanza è la chiave del successo. Ecco <strong style={{ color: 'var(--theme-accent)' }}>+25 XP</strong> gratuiti per aver aperto l'app oggi!
-                </p>
-                <button
-                  onClick={claimDailyReward}
-                  className="w-full rounded-2xl px-6 py-4 font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
-                  style={{ background: `linear-gradient(135deg, var(--theme-accent), color-mix(in srgb, var(--theme-accent) 70%, #000))` }}
+          <AnimatePresence>
+            {showDailyReward && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  style={{
+                    backgroundColor: 'var(--theme-panel)',
+                    borderColor: 'var(--theme-accent)',
+                    color: 'var(--theme-ink)',
+                  }}
+                  className="border-2 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden"
                 >
-                  Riscatta +25 XP
-                </button>
+                  <div className="absolute inset-0 opacity-15 pointer-events-none" style={{ background: `radial-gradient(circle at center, var(--theme-accent), transparent 70%)` }} />
+                  <div className="relative z-10">
+                    <div className="w-16 h-16 mx-auto mb-5 rounded-full flex items-center justify-center" style={{ background: `color-mix(in srgb, var(--theme-accent) 15%, transparent)`, border: `1.5px solid color-mix(in srgb, var(--theme-accent) 25%, transparent)` }}>
+                      <Sparkles size={32} style={{ color: 'var(--theme-accent)' }} />
+                    </div>
+                    <h2 className="text-2xl font-black mb-2" style={{ color: 'var(--theme-ink)' }}>Bentornato!</h2>
+                    <p className="text-sm font-medium mb-6" style={{ color: `color-mix(in srgb, var(--theme-ink) 65%, transparent)` }}>
+                      La costanza è la chiave del successo. Ecco <strong style={{ color: 'var(--theme-accent)' }}>+25 XP</strong> gratuiti per aver aperto l'app oggi!
+                    </p>
+                    <button
+                      onClick={claimDailyReward}
+                      className="w-full rounded-2xl px-6 py-4 font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
+                      style={{ background: `linear-gradient(135deg, var(--theme-accent), color-mix(in srgb, var(--theme-accent) 70%, #000))` }}
+                    >
+                      Riscatta +25 XP
+                    </button>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            )}
+          </AnimatePresence>
 
-      </div> {/* <-- End inner layout row container */}
-    </div>
+          {/* GLOBAL LEVEL UP CELEBRATION OVERLAY */}
+          <AnimatePresence>
+            {levelUpCelebration && (
+              <motion.div
+                className="level-up-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  className="level-up-burst"
+                  initial={{ scale: 0.68, opacity: 0, rotate: -6 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  exit={{ scale: 1.08, opacity: 0 }}
+                  transition={{ duration: 0.42, ease: 'easeOut' }}
+                >
+                  <div className="level-up-ring level-up-ring-outer" />
+                  <div className="level-up-ring level-up-ring-inner" />
+                  <div className="level-up-stars" aria-hidden="true">
+                    {Array.from({ length: 12 }).map((_, index) => (
+                      <span key={index} style={{ '--level-star-index': index } as React.CSSProperties} />
+                    ))}
+                  </div>
+                  <div className="level-up-copy">
+                    <div className="level-up-kicker">Level Up</div>
+                    <strong>LVL {levelUpCelebration.level}</strong>
+                    <span>{levelUpCelebration.title}</span>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+        </div> {/* <-- End inner layout row container */}
+      </div>
+    </DashboardContext.Provider>
   );
 }
