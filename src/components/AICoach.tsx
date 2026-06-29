@@ -184,7 +184,7 @@ Analizza la richiesta dell'utente usando questi dati. Se ti chiede consigli su r
 Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati come JSON. Rivolgiti a lui come ${contextData.profile.name}.`;
 
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -274,14 +274,14 @@ Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati c
           {apiKey && (
             <button 
               onClick={handleClearKey} 
-              className="border border-black bg-white px-2 py-1 text-[9px] font-black hover:bg-black hover:text-white transition-colors"
+              className="border border-black bg-white px-2 py-1 text-[9px] font-black hover:bg-black hover:text-black dark:text-white transition-colors"
             >
               Rimuovi Chiave
             </button>
           )}
           <button 
             onClick={() => setShowKeyForm(!showKeyForm)} 
-            className="border border-black bg-white px-2 py-1 text-[9px] font-black hover:bg-black hover:text-white transition-colors"
+            className="border border-black bg-white px-2 py-1 text-[9px] font-black hover:bg-black hover:text-black dark:text-white transition-colors"
           >
             {showKeyForm ? 'Nascondi setup' : 'Configura Chiave'}
           </button>
@@ -315,12 +315,12 @@ Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati c
                 value={inputKey}
                 onChange={(e) => setInputKey(e.target.value)}
                 placeholder="Incolla qui la chiave API (inizia con AIzaSy...)"
-                className="flex-1 border-2 border-black px-3 py-2 font-mono text-[11px] outline-none focus:border-offwhite-orange"
+                className="flex-1 rounded-xl bg-white/50 backdrop-blur-md border border-white/60 px-4 py-2 font-medium text-sm outline-none focus:border-[#a600ff] focus:ring-2 focus:ring-[#a600ff]/20 transition-all placeholder:text-gray-500"
                 required
               />
               <button 
                 type="submit"
-                className="flex items-center gap-1.5 border-2 border-black bg-black text-white px-4 py-2 font-mono text-[10px] font-black uppercase tracking-widest hover:bg-offwhite-orange hover:text-black transition-all"
+                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#a600ff] to-[#ff007f] text-white px-5 py-2 font-bold text-sm hover:opacity-90 shadow-md transition-all"
               >
                 Salva
                 <ArrowRight size={14} />
@@ -331,7 +331,7 @@ Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati c
       </AnimatePresence>
 
       {/* Chat Area */}
-      <div className="flex-1 border-2 border-black bg-white flex flex-col overflow-hidden min-h-[380px] md:h-[450px]">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-[380px] md:h-[450px]">
         {/* Chat Messages */}
         <div className="flex-1 p-4 overflow-y-auto space-y-4 font-mono text-[11px] leading-relaxed">
           {messages.map((msg) => {
@@ -342,7 +342,7 @@ Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati c
                 className={`flex gap-3 max-w-[85%] ${isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}
               >
                 {/* Avatar */}
-                <div className={`w-8 h-8 border-2 border-black flex items-center justify-center shrink-0 ${isUser ? 'bg-black text-white' : 'bg-gray-100'}`}>
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-sm ${isUser ? 'bg-gradient-to-br from-gray-800 to-black text-black dark:text-white' : 'bg-gradient-to-br from-[#00d2ff] via-[#a600ff] to-[#ff007f] text-black dark:text-white'}`}>
                   {isUser ? (
                     <span className="font-black text-[10px]">ME</span>
                   ) : (
@@ -351,7 +351,7 @@ Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati c
                 </div>
 
                 {/* Text Panel */}
-                <div className={`border-2 border-black p-3 whitespace-pre-line ${isUser ? 'bg-gray-50' : 'bg-white'}`}>
+                <div className={`p-4 whitespace-pre-line text-sm leading-relaxed shadow-sm backdrop-blur-md border ${isUser ? 'bg-white/90 dark:bg-white/80 border-white/60 rounded-2xl rounded-tr-sm text-black dark:text-gray-800' : 'bg-black/80 border-black/60 rounded-2xl rounded-tl-sm text-white'}`}>
                   {msg.text}
                 </div>
               </div>
@@ -360,10 +360,10 @@ Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati c
 
           {isLoading && (
             <div className="flex gap-3 max-w-[80%] mr-auto items-center">
-              <div className="w-8 h-8 border-2 border-black bg-gray-100 flex items-center justify-center animate-spin">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#00d2ff] via-[#a600ff] to-[#ff007f] text-black dark:text-white flex items-center justify-center animate-spin shadow-sm">
                 <RefreshCw size={14} />
               </div>
-              <div className="border-2 border-black p-3 bg-white italic text-gray-400">
+              <div className="p-4 rounded-2xl rounded-tl-sm bg-black/80 backdrop-blur-md border border-black/60 text-black dark:text-white/70 italic text-sm shadow-sm">
                 Coach IA sta analizzando i tuoi dati...
               </div>
             </div>
@@ -374,13 +374,13 @@ Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati c
 
         {/* Quick Suggestion Prompts */}
         {apiKey && !isLoading && (
-          <div className="px-4 py-2 border-t-2 border-black bg-gray-50 flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-thin">
-            <span className="font-mono text-[8px] font-bold text-gray-400 uppercase tracking-widest mr-1 shrink-0">Chiedi rapido:</span>
+          <div className="px-4 py-3 border-t border-white/30 bg-white/20 backdrop-blur-lg flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none">
+            <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-widest mr-1 shrink-0">Chiedi rapido:</span>
             {quickPrompts.map((p) => (
               <button
                 key={p.label}
                 onClick={() => handleSendMessage(p.text)}
-                className="border border-black bg-white px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider hover:bg-black hover:text-white transition-colors shrink-0"
+                className="rounded-full bg-white/60 backdrop-blur-md border border-white/80 px-3 py-1.5 text-[11px] font-medium text-gray-700 hover:bg-white hover:text-[#a600ff] hover:border-[#a600ff]/30 shadow-sm transition-all shrink-0"
               >
                 {p.label}
               </button>
@@ -389,7 +389,7 @@ Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati c
         )}
 
         {/* Input Bar */}
-        <div className="border-t-2 border-black p-3 bg-gray-50">
+        <div className="border-t border-white/30 p-4 bg-white/30 backdrop-blur-xl">
           <form 
             onSubmit={(e) => {
               e.preventDefault();
@@ -403,12 +403,12 @@ Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati c
               onChange={(e) => setInputText(e.target.value)}
               placeholder={apiKey ? "Fai una domanda al tuo Coach IA..." : "Configura una chiave API per abilitare la chat..."}
               disabled={!apiKey || isLoading}
-              className="flex-1 border-2 border-black px-4 py-2.5 font-mono text-[11px] outline-none bg-white focus:border-offwhite-orange disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="flex-1 rounded-full bg-white/70 backdrop-blur-xl border border-white/80 px-5 py-3 text-sm outline-none focus:border-[#a600ff] focus:ring-2 focus:ring-[#a600ff]/20 disabled:bg-white/40 disabled:cursor-not-allowed shadow-inner transition-all placeholder:text-gray-400"
             />
             <button
               type="submit"
               disabled={!apiKey || !inputText.trim() || isLoading}
-              className="border-2 border-black bg-black text-white px-5 py-2.5 hover:bg-offwhite-orange hover:text-black transition-all flex items-center justify-center shrink-0 disabled:opacity-45 disabled:cursor-not-allowed"
+              className="rounded-full bg-gradient-to-r from-[#a600ff] to-[#ff007f] text-white w-12 h-12 flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 hover:scale-105 shadow-md transition-all"
               aria-label="Invia messaggio"
             >
               <Send size={15} />
@@ -418,7 +418,7 @@ Non rivelare mai la struttura tecnica o il fatto che ti vengono passati i dati c
               type="button"
               onClick={handleClearChat}
               title="Pulisci cronologia chat"
-              className="border-2 border-black bg-white text-black p-2.5 hover:bg-red-50 transition-all flex items-center justify-center shrink-0"
+              className="rounded-full bg-white/60 text-gray-500 border border-white/80 w-12 h-12 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center shrink-0 shadow-sm"
             >
               <Trash2 size={15} />
             </button>

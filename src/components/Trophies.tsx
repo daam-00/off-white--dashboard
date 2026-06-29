@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Award, CalendarCheck, CheckCircle2, ChevronRight, Flame, Gift, ListChecks, ShoppingBag, Sparkles, Utensils, X } from 'lucide-react';
 import { SectionHeader } from './SectionHeader';
+import { CircularProgress } from './CircularProgress';
 import { awardUserPoints, getStoredUserStats } from '../lib/account';
 
 type WeeklyGoal = {
@@ -272,19 +273,22 @@ export const Trophies: React.FC = () => {
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <span className="weekly-goal-topline">
+                                <span className="weekly-goal-topline">
                   <span>{goal.kicker}</span>
-                  {complete ? <CheckCircle2 size={16} /> : <ChevronRight size={16} />}
+                  {complete ? <CheckCircle2 size={16} className="text-[#a600ff]" /> : <ChevronRight size={16} />}
                 </span>
-                <span className="weekly-goal-icon">
-                  <goal.Icon size={24} />
-                </span>
+                <div className="flex justify-center items-center my-4">
+                  <CircularProgress 
+                    progress={percent} 
+                    size={64} 
+                    strokeWidth={5} 
+                    color={active ? "#a600ff" : "#FF5C00"}
+                    icon={<goal.Icon size={24} />}
+                  />
+                </div>
                 <strong>{goal.title}</strong>
                 <span className="weekly-goal-progress">
                   {Math.min(goal.progress, goal.target)}/{goal.target} {goal.unit}
-                </span>
-                <span className="weekly-goal-bar">
-                  <i style={{ width: `${percent}%` }} />
                 </span>
               </motion.button>
             );

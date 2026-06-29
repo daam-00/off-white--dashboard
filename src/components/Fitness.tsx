@@ -355,28 +355,20 @@ function PersonalView() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="offwhite-border">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="offwhite-label">SCHEDA_PERSONALE</div>
-            <h2 className="mt-2 text-4xl font-black uppercase leading-none tracking-tight">
-              I miei allenamenti
-            </h2>
-            <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">
-              Organizza gli esercizi in gruppi — per giorno, muscolo o tipo di allenamento.
-            </p>
+      {/* Progress Summary */}
+      {totalAll > 0 && (
+        <div className="flex items-center justify-between rounded-2xl border border-black/10 bg-white/60 px-5 py-3 backdrop-blur-sm">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-gray-500">
+            Organizza per giorno, muscolo o tipo.
+          </p>
+          <div className="text-right">
+            <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-gray-400">Completati</div>
+            <strong className="mt-0.5 block text-xl font-black tracking-tight text-offwhite-orange">
+              {doneAll}/{totalAll}
+            </strong>
           </div>
-          {totalAll > 0 && (
-            <div className="border-2 border-black bg-black px-5 py-3 text-white">
-              <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-white/45">Completati</div>
-              <strong className="mt-1 block text-3xl font-black tracking-tight text-offwhite-orange">
-                {doneAll}/{totalAll}
-              </strong>
-            </div>
-          )}
         </div>
-      </div>
+      )}
 
       {/* Add group */}
       {showAddGroup ? (
@@ -572,7 +564,11 @@ export const Fitness: React.FC<FitnessProps> = ({ ownerEmail }) => {
 
   return (
     <div className="offwhite-border h-full">
-      <SectionHeader title="ALLENAMENTO" label={isThsedici ? 'SPLIT_2_GIORNI' : 'SCHEDA_PERSONALE'} />
+      <SectionHeader 
+        title={isThsedici ? 'Workout Split' : 'I Miei Allenamenti'} 
+        label={isThsedici ? 'SPLIT_2_GIORNI' : 'SCHEDA_PERSONALE'}
+        subtitle={isThsedici ? undefined : 'Organizza gli esercizi in gruppi — per giorno, muscolo o tipo.'}
+      />
       <div className="mt-5">
         {isThsedici ? <ThsediciView /> : <PersonalView />}
       </div>

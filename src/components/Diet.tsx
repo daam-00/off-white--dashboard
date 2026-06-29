@@ -219,6 +219,246 @@ const ALL_RECIPE_POOL: RecipeSuggestion[] = [
     tag: 'Rapido',
     ingredients: ['Yogurt greco', 'Frutti di bosco', 'Semi di chia', 'Miele'],
   },
+  {
+    id: 'porridge-frutti-rossi',
+    title: 'Porridge avena e frutti rossi',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Porridge.html',
+    image: 'https://images.unsplash.com/photo-1517686469429-8faf88b9f7af?w=600&q=75',
+    focus: 'Colazione · medium day',
+    tag: 'Fibre',
+    ingredients: ['Avena', 'Latte vegetale', 'Frutti di bosco', 'Semi di lino'],
+  },
+  {
+    id: 'pollo-curry-basmati',
+    title: 'Pollo al curry con riso basmati',
+    source: "Cucchiaio d'Argento",
+    url: 'https://www.cucchiaio.it/ricetta/pollo-al-curry/',
+    image: 'https://images.unsplash.com/photo-1631292780216-c177699709aa?w=600&q=75',
+    focus: 'Pranzo · high day',
+    tag: 'Post-workout',
+    ingredients: ['Petto di pollo', 'Curry', 'Riso basmati', 'Latte di cocco'],
+  },
+  {
+    id: 'tacchino-zucchine',
+    title: 'Fesa di tacchino e zucchine',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Involtini-di-tacchino-con-zucchine.html',
+    image: 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=600&q=75',
+    focus: 'Cena · low day',
+    tag: 'Proteine magre',
+    ingredients: ['Fesa di tacchino', 'Zucchine', 'EVO', 'Menta'],
+  },
+  {
+    id: 'yogurt-noci-miele',
+    title: 'Yogurt greco noci e miele',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Yogurt-con-noci-e-miele.html',
+    image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&q=75',
+    focus: 'Spuntino · qualsiasi',
+    tag: 'Veloce',
+    ingredients: ['Yogurt greco', 'Noci sgusciate', 'Miele biologico'],
+  },
+  {
+    id: 'pasta-pomodorini-rucola',
+    title: 'Pasta integrale pomodorini e rucola',
+    source: "Cucchiaio d'Argento",
+    url: 'https://www.cucchiaio.it/ricetta/pasta-fredda-con-pomodorini-e-rucola/',
+    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&q=75',
+    focus: 'Pranzo · high day',
+    tag: 'Carbo',
+    ingredients: ['Pasta integrale', 'Pomodorini', 'Rucola', 'Scaglie grana'],
+  },
+  {
+    id: 'merluzzo-broccoli',
+    title: 'Filetto di merluzzo con broccoli',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Merluzzo-con-broccoli.html',
+    image: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&q=75',
+    focus: 'Cena · low day',
+    tag: 'Light',
+    ingredients: ['Filetto di merluzzo', 'Broccoli', 'Limone', 'EVO'],
+  },
+  {
+    id: 'gallette-tacchino-avocado',
+    title: 'Gallette con tacchino e avocado',
+    source: 'Chef IA',
+    url: 'https://www.google.com/search?q=gallette+tacchino+avocado',
+    image: 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=600&q=75',
+    focus: 'Spuntino · post-workout',
+    tag: 'Carbo + grassi buoni',
+    ingredients: ['Gallette di riso', 'Fesa di tacchino', 'Avocado schiacciato'],
+  },
+  {
+    id: 'chia-pudding-mango',
+    title: 'Chia pudding mango e cocco',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Chia-pudding.html',
+    image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600&q=75',
+    focus: 'Colazione · light day',
+    tag: 'Vegano',
+    ingredients: ['Semi di chia', 'Latte di cocco', 'Mango fresco', 'Sciroppo d acero'],
+  },
+  {
+    id: 'frittata-albumi-zucchine',
+    title: 'Frittata di albumi e zucchine',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Frittata-di-soli-albumi.html',
+    image: 'https://images.unsplash.com/photo-1494597564530-871f2b93ac55?w=600&q=75',
+    focus: 'Cena · low day',
+    tag: 'Low carb',
+    ingredients: ['Albumi d uovo', 'Zucchine a rondelle', 'Menta fresca', 'EVO'],
+  },
+  {
+    id: 'vellutata-zucca-ceci',
+    title: 'Vellutata di zucca con ceci',
+    source: "Cucchiaio d'Argento",
+    url: 'https://www.cucchiaio.it/ricetta/vellutata-di-zucca-e-ceci/',
+    image: 'https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=600&q=75',
+    focus: 'Cena · medium day',
+    tag: 'Comfort food',
+    ingredients: ['Zucca', 'Ceci precotti', 'Rosmarino', 'EVO'],
+  },
+  {
+    id: 'bresaola-caprino-rucola',
+    title: 'Involtini bresaola, caprino e rucola',
+    source: "Cucchiaio d'Argento",
+    url: 'https://www.cucchiaio.it/ricetta/involtini-di-bresaola-e-caprino/',
+    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=75',
+    focus: 'Spuntino · proteico',
+    tag: 'Senza cottura',
+    ingredients: ['Bresaola', 'Formaggio caprino', 'Rucola', 'Pepe nero'],
+  },
+  {
+    id: 'quinoa-verdure-tofu',
+    title: 'Quinoa con verdure e tofu',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Insalata-di-quinoa-con-verdure.html',
+    image: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=600&q=75',
+    focus: 'Pranzo · vegetariano',
+    tag: 'Fibre + proteine',
+    ingredients: ['Quinoa', 'Tofu grigliato', 'Zucchine', 'Carote', 'Melanzane'],
+  },
+  {
+    id: 'uova-camicia-pane',
+    title: 'Uovo in camicia su crostone',
+    source: "Cucchiaio d'Argento",
+    url: 'https://www.cucchiaio.it/ricetta/uova-in-camicia/',
+    image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=600&q=75',
+    focus: 'Colazione · medium day',
+    tag: 'Energizzante',
+    ingredients: ['Uova fresche', 'Pane integrale', 'Avocado', 'Sale e pepe'],
+  },
+  {
+    id: 'sgombro-finocchi',
+    title: 'Sgombro grigliato con finocchi',
+    source: "Cucchiaio d'Argento",
+    url: 'https://www.cucchiaio.it/ricetta/sgombro-alla-griglia-con-insalatina-di-finocchi/',
+    image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&q=75',
+    focus: 'Cena · low day',
+    tag: 'Omega-3',
+    ingredients: ['Filetto di sgombro', 'Finocchi', 'Arance', 'Olive nere'],
+  },
+  {
+    id: 'smoothie-banana-arachidi',
+    title: 'Smoothie banana e arachidi',
+    source: 'Chef IA',
+    url: 'https://www.google.com/search?q=smoothie+banana+burro+arachidi',
+    image: 'https://images.unsplash.com/photo-1553530979-7ee52a2670c4?w=600&q=75',
+    focus: 'Spuntino · pre-workout',
+    tag: 'Energia',
+    ingredients: ['Banana', 'Burro d arachidi', 'Latte di avena', 'Whey protein'],
+  },
+  {
+    id: 'farro-pesto-gamberi',
+    title: 'Farro con pesto e gamberetti',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Insalata-di-farro-con-pesto-e-gamberetti.html',
+    image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&q=75',
+    focus: 'Pranzo · high day',
+    tag: 'Premium',
+    ingredients: ['Farro', 'Gamberetti sgusciati', 'Pesto di basilico', 'Pomodorini'],
+  },
+  {
+    id: 'hamburger-pollo-spinaci',
+    title: 'Hamburger di pollo e spinaci',
+    source: 'Chef IA',
+    url: 'https://www.google.com/search?q=hamburger+pollo+spinaci+fit',
+    image: 'https://images.unsplash.com/photo-1525059696034-4967a8e1dca2?w=600&q=75',
+    focus: 'Cena · low day',
+    tag: 'Proteine',
+    ingredients: ['Petto di pollo macinato', 'Spinaci tritati', 'Albume', 'Spezie'],
+  },
+  {
+    id: 'hummus-carote-cetrioli',
+    title: 'Hummus con carote e cetrioli',
+    source: "Cucchiaio d'Argento",
+    url: 'https://www.cucchiaio.it/ricetta/ricetta-hummus-ceci/',
+    image: 'https://images.unsplash.com/photo-1577906096429-f73c2c312435?w=600&q=75',
+    focus: 'Spuntino · sano',
+    tag: 'Vegano',
+    ingredients: ['Hummus di ceci', 'Carote a bastoncini', 'Cetrioli a bastoncini'],
+  },
+  {
+    id: 'piada-avena-salmone',
+    title: 'Piadina d avena con salmone',
+    source: 'Chef IA',
+    url: 'https://www.google.com/search?q=piadina+avena+salmone+affumicato',
+    image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=600&q=75',
+    focus: 'Pranzo · medium day',
+    tag: 'Fit piada',
+    ingredients: ['Farina d avena', 'Acqua', 'Salmone affumicato', 'Rucola', 'Spalmabile light'],
+  },
+  {
+    id: 'muffin-avena-banana',
+    title: 'Muffin avena e banana fit',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Muffin-banana-e-cioccolato.html',
+    image: 'https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=600&q=75',
+    focus: 'Colazione · qualsiasi',
+    tag: 'Meal prep',
+    ingredients: ['Banane mature', 'Fiocchi d avena', 'Uova', 'Gocce cioccolato fondente'],
+  },
+  {
+    id: 'spiedini-pollo-forno',
+    title: 'Spiedini di pollo e verdure',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Spiedini-di-pollo-e-verdure-al-forno.html',
+    image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600&q=75',
+    focus: 'Cena · low day',
+    tag: 'Proteine + fibre',
+    ingredients: ['Bocconcini di pollo', 'Peperoni', 'Zucchine', 'Cipolla rossa', 'EVO'],
+  },
+  {
+    id: 'insalata-farro-feta',
+    title: 'Insalata di farro con feta',
+    source: "Cucchiaio d'Argento",
+    url: 'https://www.cucchiaio.it/ricetta/insalata-di-farro-con-pomodorini-e-feta/',
+    image: 'https://images.unsplash.com/photo-1505575967455-40e256f7377c?w=600&q=75',
+    focus: 'Pranzo · medium day',
+    tag: 'Fresco',
+    ingredients: ['Farro perlato', 'Feta a cubetti', 'Pomodorini', 'Olive taggiasche', 'Basilico'],
+  },
+  {
+    id: 'crema-riso-whey',
+    title: 'Crema di riso post-workout',
+    source: 'Chef IA',
+    url: 'https://www.google.com/search?q=crema+di+riso+post+workout+whey',
+    image: 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=600&q=75',
+    focus: 'Spuntino · post-workout',
+    tag: 'Proteico',
+    ingredients: ['Farina di riso termotrattata', 'Acqua bollente', 'Whey protein', 'Frutti rossi'],
+  },
+  {
+    id: 'polpette-merluzzo-patate',
+    title: 'Polpette merluzzo e patate',
+    source: 'GialloZafferano',
+    url: 'https://ricette.giallozafferano.it/Polpette-di-pesce.html',
+    image: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&q=75',
+    focus: 'Cena · medium day',
+    tag: 'Fit',
+    ingredients: ['Filetto di merluzzo macinato', 'Patate lesse schiacciate', 'Prezzemolo', 'Uovo'],
+  },
 ];
 
 // Daily rotation: seed from date string → pick 4 recipes
@@ -269,10 +509,124 @@ export const Diet: React.FC<DietProps> = ({ ownerEmail }) => {
   const isOwner = ownerEmail?.toLowerCase().trim() === OWNER_EMAIL;
   const todayKey = getLocalDateKey();
 
-  const dailyRecipes = useMemo(() => getDailyRecipes(todayKey), [todayKey]);
+  // API Key & dynamic recipes states
+  const [apiKey] = useState<string>(() => {
+    const local = localStorage.getItem('betterme_gemini_api_key');
+    if (local) return local;
+    try {
+      return (process.env.GEMINI_API_KEY as string) || '';
+    } catch {
+      return '';
+    }
+  });
+  const [dailyRecipes, setDailyRecipes] = useState<RecipeSuggestion[]>([]);
+  const [loadingDaily, setLoadingDaily] = useState(true);
+  const [recipeSource, setRecipeSource] = useState<'IA' | 'LOCAL'>('LOCAL');
+
+  const fetchDailyRecipes = async (dateKey: string, forceRegenerate = false) => {
+    setLoadingDaily(true);
+
+    if (!forceRegenerate) {
+      try {
+        const cachedRecipes = localStorage.getItem(`betterme_daily_recipes_${dateKey}`);
+        const cachedSource = localStorage.getItem(`betterme_daily_recipes_source_${dateKey}`);
+        if (cachedRecipes && cachedSource) {
+          setDailyRecipes(JSON.parse(cachedRecipes));
+          setRecipeSource(cachedSource as 'IA' | 'LOCAL');
+          setLoadingDaily(false);
+          return;
+        }
+      } catch (e) {
+        console.error("Errore lettura cache ricette:", e);
+      }
+    }
+
+    if (apiKey) {
+      try {
+        const promptText = `Genera esattamente 4 ricette sane italiane diverse per oggi: ${dateKey}.
+Le ricette devono essere adatte ad atleti o persone attive, bilanciando macronutrienti per carb cycling (es: giorni alti carboidrati, medi, bassi carboidrati).
+Restituisci ESCLUSIVAMENTE un array JSON valido in lingua italiana secondo lo schema JSON richiesto, senza contenitori markdown extra. Non mettere caratteri aggiuntivi prima o dopo il JSON.`;
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [{ text: promptText }]
+              }
+            ],
+            systemInstruction: {
+              parts: [{ text: "Sei un esperto chef salutista e nutrizionista italiano. Rispondi solo in formato JSON strutturato, senza utilizzare i blocchi di codice ```json o altro testo esterno." }]
+            },
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    id: { type: "STRING", description: "Slug unico in lowercase della ricetta (es: pasta-salmone)" },
+                    title: { type: "STRING", description: "Nome della ricetta in italiano" },
+                    source: { type: "STRING", description: "Nome di un noto sito di cucina o 'Chef IA'" },
+                    url: { type: "STRING", description: "Un URL di ricerca per la ricetta" },
+                    image: { type: "STRING", description: "URL di un'immagine di cibo reale e appetitosa da Unsplash (es: https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=75)" },
+                    focus: { type: "STRING", description: "Es: 'Pranzo · high day', 'Cena · low day'" },
+                    tag: { type: "STRING", description: "Es: 'Post-workout', 'Proteine', 'Fibre', 'Veloce'" },
+                    ingredients: {
+                      type: "ARRAY",
+                      items: { type: "STRING" },
+                      description: "Ingredienti principali (3-6 elementi)"
+                    }
+                  },
+                  required: ["id", "title", "source", "url", "image", "focus", "tag", "ingredients"]
+                }
+              },
+              maxOutputTokens: 1200,
+              temperature: 0.8,
+            }
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const jsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (jsonText) {
+            const parsed: RecipeSuggestion[] = JSON.parse(jsonText.trim());
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              localStorage.setItem(`betterme_daily_recipes_${dateKey}`, JSON.stringify(parsed));
+              localStorage.setItem(`betterme_daily_recipes_source_${dateKey}`, 'IA');
+              setDailyRecipes(parsed);
+              setRecipeSource('IA');
+              setLoadingDaily(false);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Errore fetch ricette Gemini:", err);
+      }
+    }
+
+    // Fallback: local pool
+    const localSuggestions = getDailyRecipes(dateKey);
+    localStorage.setItem(`betterme_daily_recipes_${dateKey}`, JSON.stringify(localSuggestions));
+    localStorage.setItem(`betterme_daily_recipes_source_${dateKey}`, 'LOCAL');
+    setDailyRecipes(localSuggestions);
+    setRecipeSource('LOCAL');
+    setLoadingDaily(false);
+  };
+
+  useEffect(() => {
+    fetchDailyRecipes(todayKey);
+  }, [todayKey]);
 
   // Mark already-saved suggestions
   useEffect(() => {
+    if (!dailyRecipes) return;
     const alreadySaved = new Set(
       dailyRecipes
         .filter((s) => recipes.some((r) => r.name === s.title.toUpperCase()))
@@ -304,6 +658,7 @@ export const Diet: React.FC<DietProps> = ({ ownerEmail }) => {
   };
 
   const saveAllDaily = () => {
+    if (!dailyRecipes) return;
     dailyRecipes.forEach((s) => saveSuggestion(s));
   };
 
@@ -373,90 +728,140 @@ export const Diet: React.FC<DietProps> = ({ ownerEmail }) => {
           <div>
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-offwhite-orange" />
-                  <span className="font-black text-sm uppercase tracking-tight">Ispirazioni di oggi</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={16} className="text-offwhite-orange" />
+                    <span className="font-black text-sm uppercase tracking-tight">Ispirazioni di oggi</span>
+                  </div>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-mono text-[9px] font-semibold uppercase tracking-wider ${
+                    recipeSource === 'IA' 
+                      ? 'bg-green-50 text-green-700 border border-green-200' 
+                      : 'bg-gray-100 text-gray-500 border border-gray-200'
+                  }`}>
+                    {recipeSource === 'IA' ? '✦ IA' : 'Locale'}
+                  </span>
                 </div>
                 <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.22em] text-gray-400">
                   {todayKey} · 4 ricette nuove ogni giorno
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={saveAllDaily}
-                className="border-2 border-black bg-white px-4 py-2 font-mono text-[10px] font-black uppercase tracking-widest transition hover:bg-black hover:text-white"
-              >
-                Salva tutte nel vault
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                {apiKey && (
+                  <button
+                    type="button"
+                    onClick={() => fetchDailyRecipes(todayKey, true)}
+                    disabled={loadingDaily}
+                    className="flex items-center gap-1.5 border-2 border-black bg-white px-3 py-2 font-mono text-[10px] font-black uppercase tracking-widest transition hover:bg-black hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw size={12} className={loadingDaily ? 'animate-spin' : ''} />
+                    Rigenera IA
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={saveAllDaily}
+                  disabled={loadingDaily || dailyRecipes.length === 0}
+                  className="border-2 border-black bg-white px-4 py-2 font-mono text-[10px] font-black uppercase tracking-widest transition hover:bg-black hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Salva tutte nel vault
+                </button>
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {dailyRecipes.map((s) => {
-                const isSaved = savedToday.has(s.id);
-                return (
-                  <div key={s.id} className="flex flex-col border-2 border-black bg-white">
-                    {/* Image */}
-                    <div
-                      className="h-36 w-full shrink-0 border-b-2 border-black"
-                      style={{
-                        backgroundImage: `url(${s.image})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                      }}
-                    />
-                    {/* Content */}
-                    <div className="flex flex-1 flex-col p-3">
-                      <div className="font-mono text-[8px] uppercase tracking-[0.18em] text-offwhite-orange">
-                        {s.source}
+              {loadingDaily ? (
+                Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={`skeleton-${idx}`} className="flex flex-col border-2 border-black bg-white animate-pulse">
+                    {/* Skeleton image */}
+                    <div className="h-36 w-full bg-gray-200 border-b-2 border-black" />
+                    {/* Skeleton content */}
+                    <div className="flex flex-1 flex-col p-3 space-y-2.5">
+                      <div className="h-2 w-16 bg-gray-200" />
+                      <div className="h-4 w-3/4 bg-gray-300" />
+                      <div className="flex gap-1">
+                        <div className="h-3 w-16 bg-gray-200" />
+                        <div className="h-3 w-12 bg-gray-200" />
                       </div>
-                      <div className="mt-1 text-base font-black uppercase leading-tight tracking-tight">
-                        {s.title}
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        <span className="bg-black px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.14em] text-white">
-                          {s.focus}
-                        </span>
-                        <span className="border border-black/30 px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.14em] text-gray-500">
-                          {s.tag}
-                        </span>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {s.ingredients.map((ing) => (
-                          <span
-                            key={ing}
-                            className="border border-black/15 bg-gray-50 px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.12em] text-gray-500"
-                          >
-                            {ing}
-                          </span>
-                        ))}
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        <div className="h-2 w-8 bg-gray-200" />
+                        <div className="h-2 w-8 bg-gray-200" />
+                        <div className="h-2 w-8 bg-gray-200" />
                       </div>
                       <div className="mt-auto flex gap-2 pt-3">
-                        <a
-                          href={s.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center border-2 border-black bg-white transition hover:bg-black hover:text-white"
-                          aria-label="Apri ricetta"
-                        >
-                          <ExternalLink size={13} />
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => saveSuggestion(s)}
-                          disabled={isSaved}
-                          className={`flex flex-1 items-center justify-center gap-1.5 border-2 px-3 py-1.5 font-mono text-[9px] uppercase tracking-widest transition ${
-                            isSaved
-                              ? 'border-black/20 bg-gray-50 text-gray-400 cursor-default'
-                              : 'border-black bg-black text-white hover:bg-offwhite-orange hover:border-offwhite-orange hover:text-black'
-                          }`}
-                        >
-                          {isSaved ? <><Check size={11} /> Salvata</> : 'Salva'}
-                        </button>
+                        <div className="h-8 w-8 bg-gray-200 border-2 border-black/15" />
+                        <div className="h-8 flex-1 bg-gray-200 border-2 border-black/15" />
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                ))
+              ) : (
+                dailyRecipes.map((s) => {
+                  const isSaved = savedToday.has(s.id);
+                  return (
+                    <div key={s.id} className="flex flex-col border-2 border-black bg-white">
+                      {/* Image */}
+                      <div
+                        className="h-36 w-full shrink-0 border-b-2 border-black"
+                        style={{
+                          backgroundImage: `url(${s.image})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                        }}
+                      />
+                      {/* Content */}
+                      <div className="flex flex-1 flex-col p-3">
+                        <div className="font-mono text-[8px] uppercase tracking-[0.18em] text-offwhite-orange">
+                          {s.source}
+                        </div>
+                        <div className="mt-1 text-base font-black uppercase leading-tight tracking-tight">
+                          {s.title}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          <span className="bg-black px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.14em] text-white">
+                            {s.focus}
+                          </span>
+                          <span className="border border-black/30 px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.14em] text-gray-500">
+                            {s.tag}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {s.ingredients.map((ing) => (
+                            <span
+                              key={ing}
+                              className="border border-black/15 bg-gray-50 px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.12em] text-gray-500"
+                            >
+                              {ing}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="mt-auto flex gap-2 pt-3">
+                          <a
+                            href={s.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center border-2 border-black bg-white transition hover:bg-black hover:text-white"
+                            aria-label="Apri ricetta"
+                          >
+                            <ExternalLink size={13} />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => saveSuggestion(s)}
+                            disabled={isSaved}
+                            className={`flex flex-1 items-center justify-center gap-1.5 border-2 px-3 py-1.5 font-mono text-[9px] uppercase tracking-widest transition ${
+                              isSaved
+                                ? 'border-black/20 bg-gray-50 text-gray-400 cursor-default'
+                                : 'border-black bg-black text-white hover:bg-offwhite-orange hover:border-offwhite-orange hover:text-black'
+                            }`}
+                          >
+                            {isSaved ? <><Check size={11} /> Salvata</> : 'Salva'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 

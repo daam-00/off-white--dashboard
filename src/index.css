@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Barlow+Condensed:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,300;1,14..32,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -8,33 +8,84 @@
   --color-offwhite-bg: #FFFFFF;
 }
 
-@utility offwhite-border {
-  @apply border-2 border-black p-4 md:p-6 transition-all;
-}
-
-@utility offwhite-label {
-  @apply font-mono text-[8px] md:text-[10px] uppercase tracking-widest bg-black text-white px-2 py-0.5 inline-block mb-2;
-}
-
-@utility offwhite-quote {
-  @apply relative inline-block;
-}
+/* ─── Clean, Premium Utilities ─────────────────────────────────────────────── */
 
 @utility betterme-card {
-  @apply offwhite-border;
+  background-color: var(--theme-panel);
+  border: 1.5px solid var(--theme-border);
+  border-radius: 20px;
+  padding: 1.25rem;
+  box-shadow: var(--theme-shadow);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 @utility betterme-label {
-  @apply offwhite-label;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--theme-accent);
+  background-color: color-mix(in srgb, var(--theme-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 18%, transparent);
+  border-radius: 6px;
+  padding: 0.2rem 0.55rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
 }
 
 @utility betterme-button {
-  @apply border-2 border-black px-4 py-2 font-mono text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none hover:bg-black hover:text-white;
+  border: 1.5px solid var(--theme-border);
+  border-radius: 12px;
+  padding: 0.7rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--theme-ink);
+  background: var(--theme-panel);
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @utility betterme-button-primary {
-  @apply betterme-button bg-black text-white hover:bg-offwhite-orange;
+  border: 1.5px solid var(--theme-accent);
+  border-radius: 12px;
+  padding: 0.7rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--theme-ink-contrast);
+  background: var(--theme-accent);
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+@utility offwhite-quote {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @layer base {
   html,
@@ -68,6 +119,59 @@
       letter-spacing: 0;
     }
   }
+}
+
+/* Global Smoothness */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, input, select, textarea {
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Premium scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+/* Smooth page-level animations */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes subtlePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .dashboard-theme {
@@ -248,9 +352,11 @@
 }
 
 .dashboard-theme .mobile-nav-shell {
-  background-color: transparent;
-  backdrop-filter: none;
-  box-shadow: none;
+  background-color: color-mix(in srgb, var(--theme-panel) 72%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
+  border-top: 1px solid color-mix(in srgb, var(--theme-border) 12%, transparent);
 }
 
 .mobile-nav-scroll {
@@ -302,6 +408,7 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.36),
     0 10px 22px color-mix(in srgb, var(--theme-accent) 16%, transparent);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .mobile-nav-orbit-item:active {
@@ -361,14 +468,11 @@
 
 .welcome-home-shell {
   position: relative;
-  border: 1px solid color-mix(in srgb, var(--theme-border) 42%, transparent);
-  border-radius: 2rem;
+  border: 2px solid var(--theme-border);
+  border-radius: 4px;
   padding: 1.25rem;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-panel) 78%, rgba(255, 255, 255, 0.14)) 0%, color-mix(in srgb, var(--theme-panel-muted) 70%, transparent) 100%);
-  box-shadow:
-    0 28px 70px color-mix(in srgb, var(--theme-ink) 10%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  background: var(--theme-panel);
+  box-shadow: var(--theme-shadow);
   isolation: isolate;
 }
 
@@ -704,7 +808,7 @@
 @media (min-width: 768px) {
   .welcome-home-shell {
     padding: 1.8rem;
-    border-radius: 2.4rem;
+    border-radius: 4px;
   }
 
   .welcome-home-hero {
@@ -1865,14 +1969,17 @@
 .home-verse-card,
 .home-metric-card,
 .home-wide-card {
-  border: 1px solid color-mix(in srgb, var(--theme-border) 10%, rgba(255, 255, 255, 0.68));
-  border-radius: 2.15rem;
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--theme-panel) 94%, white), color-mix(in srgb, var(--theme-panel-muted) 28%, var(--theme-panel)));
-  box-shadow:
-    0 26px 54px rgba(34, 38, 44, 0.09),
-    inset 0 1px 0 rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(18px);
+  border: 2px solid var(--theme-border);
+  border-radius: 4px;
+  background: var(--theme-panel);
+  box-shadow: var(--theme-shadow);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.home-metric-card:hover,
+.home-wide-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 13px 13px 0 var(--theme-border);
 }
 
 .home-verse-card {
@@ -2438,12 +2545,6 @@
   background:
     linear-gradient(180deg, #ffffff 0%, #f4f4f4 100%);
 }
-
-.dashboard-theme .theme-card-theme-blue {
-  background:
-    linear-gradient(160deg, #eef3ff 0%, #dce6ff 100%);
-}
-
 
 .dashboard-theme .theme-live-banner {
   background-color: var(--theme-ink);
@@ -6111,442 +6212,391 @@
 
 
 /* ════════════════════════════════════════════════════════════════════
-   SHARED THEME HELPER: ThemeStudio card backgrounds
-   ════════════════════════════════════════════════════════════════════ */
-.dashboard-theme .theme-card-theme-dark {
-  background: linear-gradient(160deg, #111111 0%, #1A1A1A 100%);
-}
-.dashboard-theme .theme-card-theme-forest {
-  background: linear-gradient(160deg, #E8F5E9 0%, #C8E6C9 100%);
-}
-.dashboard-theme .theme-card-theme-sunset {
-  background: linear-gradient(160deg, #FFF8F5 0%, #FFD4C2 100%);
-}
-.dashboard-theme .theme-card-theme-invincible-v2 {
-  background: linear-gradient(160deg, #030B15 0%, #0D1E33 100%);
-  border-color: #FFD400 !important;
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   THEME: MIDNIGHT  /  theme-dark
-   Strategy: dark surfaces, neon-green accent, all text light
+   BIBLE VOICE READING CONTROLS
    ════════════════════════════════════════════════════════════════════ */
 
-/* Root surface */
-.dashboard-theme.theme-dark { background-color: #0A0A0A !important; color: #E8E8E8 !important; }
-
-/* Sidebar */
-.dashboard-theme.theme-dark .sidebar-shell { background-color: #060606 !important; border-color: #1E1E1E !important; }
-.dashboard-theme.theme-dark .sidebar-shell .dashboard-brand { color: #00FF94 !important; }
-.dashboard-theme.theme-dark .sidebar-shell nav button { color: rgba(232,232,232,0.55) !important; background: transparent !important; }
-.dashboard-theme.theme-dark .sidebar-shell nav button:hover { background: rgba(0,255,148,0.08) !important; color: #00FF94 !important; }
-.dashboard-theme.theme-dark .sidebar-shell nav button.bg-black { background: #00FF94 !important; color: #0A0A0A !important; }
-.dashboard-theme.theme-dark .sidebar-shell .border-t-2 { border-color: #1E1E1E !important; }
-.dashboard-theme.theme-dark .sidebar-shell .text-gray-400 { color: rgba(232,232,232,0.35) !important; }
-.dashboard-theme.theme-dark .sidebar-shell .text-offwhite-orange { color: #00FF94 !important; }
-
-/* Main panels */
-.dashboard-theme.theme-dark .main-shell { background-color: #0A0A0A !important; }
-.dashboard-theme.theme-dark .offwhite-border,
-.dashboard-theme.theme-dark .offwhite-panel,
-.dashboard-theme.theme-dark .hero-panel { background-color: #111111 !important; border-color: #2A2A2A !important; }
-
-/* Mobile header */
-.dashboard-theme.theme-dark .sidebar-shell.md\:hidden { background-color: #060606 !important; border-color: #1E1E1E !important; }
-.dashboard-theme.theme-dark .sidebar-shell.md\:hidden .dashboard-brand { color: #E8E8E8 !important; }
-
-/* Text overrides — light-on-dark */
-.dashboard-theme.theme-dark .text-gray-500 { color: rgba(232,232,232,0.45) !important; }
-.dashboard-theme.theme-dark .text-gray-600 { color: rgba(232,232,232,0.55) !important; }
-.dashboard-theme.theme-dark .text-gray-400 { color: rgba(232,232,232,0.35) !important; }
-.dashboard-theme.theme-dark .text-black { color: #E8E8E8 !important; }
-.dashboard-theme.theme-dark .text-offwhite-orange { color: #00FF94 !important; }
-
-/* Borders */
-.dashboard-theme.theme-dark .border-black { border-color: #2A2A2A !important; }
-.dashboard-theme.theme-dark .border-black\/20 { border-color: rgba(232,232,232,0.12) !important; }
-.dashboard-theme.theme-dark .border-black\/30 { border-color: rgba(232,232,232,0.18) !important; }
-
-/* White BGs → dark panels */
-.dashboard-theme.theme-dark .bg-white { background-color: #111111 !important; }
-.dashboard-theme.theme-dark .bg-black { background-color: #00FF94 !important; }
-.dashboard-theme.theme-dark .text-white { color: #0A0A0A !important; }
-.dashboard-theme.theme-dark h1, .dashboard-theme.theme-dark h2, .dashboard-theme.theme-dark h3 { color: #E8E8E8 !important; }
-.dashboard-theme.theme-dark .dashboard-brand { color: #00FF94 !important; }
-
-/* Home HUD */
-.dashboard-theme.theme-dark .home-level-circle { border-color: #00FF94 !important; }
-.dashboard-theme.theme-dark .home-level-circle strong { color: #00FF94 !important; }
-.dashboard-theme.theme-dark .home-level-fill { background-color: #00FF94 !important; }
-.dashboard-theme.theme-dark .home-level-track { background-color: #1A1A1A !important; }
-.dashboard-theme.theme-dark .home-check-button { background: #111111 !important; border-color: #2A2A2A !important; color: #E8E8E8 !important; }
-.dashboard-theme.theme-dark .home-check-button.is-complete { background: #003D24 !important; border-color: #00FF94 !important; color: #00FF94 !important; }
-.dashboard-theme.theme-dark .home-metric-card,
-.dashboard-theme.theme-dark .home-wide-card { background: #111111 !important; border-color: #2A2A2A !important; color: #E8E8E8 !important; }
-.dashboard-theme.theme-dark .home-user-button { background: #111111 !important; border-color: #2A2A2A !important; color: #E8E8E8 !important; }
-
-/* Offwhite label */
-.dashboard-theme.theme-dark .offwhite-label { color: #00FF94 !important; border-color: #00FF94 !important; }
-
-/* Weekly goal cards */
-.dashboard-theme.theme-dark .weekly-goal-card { background: #111111 !important; border-color: #2A2A2A !important; color: #E8E8E8 !important; }
-.dashboard-theme.theme-dark .weekly-goal-card.is-active { border-color: #00FF94 !important; }
-.dashboard-theme.theme-dark .weekly-prize-panel { background: #111111 !important; border-color: #2A2A2A !important; }
-.dashboard-theme.theme-dark .weekly-prize-button:not(:disabled) { background: #00FF94 !important; color: #0A0A0A !important; border-color: #00FF94 !important; }
-
-/* ThemeStudio chips */
-.dashboard-theme.theme-dark .theme-chip-panel,
-.dashboard-theme.theme-dark .theme-live-preview,
-.dashboard-theme.theme-dark .theme-live-tile,
-.dashboard-theme.theme-dark .theme-card-preview { background: #1A1A1A !important; }
-.dashboard-theme.theme-dark .theme-live-banner { background: #00FF94 !important; color: #0A0A0A !important; }
-
-/* Inputs */
-.dashboard-theme.theme-dark input,
-.dashboard-theme.theme-dark textarea,
-.dashboard-theme.theme-dark select { background: #111111 !important; border-color: #2A2A2A !important; color: #E8E8E8 !important; }
-.dashboard-theme.theme-dark input::placeholder,
-.dashboard-theme.theme-dark textarea::placeholder { color: rgba(232,232,232,0.3) !important; }
-
-/* Scrollbar */
-.dashboard-theme.theme-dark ::-webkit-scrollbar-track { background: #111111; }
-.dashboard-theme.theme-dark ::-webkit-scrollbar-thumb { background: #2A2A2A; }
-
-
-/* ════════════════════════════════════════════════════════════════════
-   THEME: DEEP FOREST  /  theme-forest
-   Strategy: deep forest green sidebar, clean white content, green accents
-   ════════════════════════════════════════════════════════════════════ */
-
-.dashboard-theme.theme-forest { background-color: #F1F8F1 !important; color: #1B2E1B !important; }
-
-/* Sidebar — dark forest green */
-.dashboard-theme.theme-forest .sidebar-shell { background-color: #1B2E1B !important; border-color: #2D4A2D !important; }
-.dashboard-theme.theme-forest .sidebar-shell .dashboard-brand { color: #A8D5A2 !important; }
-.dashboard-theme.theme-forest .sidebar-shell nav button { color: rgba(200,230,201,0.65) !important; background: transparent !important; }
-.dashboard-theme.theme-forest .sidebar-shell nav button:hover { background: rgba(76,175,80,0.15) !important; color: #A8D5A2 !important; }
-.dashboard-theme.theme-forest .sidebar-shell nav button.bg-black { background: #4CAF50 !important; color: #1B2E1B !important; }
-.dashboard-theme.theme-forest .sidebar-shell .border-t-2 { border-color: #2D4A2D !important; }
-.dashboard-theme.theme-forest .sidebar-shell .text-gray-400 { color: rgba(200,230,201,0.4) !important; }
-.dashboard-theme.theme-forest .sidebar-shell .text-offwhite-orange { color: #81C784 !important; }
-
-/* Logout button inside sidebar */
-.dashboard-theme.theme-forest .sidebar-shell button.border-black { background: transparent !important; border-color: rgba(200,230,201,0.4) !important; color: rgba(200,230,201,0.7) !important; }
-.dashboard-theme.theme-forest .sidebar-shell button.border-black:hover { background: rgba(76,175,80,0.2) !important; color: #A8D5A2 !important; border-color: #81C784 !important; }
-
-/* Main content — stays light */
-.dashboard-theme.theme-forest .main-shell { background-color: #F1F8F1 !important; }
-.dashboard-theme.theme-forest .offwhite-border,
-.dashboard-theme.theme-forest .offwhite-panel,
-.dashboard-theme.theme-forest .hero-panel { background-color: #FFFFFF !important; border-color: #1B2E1B !important; }
-
-/* Accent */
-.dashboard-theme.theme-forest .text-offwhite-orange { color: #388E3C !important; }
-.dashboard-theme.theme-forest .offwhite-label { color: #388E3C !important; border-color: #388E3C !important; }
-
-/* HUD */
-.dashboard-theme.theme-forest .home-level-circle { border-color: #1B2E1B !important; }
-.dashboard-theme.theme-forest .home-level-circle strong { color: #2E7D32 !important; }
-.dashboard-theme.theme-forest .home-level-fill { background-color: #4CAF50 !important; }
-.dashboard-theme.theme-forest .home-check-button.is-complete { background: #4CAF50 !important; border-color: #1B2E1B !important; color: #fff !important; }
-
-/* Mobile header */
-.dashboard-theme.theme-forest .sidebar-shell.md\:hidden { background-color: #1B2E1B !important; border-color: #2D4A2D !important; color: #A8D5A2 !important; }
-.dashboard-theme.theme-forest .sidebar-shell.md\:hidden .dashboard-brand { color: #A8D5A2 !important; }
-.dashboard-theme.theme-forest .sidebar-shell.md\:hidden .text-black { color: #A8D5A2 !important; }
-.dashboard-theme.theme-forest .sidebar-shell.md\:hidden .text-offwhite-orange { color: #81C784 !important; }
-
-
-/* ════════════════════════════════════════════════════════════════════
-   THEME: GOLDEN HOUR  /  theme-sunset
-   Strategy: warm white content, burnt-orange accent, deep brown sidebar
-   ════════════════════════════════════════════════════════════════════ */
-
-.dashboard-theme.theme-sunset { background-color: #FFF8F5 !important; color: #2D1B10 !important; }
-
-/* Sidebar — deep warm brown */
-.dashboard-theme.theme-sunset .sidebar-shell { background-color: #2D1B10 !important; border-color: #4A2E1A !important; }
-.dashboard-theme.theme-sunset .sidebar-shell .dashboard-brand { color: #FFB085 !important; }
-.dashboard-theme.theme-sunset .sidebar-shell nav button { color: rgba(255,176,133,0.6) !important; background: transparent !important; }
-.dashboard-theme.theme-sunset .sidebar-shell nav button:hover { background: rgba(255,107,53,0.15) !important; color: #FFB085 !important; }
-.dashboard-theme.theme-sunset .sidebar-shell nav button.bg-black { background: #FF6B35 !important; color: #2D1B10 !important; }
-.dashboard-theme.theme-sunset .sidebar-shell .border-t-2 { border-color: #4A2E1A !important; }
-.dashboard-theme.theme-sunset .sidebar-shell .text-gray-400 { color: rgba(255,176,133,0.4) !important; }
-.dashboard-theme.theme-sunset .sidebar-shell .text-offwhite-orange { color: #FFB085 !important; }
-.dashboard-theme.theme-sunset .sidebar-shell button.border-black { background: transparent !important; border-color: rgba(255,176,133,0.35) !important; color: rgba(255,176,133,0.7) !important; }
-.dashboard-theme.theme-sunset .sidebar-shell button.border-black:hover { background: rgba(255,107,53,0.2) !important; color: #FFB085 !important; }
-
-/* Main content */
-.dashboard-theme.theme-sunset .main-shell { background-color: #FFF8F5 !important; }
-.dashboard-theme.theme-sunset .offwhite-border,
-.dashboard-theme.theme-sunset .offwhite-panel,
-.dashboard-theme.theme-sunset .hero-panel { background-color: #FFFFFF !important; border-color: #2D1B10 !important; }
-
-/* Accent */
-.dashboard-theme.theme-sunset .text-offwhite-orange { color: #E8521A !important; }
-.dashboard-theme.theme-sunset .offwhite-label { color: #E8521A !important; border-color: #E8521A !important; }
-
-/* HUD */
-.dashboard-theme.theme-sunset .home-level-circle { border-color: #2D1B10 !important; }
-.dashboard-theme.theme-sunset .home-level-circle strong { color: #E8521A !important; }
-.dashboard-theme.theme-sunset .home-level-fill { background-color: #FF6B35 !important; }
-.dashboard-theme.theme-sunset .home-check-button.is-complete { background: #FF6B35 !important; border-color: #2D1B10 !important; color: #fff !important; }
-
-/* Mobile header */
-.dashboard-theme.theme-sunset .sidebar-shell.md\:hidden { background-color: #2D1B10 !important; border-color: #4A2E1A !important; }
-.dashboard-theme.theme-sunset .sidebar-shell.md\:hidden .dashboard-brand { color: #FFB085 !important; }
-.dashboard-theme.theme-sunset .sidebar-shell.md\:hidden .text-black { color: #FFB085 !important; }
-.dashboard-theme.theme-sunset .sidebar-shell.md\:hidden .text-offwhite-orange { color: #FFB085 !important; }
-
-
-/* ════════════════════════════════════════════════════════════════════
-   THEME: INVINCIBLE V2  /  theme-invincible-v2
-   Professional game-quality: cosmic navy + stark yellow + red shadow
-   Bangers font, comic-panel borders, zero ambiguity on contrast
-   ════════════════════════════════════════════════════════════════════ */
-
-.theme-invincible-v2 {
-  --inv-bg:     #020911;
-  --inv-panel:  #071527;
-  --inv-panel2: #0C1D35;
-  --inv-yellow: #FFD400;
-  --inv-red:    #E8000D;
-  --inv-text:   #F0E6C8;
-  --inv-muted:  rgba(240,230,200,0.5);
-  --inv-border: rgba(255,212,0,0.55);
-  --font-inv:   'Bangers', 'Anton', cursive;
+/* --- Verse line with speaker button --- */
+.bible-verse-line {
+  position: relative;
+  transition: background-color 0.35s ease, box-shadow 0.35s ease, transform 0.2s ease;
+  border-radius: 4px;
+  padding-right: 2.2rem !important;
 }
 
-/* Root */
-.dashboard-theme.theme-invincible-v2 { background-color: var(--inv-bg) !important; color: var(--inv-text) !important; }
-
-/* ── SIDEBAR ─────────────────────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 .sidebar-shell {
-  background-color: #010609 !important;
-  border-right: 2px solid var(--inv-yellow) !important;
-  box-shadow: 4px 0 20px rgba(255,212,0,0.06);
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell .dashboard-brand {
-  color: var(--inv-yellow) !important;
-  font-family: var(--font-inv) !important;
-  letter-spacing: 0.06em !important;
-  text-shadow: 2px 2px 0 var(--inv-red);
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell nav button {
-  color: var(--inv-muted) !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell nav button:hover {
-  background: rgba(255,212,0,0.07) !important;
-  color: var(--inv-yellow) !important;
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell nav button.bg-black {
-  background: var(--inv-yellow) !important;
-  color: var(--inv-bg) !important;
-  box-shadow: 3px 0 0 var(--inv-red);
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell .border-t-2 {
-  border-color: rgba(255,212,0,0.25) !important;
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell .text-gray-400 {
-  color: rgba(240,230,200,0.3) !important;
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell .text-offwhite-orange {
-  color: var(--inv-yellow) !important;
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell button.border-black {
-  background: transparent !important;
-  border-color: rgba(255,212,0,0.3) !important;
-  color: var(--inv-muted) !important;
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell button.border-black:hover {
-  background: rgba(255,212,0,0.1) !important;
-  color: var(--inv-yellow) !important;
-  border-color: var(--inv-yellow) !important;
+.bible-verse-line:hover .bible-verse-speak-btn {
+  opacity: 0.6;
 }
 
-/* Mobile header */
-.dashboard-theme.theme-invincible-v2 .sidebar-shell.md\:hidden {
-  background-color: #010609 !important;
-  border-bottom-color: var(--inv-yellow) !important;
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell.md\:hidden .dashboard-brand {
-  color: var(--inv-yellow) !important;
-  font-family: var(--font-inv) !important;
-}
-.dashboard-theme.theme-invincible-v2 .sidebar-shell.md\:hidden .text-black { color: var(--inv-text) !important; }
-.dashboard-theme.theme-invincible-v2 .sidebar-shell.md\:hidden .text-offwhite-orange { color: var(--inv-yellow) !important; }
-
-/* ── MAIN SURFACE ────────────────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 .main-shell { background-color: var(--inv-bg) !important; }
-
-/* Halftone dots atmospheric overlay */
-.dashboard-theme.theme-invincible-v2 .main-shell::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(255,212,0,0.025) 1px, transparent 1px);
-  background-size: 20px 20px;
-  pointer-events: none;
-  z-index: 0;
+.bible-verse-speak-btn {
+  position: absolute;
+  right: 0.15rem;
+  top: 0.35rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.25s ease, transform 0.2s ease, color 0.2s ease;
+  border-radius: 50%;
+  padding: 0;
 }
 
-/* ── PANELS & BORDERS ────────────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 .offwhite-border,
-.dashboard-theme.theme-invincible-v2 .offwhite-panel,
-.dashboard-theme.theme-invincible-v2 .hero-panel {
-  background-color: var(--inv-panel) !important;
-  border-color: rgba(255,212,0,0.35) !important;
-  box-shadow: 4px 4px 0 rgba(232,0,13,0.3) !important;
+.bible-verse-speak-btn:hover {
+  opacity: 1 !important;
+  transform: scale(1.15);
+  color: var(--color-offwhite-orange, #FF5C00);
 }
 
-.dashboard-theme.theme-invincible-v2 .border-black { border-color: rgba(255,212,0,0.4) !important; }
-.dashboard-theme.theme-invincible-v2 .border-black\/20 { border-color: rgba(255,212,0,0.12) !important; }
-.dashboard-theme.theme-invincible-v2 .border-black\/30 { border-color: rgba(255,212,0,0.18) !important; }
-.dashboard-theme.theme-invincible-v2 .bg-white { background-color: var(--inv-panel) !important; }
-.dashboard-theme.theme-invincible-v2 .bg-black { background-color: var(--inv-yellow) !important; }
-.dashboard-theme.theme-invincible-v2 .text-white { color: var(--inv-bg) !important; }
+.bible-verse-line.is-reading .bible-verse-speak-btn {
+  opacity: 1;
+  color: var(--color-offwhite-orange, #FF5C00);
+  animation: bible-pulse-mic 1.5s ease-in-out infinite;
+}
 
-/* ── TYPOGRAPHY ──────────────────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 h1,
-.dashboard-theme.theme-invincible-v2 h2,
-.dashboard-theme.theme-invincible-v2 h3,
-.dashboard-theme.theme-invincible-v2 .dashboard-brand {
-  font-family: var(--font-inv) !important;
-  color: var(--inv-yellow) !important;
-  text-shadow: 2px 2px 0 var(--inv-red);
-  letter-spacing: 0.05em;
+/* --- Reading highlight animation --- */
+.bible-verse-line.is-reading {
+  background: linear-gradient(90deg,
+    rgba(255, 92, 0, 0.06) 0%,
+    rgba(255, 92, 0, 0.10) 50%,
+    rgba(255, 92, 0, 0.06) 100%
+  );
+  box-shadow: inset 3px 0 0 var(--color-offwhite-orange, #FF5C00);
+  transform: translateX(2px);
 }
-.dashboard-theme.theme-invincible-v2 .text-black { color: var(--inv-text) !important; }
-.dashboard-theme.theme-invincible-v2 .text-gray-500 { color: var(--inv-muted) !important; }
-.dashboard-theme.theme-invincible-v2 .text-gray-600 { color: rgba(240,230,200,0.55) !important; }
-.dashboard-theme.theme-invincible-v2 .text-gray-400 { color: rgba(240,230,200,0.35) !important; }
-.dashboard-theme.theme-invincible-v2 .text-offwhite-orange { color: var(--inv-yellow) !important; }
-.dashboard-theme.theme-invincible-v2 .offwhite-label {
-  color: var(--inv-red) !important;
-  border-color: var(--inv-red) !important;
-  font-family: var(--font-inv) !important;
-  letter-spacing: 0.1em !important;
-}
-.dashboard-theme.theme-invincible-v2 .font-mono { color: var(--inv-muted) !important; }
 
-/* ── HOME HUD ────────────────────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 .home-level-circle {
-  border: 3px solid var(--inv-red) !important;
-  box-shadow: 2px 2px 0 var(--inv-red) !important;
+@keyframes bible-pulse-mic {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
 }
-.dashboard-theme.theme-invincible-v2 .home-level-circle strong {
-  font-family: var(--font-inv) !important;
-  font-size: 1.4rem !important;
-  color: var(--inv-yellow) !important;
-  text-shadow: 1px 1px 0 var(--inv-red);
+
+/* --- Floating Audio Control Bar --- */
+.bible-audio-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  margin: 0 -0.35rem;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border-top: 1.5px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.dashboard-theme.theme-invincible-v2 .home-level-track { background: var(--inv-panel2) !important; border-color: rgba(255,212,0,0.2) !important; }
-.dashboard-theme.theme-invincible-v2 .home-level-fill { background: linear-gradient(90deg, var(--inv-yellow), var(--inv-red)) !important; }
-.dashboard-theme.theme-invincible-v2 .home-user-button {
-  background: var(--inv-panel) !important;
-  border-color: var(--inv-yellow) !important;
-  color: var(--inv-yellow) !important;
-  box-shadow: 2px 2px 0 var(--inv-red) !important;
+
+.bible-audio-bar.is-active {
+  background: rgba(255, 255, 255, 0.94);
+  border-top-color: var(--color-offwhite-orange, #FF5C00);
+  box-shadow: 0 -4px 24px rgba(255, 92, 0, 0.08);
+}
+
+.bible-audio-progress-track {
+  width: 100%;
+  height: 2.5px;
+  background: rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
-.dashboard-theme.theme-invincible-v2 .home-wordmark-bottom {
-  font-family: var(--font-inv) !important;
-  color: var(--inv-yellow) !important;
-  text-shadow: 2px 2px 0 var(--inv-red) !important;
-}
-.dashboard-theme.theme-invincible-v2 .home-wordmark-top { color: rgba(255,212,0,0.6) !important; }
 
-/* Check button */
-.dashboard-theme.theme-invincible-v2 .home-check-button {
-  background: var(--inv-panel) !important;
-  border: 3px solid rgba(255,212,0,0.5) !important;
-  color: var(--inv-text) !important;
-  box-shadow: 4px 4px 0 rgba(232,0,13,0.25) !important;
-}
-.dashboard-theme.theme-invincible-v2 .home-check-button.is-complete {
-  background: var(--inv-yellow) !important;
-  border-color: var(--inv-yellow) !important;
-  color: var(--inv-bg) !important;
-  box-shadow: 4px 4px 0 var(--inv-red) !important;
-}
-.dashboard-theme.theme-invincible-v2 .home-check-flame { color: var(--inv-red) !important; }
-
-/* Metric cards */
-.dashboard-theme.theme-invincible-v2 .home-metric-card,
-.dashboard-theme.theme-invincible-v2 .home-wide-card {
-  background: var(--inv-panel) !important;
-  border-color: rgba(255,212,0,0.3) !important;
-  color: var(--inv-text) !important;
-  box-shadow: 3px 3px 0 rgba(232,0,13,0.2) !important;
-}
-.dashboard-theme.theme-invincible-v2 .home-card-title { color: var(--inv-yellow) !important; }
-
-/* ── SECTION HEADERS ─────────────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 .section-header-title {
-  font-family: var(--font-inv) !important;
-  color: var(--inv-yellow) !important;
-  letter-spacing: 0.08em !important;
+.bible-audio-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-offwhite-orange, #FF5C00), #ff8c42);
+  transition: width 0.4s ease;
+  border-radius: 0 2px 2px 0;
 }
 
-/* ── THEME STUDIO ────────────────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 .theme-chip-panel,
-.dashboard-theme.theme-invincible-v2 .theme-live-preview,
-.dashboard-theme.theme-invincible-v2 .theme-live-tile,
-.dashboard-theme.theme-invincible-v2 .theme-card-preview { background-color: var(--inv-panel2) !important; }
-.dashboard-theme.theme-invincible-v2 .theme-live-banner { background-color: var(--inv-yellow) !important; color: var(--inv-bg) !important; }
-.dashboard-theme.theme-invincible-v2 .theme-dot { background: linear-gradient(135deg, var(--inv-yellow), var(--inv-red)) !important; }
-.dashboard-theme.theme-invincible-v2 .theme-card {
-  background-color: var(--inv-panel) !important;
-  color: var(--inv-text) !important;
-}
-.dashboard-theme.theme-invincible-v2 .theme-card:hover {
-  box-shadow: 4px 4px 0 var(--inv-red) !important;
+.bible-audio-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  position: relative;
 }
 
-/* ── TROPHIES / WEEKLY GOALS ─────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 .weekly-goal-card {
-  background: var(--inv-panel) !important;
-  border-color: rgba(255,212,0,0.2) !important;
-  color: var(--inv-text) !important;
-}
-.dashboard-theme.theme-invincible-v2 .weekly-goal-card.is-active { border-color: var(--inv-yellow) !important; background: var(--inv-panel2) !important; }
-.dashboard-theme.theme-invincible-v2 .weekly-goal-card.is-complete { border-color: var(--inv-yellow) !important; }
-.dashboard-theme.theme-invincible-v2 .weekly-prize-panel { background: var(--inv-panel) !important; border-color: rgba(255,212,0,0.35) !important; }
-.dashboard-theme.theme-invincible-v2 .weekly-prize-button:not(:disabled) {
-  background: var(--inv-yellow) !important;
-  color: var(--inv-bg) !important;
-  border-color: var(--inv-yellow) !important;
-  font-family: var(--font-inv) !important;
-  letter-spacing: 0.06em !important;
-  box-shadow: 3px 3px 0 var(--inv-red) !important;
-}
-.dashboard-theme.theme-invincible-v2 .weekly-goal-preview { background: var(--inv-panel) !important; border-color: rgba(255,212,0,0.3) !important; }
-.dashboard-theme.theme-invincible-v2 .weekly-preview-reward { background: var(--inv-panel2) !important; color: var(--inv-yellow) !important; }
-.dashboard-theme.theme-invincible-v2 .weekly-prize-meter > div { background: var(--inv-panel2) !important; }
-.dashboard-theme.theme-invincible-v2 .weekly-prize-meter > div > i { background: linear-gradient(90deg, var(--inv-yellow), var(--inv-red)) !important; }
-
-/* ── MOBILE NAV ──────────────────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 .mobile-nav {
-  background: #010609 !important;
-  border-top: 2px solid var(--inv-yellow) !important;
+.bible-audio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #1a1a1a;
+  transition: all 0.2s ease;
+  padding: 0.35rem;
+  border-radius: 50%;
+  min-width: 2rem;
+  min-height: 2rem;
 }
 
-/* ── INPUTS ──────────────────────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 input,
-.dashboard-theme.theme-invincible-v2 textarea,
-.dashboard-theme.theme-invincible-v2 select {
-  background: var(--inv-panel) !important;
-  border-color: rgba(255,212,0,0.3) !important;
-  color: var(--inv-text) !important;
+.bible-audio-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--color-offwhite-orange, #FF5C00);
+  transform: scale(1.08);
 }
-.dashboard-theme.theme-invincible-v2 input::placeholder,
-.dashboard-theme.theme-invincible-v2 textarea::placeholder { color: var(--inv-muted) !important; }
 
-/* ── SCROLLBAR ───────────────────────────────────────────────────── */
-.dashboard-theme.theme-invincible-v2 ::-webkit-scrollbar-track { background: var(--inv-panel); }
-.dashboard-theme.theme-invincible-v2 ::-webkit-scrollbar-thumb { background: rgba(255,212,0,0.4); }
+.bible-audio-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.bible-audio-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.bible-audio-btn-play {
+  width: 2.8rem;
+  height: 2.8rem;
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 50%;
+  margin: 0 0.25rem;
+}
+
+.bible-audio-btn-play:hover:not(:disabled) {
+  background: var(--color-offwhite-orange, #FF5C00);
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.bible-audio-btn-stop {
+  color: #999;
+}
+
+.bible-audio-btn-speed {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  min-width: 2.4rem;
+}
+
+.bible-audio-btn-speed:hover {
+  background: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.bible-audio-info {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  margin: 0 0.25rem;
+  min-width: 3.5rem;
+}
+
+.bible-audio-verse-num {
+  color: var(--color-offwhite-orange, #FF5C00);
+  font-weight: 800;
+}
+
+.bible-audio-dot { color: #ccc; }
+.bible-audio-label { color: #aaa; }
+
+/* --- Speed Popup --- */
+.bible-speed-popup {
+  position: absolute;
+  bottom: 100%;
+  right: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  animation: bible-popup-in 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 50;
+}
+
+@keyframes bible-popup-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.bible-speed-popup-btn {
+  border: none;
+  background: transparent;
+  padding: 0.4rem 0.9rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  color: #444;
+  text-align: center;
+}
+
+.bible-speed-popup-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.bible-speed-popup-btn.is-active {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+/* --- Voice Settings Panel --- */
+.bible-voice-settings {
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.08);
+  background: rgba(248, 248, 248, 0.95);
+  backdrop-filter: blur(8px);
+  animation: bible-popup-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bible-voice-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem 0.45rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.bible-voice-settings-header button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  color: #999;
+  transition: all 0.2s;
+}
+
+.bible-voice-settings-header button:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #333;
+}
+
+.bible-voice-settings-body {
+  padding: 0.25rem 1rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.bible-voice-select-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.bible-voice-select-label > span {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #999;
+}
+
+.bible-voice-select {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 7px;
+  font-size: 0.78rem;
+  background: #fff;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.bible-voice-select:focus {
+  border-color: var(--color-offwhite-orange, #FF5C00);
+  outline: none;
+}
+
+.bible-speed-chips {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.bible-speed-chip {
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  padding: 0.3rem 0.6rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #555;
+}
+
+.bible-speed-chip:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.bible-speed-chip.is-active {
+  background: #1a1a1a;
+  color: #fff;
+  border-color: #1a1a1a;
+}
+
+.bible-voice-unsupported {
+  font-size: 0.75rem;
+  color: #c44;
+  font-style: italic;
+}
+
+/* --- Mobile adjustments for audio bar --- */
+@media (max-width: 760px) {
+  .bible-audio-bar {
+    margin: 0 -0.35rem;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bible-audio-controls {
+    padding: 0.4rem 0.5rem;
+    gap: 0.2rem;
+  }
+
+  .bible-audio-btn-play {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .bible-audio-info {
+    font-size: 0.55rem;
+    min-width: 2.5rem;
+  }
+
+  .bible-verse-speak-btn {
+    opacity: 0.35;
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  .bible-app-page {
+    padding-bottom: 5rem !important;
+  }
+}
 
 /* ════════════════════════════════════════════════════════════════════
    LEVEL MODAL
@@ -6673,378 +6723,2520 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   THEMESTUDIO: icon badge contrast fix for dark-background cards
-   ════════════════════════════════════════════════════════════════════ */
-.theme-card-theme-invincible-v2 .bg-white:not(.theme-card-preview) {
-  background-color: #0C1D35 !important;
-  color: #FFD400 !important;
-  border-color: rgba(255,212,0,0.5) !important;
-}
-.theme-card-theme-dark .bg-white:not(.theme-card-preview) {
-  background-color: #1A1A1A !important;
-  color: #00FF94 !important;
-  border-color: rgba(0,255,148,0.4) !important;
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   VELOCITY BLUE — stronger visual hierarchy
+   OFF-WHITE PREMIUM INDUSTRIAL UI STYLING & ANIMATIONS
    ════════════════════════════════════════════════════════════════════ */
 
-/* Sidebar — distinct slate-blue instead of near-white */
-.dashboard-theme.theme-blue .sidebar-shell {
-  background-color: #1E2D6E !important;
-  border-right-color: #2B59FF !important;
-}
-.dashboard-theme.theme-blue .sidebar-shell .dashboard-brand { color: #C9D5FF !important; }
-.dashboard-theme.theme-blue .sidebar-shell nav button {
-  color: rgba(201,213,255,0.6) !important;
-  background: transparent !important;
-}
-.dashboard-theme.theme-blue .sidebar-shell nav button:hover {
-  background: rgba(43,89,255,0.15) !important;
-  color: #C9D5FF !important;
-}
-.dashboard-theme.theme-blue .sidebar-shell nav button.bg-black {
-  background: #2B59FF !important;
-  color: #F8FAFF !important;
-}
-.dashboard-theme.theme-blue .sidebar-shell .border-t-2 { border-color: rgba(201,213,255,0.2) !important; }
-.dashboard-theme.theme-blue .sidebar-shell .text-gray-400 { color: rgba(201,213,255,0.4) !important; }
-.dashboard-theme.theme-blue .sidebar-shell .text-offwhite-orange { color: #7B9FFF !important; }
-.dashboard-theme.theme-blue .sidebar-shell button.border-black {
-  background: transparent !important;
-  border-color: rgba(201,213,255,0.3) !important;
-  color: rgba(201,213,255,0.7) !important;
-}
-.dashboard-theme.theme-blue .sidebar-shell button.border-black:hover {
-  background: rgba(43,89,255,0.2) !important;
-  color: #C9D5FF !important;
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
 }
 
-/* Mobile header */
-.dashboard-theme.theme-blue .sidebar-shell.md\:hidden {
-  background-color: #1E2D6E !important;
-  border-bottom-color: #2B59FF !important;
-}
-.dashboard-theme.theme-blue .sidebar-shell.md\:hidden .dashboard-brand { color: #C9D5FF !important; }
-.dashboard-theme.theme-blue .sidebar-shell.md\:hidden .text-black { color: #C9D5FF !important; }
-.dashboard-theme.theme-blue .sidebar-shell.md\:hidden .text-offwhite-orange { color: #7B9FFF !important; }
-
-/* Home check button — more contrast on blue */
-.dashboard-theme.theme-blue .home-check-button {
-  background: linear-gradient(90deg, #F8FAFF, #EEF3FF) !important;
-  border-color: #0F172A !important;
-  color: #0F172A !important;
-  box-shadow: 8px 8px 0 rgba(15,23,42,0.15), 0 24px 48px rgba(43,89,255,0.12) !important;
-}
-.dashboard-theme.theme-blue .home-check-button.is-complete {
-  background: linear-gradient(90deg, #C9D5FF, #EEF3FF) !important;
-  border-color: #2B59FF !important;
-}
-.dashboard-theme.theme-blue .home-check-flame {
-  background: #0F172A !important;
-  color: #2B59FF !important;
-  border-color: #0F172A !important;
+.offwhite-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  border-bottom: 2px solid #090909;
+  background: repeating-linear-gradient(
+    -45deg,
+    #ff5c00,
+    #ff5c00 10px,
+    #090909 10px,
+    #090909 20px
+  );
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 5px 0;
+  user-select: none;
+  z-index: 100;
 }
 
-/* Level HUD */
-.dashboard-theme.theme-blue .home-level-circle {
-  border-color: #0F172A !important;
-  box-shadow: 0 5px 0 rgba(15,23,42,0.2), 0 16px 32px rgba(43,89,255,0.25) !important;
-}
-.dashboard-theme.theme-blue .home-level-circle strong {
-  color: #1a3bcc !important;
-}
-.dashboard-theme.theme-blue .home-level-fill { background: #2B59FF !important; }
-.dashboard-theme.theme-blue .home-level-track { background: #DCE6FF !important; }
 
-/* User button */
-.dashboard-theme.theme-blue .home-user-button {
-  background: linear-gradient(180deg, #C9D5FF, #EEF3FF) !important;
-  border-color: #0F172A !important;
-  color: #0F172A !important;
+
+.offwhite-marquee-content {
+  display: inline-block;
+  animation: marquee 30s linear infinite;
+  white-space: nowrap;
 }
 
-/* Panels: give them more border contrast */
-.dashboard-theme.theme-blue .offwhite-border,
-.dashboard-theme.theme-blue .offwhite-panel,
-.dashboard-theme.theme-blue .hero-panel {
-  background-color: #F8FAFF !important;
-  border-color: #0F172A !important;
-}
-.dashboard-theme.theme-blue .offwhite-label { color: #2B59FF !important; border-color: #2B59FF !important; }
-.dashboard-theme.theme-blue .text-offwhite-orange { color: #2B59FF !important; }
-
-/* Metric cards */
-.dashboard-theme.theme-blue .home-metric-card,
-.dashboard-theme.theme-blue .home-wide-card {
-  background: #F8FAFF !important;
-  border-color: #0F172A !important;
-  color: #0F172A !important;
+.offwhite-marquee-text {
+  display: inline-flex;
+  gap: 3rem;
+  padding-right: 3rem;
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   CONTRAST FIX PASS 2
-   ════════════════════════════════════════════════════════════════════ */
-
-/* Rimuovi white glare overlay sui temi scuri */
-.dashboard-theme.theme-dark .home-check-button::before,
-.dashboard-theme.theme-invincible-v2 .home-check-button::before { opacity: 0 !important; }
-
-/* Dark: check button text visibile */
-.dashboard-theme.theme-dark .home-check-copy,
-.dashboard-theme.theme-dark .home-check-copy * { color: #E8E8E8 !important; }
-
-/* Invincible: check button text */
-.dashboard-theme.theme-invincible-v2 .home-check-copy,
-.dashboard-theme.theme-invincible-v2 .home-check-copy * { color: var(--inv-text) !important; }
-
-/* Dark: home-check-card-label */
-.dashboard-theme.theme-dark .home-check-card-label { color: rgba(232,232,232,0.55) !important; }
-.dashboard-theme.theme-dark .home-check-card-label strong { color: #00FF94 !important; }
-
-/* Invincible: check-card-label */
-.dashboard-theme.theme-invincible-v2 .home-check-card-label { color: var(--inv-muted) !important; }
-.dashboard-theme.theme-invincible-v2 .home-check-card-label strong { color: var(--inv-yellow) !important; }
-
-/* Dark: home-app-glow disabled */
-.dashboard-theme.theme-dark .home-app-glow { opacity: 0.06 !important; }
-
-/* Blue: home-check labels readable */
-.dashboard-theme.theme-blue .home-check-card-label { color: rgba(15,23,42,0.6) !important; }
-.dashboard-theme.theme-blue .home-check-card-label strong { color: #2B59FF !important; }
-
-/* Forest/Sunset: check-card-label accent */
-.dashboard-theme.theme-forest .home-check-card-label strong { color: #2E7D32 !important; }
-.dashboard-theme.theme-sunset .home-check-card-label strong { color: #E8521A !important; }
-
-/* Dark: main-shell bg strip residuo bianco */
-.dashboard-theme.theme-dark .home-main-surface { background: #0A0A0A !important; }
-.dashboard-theme.theme-invincible-v2 .home-main-surface { background: var(--inv-bg) !important; }
-
-/* Dark: bottom mobile nav */
-.dashboard-theme.theme-dark .mobile-nav { background: #060606 !important; border-top-color: #1E1E1E !important; }
-.dashboard-theme.theme-dark .mobile-nav-item { color: rgba(232,232,232,0.4) !important; }
-.dashboard-theme.theme-dark .mobile-nav-item.active,
-.dashboard-theme.theme-dark .mobile-nav-item[aria-current] { color: #00FF94 !important; }
-
-/* Invincible: bottom nav */
-.dashboard-theme.theme-invincible-v2 .mobile-nav { background: #010609 !important; border-top-color: var(--inv-yellow) !important; }
-.dashboard-theme.theme-invincible-v2 .mobile-nav-item { color: rgba(255,212,0,0.35) !important; }
-.dashboard-theme.theme-invincible-v2 .mobile-nav-item.active,
-.dashboard-theme.theme-invincible-v2 .mobile-nav-item[aria-current] { color: var(--inv-yellow) !important; }
-
-/* Forest: bottom nav */
-.dashboard-theme.theme-forest .mobile-nav { background: #1B2E1B !important; border-top-color: #2D4A2D !important; }
-.dashboard-theme.theme-forest .mobile-nav-item { color: rgba(200,230,201,0.45) !important; }
-.dashboard-theme.theme-forest .mobile-nav-item.active { color: #81C784 !important; }
-
-/* Sunset: bottom nav */
-.dashboard-theme.theme-sunset .mobile-nav { background: #2D1B10 !important; border-top-color: #4A2E1A !important; }
-.dashboard-theme.theme-sunset .mobile-nav-item { color: rgba(255,176,133,0.45) !important; }
-.dashboard-theme.theme-sunset .mobile-nav-item.active { color: #FFB085 !important; }
-
-/* Dark: SectionHeader separator + title */
-.dashboard-theme.theme-dark .section-header-title { color: #E8E8E8 !important; }
-.dashboard-theme.theme-dark [class*="border-black"]:not(.sidebar-shell):not(.home-check-button) {
-  border-color: #2A2A2A !important;
+/* Off-White Barcode styling */
+.offwhite-barcode {
+  width: 55px;
+  height: 15px;
+  background: repeating-linear-gradient(
+    90deg,
+    currentColor,
+    currentColor 1px,
+    transparent 1px,
+    transparent 3px,
+    currentColor 3px,
+    currentColor 4px,
+    transparent 4px,
+    transparent 5px
+  );
+  opacity: 0.65;
+  display: inline-block;
 }
 
-/* Dark: buttons inside offwhite panels */
-.dashboard-theme.theme-dark button:not(.sidebar-shell *):not(.home-check-button):not(.home-level-circle):not(.home-user-button):not(.weekly-prize-button) {
-  border-color: #2A2A2A !important;
+/* Section headers: clean typography, no ornamental quotes */
+.offwhite-header-title::before,
+.offwhite-header-title::after {
+  content: none;
 }
 
-/* Invincible: SectionHeader */
-.dashboard-theme.theme-invincible-v2 .section-header-title {
-  font-family: var(--font-inv) !important;
-  color: var(--inv-yellow) !important;
-  text-shadow: 1px 1px 0 var(--inv-red);
+/* Premium card tag styling */
+.offwhite-card-tag {
+  position: absolute;
+  top: -8px;
+  right: 15px;
+  background: var(--theme-ink, #090909);
+  color: var(--theme-ink-contrast, #ffffff);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  padding: 2px 6px;
+  border: 1px solid var(--theme-border, #090909);
+  letter-spacing: 0.1em;
 }
 
-/* offwhite-border inner text — handled by individual selectors below */
-
-/* ════════════════════════════════════════════════════════════════════
-   THEME CARD ISOLATION
-   Light-bg cards always render dark text regardless of active theme.
-   Must come LAST to win specificity ties (same class count, later = wins).
-   ════════════════════════════════════════════════════════════════════ */
-
-/* Force dark text on light-background cards */
-.theme-card-theme-offwhite,
-.theme-card-theme-blue,
-.theme-card-theme-forest,
-.theme-card-theme-sunset {
-  color: #090909 !important;
+/* --- Inline Audio Control Panel --- */
+.bible-inline-audio-panel {
+  border: 2px solid var(--theme-border);
+  border-radius: 4px;
+  background: var(--theme-panel);
+  padding: 1rem;
+  margin: 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  box-shadow: var(--theme-shadow);
 }
 
-/* Gray text inside light cards */
-.theme-card-theme-offwhite .text-gray-500,
-.theme-card-theme-offwhite .text-gray-600,
-.theme-card-theme-offwhite .text-gray-400,
-.theme-card-theme-blue .text-gray-500,
-.theme-card-theme-blue .text-gray-600,
-.theme-card-theme-blue .text-gray-400,
-.theme-card-theme-forest .text-gray-500,
-.theme-card-theme-forest .text-gray-600,
-.theme-card-theme-forest .text-gray-400,
-.theme-card-theme-sunset .text-gray-500,
-.theme-card-theme-sunset .text-gray-600,
-.theme-card-theme-sunset .text-gray-400 { color: rgba(9,9,9,0.5) !important; }
-
-/* Font-mono text inside light cards */
-.theme-card-theme-offwhite .font-mono,
-.theme-card-theme-blue .font-mono,
-.theme-card-theme-forest .font-mono,
-.theme-card-theme-sunset .font-mono { color: rgba(9,9,9,0.6) !important; }
-
-/* Icon badge bg: always white on light cards */
-.theme-card-theme-offwhite .bg-white,
-.theme-card-theme-blue .bg-white,
-.theme-card-theme-forest .bg-white,
-.theme-card-theme-sunset .bg-white {
-  background-color: #ffffff !important;
-  color: #090909 !important;
-  border-color: #090909 !important;
+.bible-inline-audio-title {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  background: var(--theme-ink);
+  color: var(--theme-ink-contrast);
+  padding: 0.2rem 0.5rem;
+  width: fit-content;
+  border-radius: 2px;
 }
 
-/* Active icon badge: always black bg on light cards */
-.theme-card-theme-offwhite .bg-black,
-.theme-card-theme-blue .bg-black,
-.theme-card-theme-forest .bg-black,
-.theme-card-theme-sunset .bg-black {
+.bible-inline-audio-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.bible-inline-audio-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 2.2px solid var(--theme-border);
+  background: var(--theme-panel);
+  color: var(--theme-ink);
+  padding: 0.5rem 0.95rem;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  border-radius: 4px;
+}
+
+.bible-inline-audio-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 var(--theme-border);
+}
+
+.bible-inline-audio-btn:active {
+  transform: scale(0.97);
+}
+
+.bible-inline-audio-btn.play-btn {
+  background: var(--theme-ink);
+  color: var(--theme-ink-contrast);
+}
+
+.bible-inline-audio-btn.play-btn:hover {
+  background: var(--theme-panel);
+  color: var(--theme-ink);
+}
+
+.bible-inline-audio-btn.play-btn.active {
+  background: var(--color-offwhite-orange, #FF5C00);
+  color: #ffffff;
+}
+
+.bible-inline-audio-btn.play-btn.active:hover {
+  background: var(--theme-panel);
+  color: var(--theme-ink);
+}
+
+.bible-inline-audio-divider {
+  width: 2px;
+  height: 1.5rem;
+  background: color-mix(in srgb, var(--theme-border) 20%, transparent);
+}
+
+.bible-inline-audio-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bible-inline-audio-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: color-mix(in srgb, var(--theme-border) 10%, transparent);
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-border) 15%, transparent);
+}
+
+.bible-inline-audio-progress-fill {
+  height: 100%;
+  background: var(--color-offwhite-orange, #FF5C00);
+  transition: width 0.35s ease;
+}
+
+.bible-inline-audio-status-text {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.65rem;
+  color: color-mix(in srgb, var(--theme-ink) 55%, transparent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Dark mode adjustments */
+.dashboard-theme.theme-dark .bible-inline-audio-btn.play-btn {
+  color: #0A0A0A;
+}
+
+.dashboard-theme.theme-dark .bible-inline-audio-btn.play-btn:hover {
+  color: #E8E8E8;
+}
+
+.dashboard-theme.theme-dark .bible-inline-audio-btn.play-btn.active {
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   VISUAL RENEWAL: APPLE-LIKE MINIMALIST OVERRIDES
+   ========================================================================== */
+
+/* 1. Global Ambient Background */
+.dashboard-theme {
+  background: 
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--theme-accent) 8%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 90% 90%, color-mix(in srgb, var(--theme-accent) 4%, transparent) 0%, transparent 40%),
+    var(--theme-bg) !important;
+  background-attachment: fixed !important;
+  color: var(--theme-ink) !important;
+}
+
+/* 2. Global Border Redesign & Squircle Corners */
+.dashboard-theme .border-2.border-black,
+.dashboard-theme .border-2.border-black\/15,
+.dashboard-theme .border-2.border-black\/20,
+.dashboard-theme .border-2.border-black\/30,
+.dashboard-theme .border-2.border-dashed.border-black,
+.dashboard-theme .border-2.border-solid,
+.dashboard-theme .border-2,
+.dashboard-theme .offwhite-border,
+.dashboard-theme .betterme-card {
+  border-width: 1px !important;
+  border-color: color-mix(in srgb, var(--theme-border) 10%, transparent) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+
+.dashboard-theme .border-black,
+.dashboard-theme .border-black\/20,
+.dashboard-theme .border-black\/30,
+.dashboard-theme .border {
+  border-color: color-mix(in srgb, var(--theme-border) 10%, transparent) !important;
+  border-width: 1px !important;
+}
+
+.dashboard-theme .rounded-none {
+  border-radius: 12px !important;
+}
+
+/* 3. Soft Shadows & Card Hover Transitions */
+.dashboard-theme .home-verse-card,
+.dashboard-theme .home-metric-card,
+.dashboard-theme .home-wide-card,
+.dashboard-theme .welcome-home-shell,
+.dashboard-theme .offwhite-panel {
+  border-width: 1px !important;
+  border-color: color-mix(in srgb, var(--theme-border) 10%, transparent) !important;
+  border-radius: 18px !important;
+  background-color: var(--theme-panel) !important;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.01) !important;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.dashboard-theme .home-metric-card:hover,
+.dashboard-theme .home-wide-card:hover,
+.dashboard-theme .offwhite-panel:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Disable brutalist translate effects */
+.dashboard-theme .offwhite-panel:hover,
+.dashboard-theme .home-metric-card:hover,
+.dashboard-theme .home-wide-card:hover {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* 4. Rounded Pills Buttons & Clean Inputs */
+.dashboard-theme .betterme-button,
+.dashboard-theme .betterme-button-primary,
+.dashboard-theme .auth-submit,
+.dashboard-theme .onboarding-submit,
+.dashboard-theme .home-check-button,
+.dashboard-theme .user-panel-logout,
+.dashboard-theme .section-save-button,
+.dashboard-theme .theme-buy-button,
+.dashboard-theme .theme-select-button {
+  border-radius: 9999px !important;
+  border: 1px solid color-mix(in srgb, var(--theme-border) 10%, transparent) !important;
+  padding: 0.65rem 1.4rem !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  font-size: 0.82rem !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  background-color: color-mix(in srgb, var(--theme-panel-muted) 40%, var(--theme-panel)) !important;
+  color: var(--theme-ink) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.dashboard-theme .betterme-button-primary,
+.dashboard-theme .auth-submit,
+.dashboard-theme .onboarding-submit,
+.dashboard-theme .section-save-button,
+.dashboard-theme .theme-buy-button,
+.dashboard-theme .theme-select-button {
+  background-color: var(--theme-accent) !important;
+  color: var(--theme-ink-contrast, #ffffff) !important;
+  border-color: transparent !important;
+}
+
+.dashboard-theme .betterme-button-primary:hover,
+.dashboard-theme .auth-submit:hover,
+.dashboard-theme .onboarding-submit:hover,
+.dashboard-theme .section-save-button:hover,
+.dashboard-theme .theme-buy-button:hover,
+.dashboard-theme .theme-select-button:hover {
+  background-color: color-mix(in srgb, var(--theme-accent) 85%, black) !important;
+}
+
+.dashboard-theme button:active,
+.dashboard-theme .section-choice-card:active {
+  transform: scale(0.97) !important;
+}
+
+/* inputs */
+.dashboard-theme input,
+.dashboard-theme textarea,
+.dashboard-theme select {
+  border-width: 1px !important;
+  border-color: color-mix(in srgb, var(--theme-border) 12%, transparent) !important;
+  background-color: color-mix(in srgb, var(--theme-panel-muted) 30%, var(--theme-panel)) !important;
+  border-radius: 10px !important;
+  padding: 0.65rem 0.9rem !important;
+  color: var(--theme-ink) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.88rem !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.dashboard-theme input:focus,
+.dashboard-theme textarea:focus,
+.dashboard-theme select:focus {
+  border-color: var(--theme-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent) 15%, transparent) !important;
+  outline: none !important;
+  background-color: var(--theme-panel) !important;
+}
+
+/* 5. Typography: clean sans-serif */
+.dashboard-theme .font-mono:not(span):not(p):not(div.truncate) {
+  font-family: var(--font-sans) !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+
+.dashboard-theme h1,
+.dashboard-theme h2,
+.dashboard-theme h3,
+.dashboard-theme h4 {
+  font-family: var(--font-sans) !important;
+  text-transform: none !important;
+  letter-spacing: -0.03em !important;
+  font-weight: 700 !important;
+}
+
+.dashboard-theme .welcome-home-title {
+  font-family: var(--font-sans) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.05em !important;
+  text-transform: none !important;
+  line-height: 0.95 !important;
+}
+
+/* 6. SectionHeader & Badges Redesign */
+.dashboard-theme .offwhite-header-title {
+  font-family: var(--font-sans) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  text-transform: none !important;
+}
+
+.dashboard-theme .h-0\.5.bg-black {
+  height: 1px !important;
+  background-color: color-mix(in srgb, var(--theme-border) 8%, transparent) !important;
+}
+
+.dashboard-theme .offwhite-barcode {
+  display: none !important;
+}
+
+/* Labels: keep classic black in Off-White, use accent in glass themes */
+.dashboard-theme.theme-offwhite .offwhite-label {
   background-color: #090909 !important;
+  color: #ffffff !important;
+  border-radius: 4px !important;
+  padding: 0.2rem 0.6rem !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 700 !important;
+  font-size: 0.65rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  border: none !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .offwhite-label {
+  background-color: rgba(255, 92, 0, 0.12) !important;
+  color: #FF5C00 !important;
+  border-radius: 4px !important;
+  padding: 0.2rem 0.6rem !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 700 !important;
+  font-size: 0.65rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  border: 1px solid rgba(255, 92, 0, 0.18) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .offwhite-label,
+.dashboard-theme.theme-liquid-glass-dark .offwhite-label {
+  background-color: color-mix(in srgb, var(--theme-accent) 10%, transparent) !important;
+  color: var(--theme-accent) !important;
+  border-radius: 6px !important;
+  padding: 0.2rem 0.6rem !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 18%, transparent) !important;
+}
+
+/* 7. Scrolling Marquee Status Bar */
+.dashboard-theme .offwhite-marquee {
+  background: color-mix(in srgb, var(--theme-accent) 8%, var(--theme-panel-muted)) !important;
+  color: var(--theme-accent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border) 8%, transparent) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  padding: 6px 0 !important;
+}
+
+/* 8. Translucent macOS-style Sidebar & Mobile Nav */
+.dashboard-theme .sidebar-shell {
+  background-color: color-mix(in srgb, var(--theme-panel) 84%, transparent) !important;
+  backdrop-filter: blur(20px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+  border-right-width: 1px !important;
+  border-right-color: color-mix(in srgb, var(--theme-border) 8%, transparent) !important;
+}
+
+.dashboard-theme .sidebar-shell nav button {
+  border-radius: 8px !important;
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
+  padding: 0.75rem 1rem !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Active sidebar item in Apple Style */
+.dashboard-theme .sidebar-shell nav button.bg-black {
+  background-color: var(--theme-accent-soft) !important;
+  color: var(--theme-accent) !important;
+  font-weight: 600 !important;
+}
+
+.dashboard-theme.theme-dark .sidebar-shell nav button.bg-black {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: var(--theme-accent) !important;
+}
+
+.dashboard-theme .sidebar-shell nav button.text-black {
+  color: var(--theme-ink) !important;
+}
+
+.dashboard-theme .sidebar-shell nav button.text-black:hover {
+  background-color: color-mix(in srgb, var(--theme-border) 6%, transparent) !important;
+}
+
+/* Mobile Bottom Nav */
+.dashboard-theme .mobile-nav-shell {
+  background-color: color-mix(in srgb, var(--theme-panel) 82%, transparent) !important;
+  backdrop-filter: blur(24px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+  border-top-width: 1px !important;
+  border-top-color: color-mix(in srgb, var(--theme-border) 8%, transparent) !important;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.04) !important;
+}
+
+.dashboard-theme .mobile-nav-orbit {
+  border-color: color-mix(in srgb, var(--theme-border) 8%, transparent) !important;
+  background: transparent !important;
+}
+
+.dashboard-theme .mobile-nav-orbit-item.is-active {
+  color: var(--theme-accent) !important;
+}
+
+.dashboard-theme .mobile-nav-orbit-item .bg-black {
+  background-color: var(--theme-accent-soft) !important;
+  border-radius: 9999px !important;
+}
+
+.dashboard-theme.theme-dark .mobile-nav-orbit-item .bg-black {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 9. Scrollbar styling */
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--theme-ink) 12%, transparent) !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--theme-accent) 30%, transparent) !important;
+}
+
+/* iOS 26 Selection Card Layout & Icons */
+.dashboard-theme .section-choice-grid {
+  display: grid !important;
+  grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  gap: 0.75rem !important;
+}
+
+@media (min-width: 640px) {
+  .dashboard-theme .section-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+.dashboard-theme .onboarding-backdrop {
+  overflow: hidden !important;
+  position: fixed !important;
+  inset: 0 !important;
+}
+
+.dashboard-theme .onboarding-bg-orbs {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  overflow: hidden !important;
+  filter: blur(80px) !important;
+  pointer-events: none !important;
+}
+
+.dashboard-theme .onboarding-bg-orbs .orb {
+  position: absolute !important;
+  border-radius: 50% !important;
+  opacity: 0.38 !important;
+  mix-blend-mode: plus-lighter !important;
+}
+
+.dashboard-theme .onboarding-bg-orbs .orb-1 {
+  width: 280px !important;
+  height: 280px !important;
+  background: var(--theme-accent) !important;
+  top: -40px !important;
+  left: -40px !important;
+  animation: floatOrb1 16s infinite alternate ease-in-out !important;
+}
+
+.dashboard-theme .onboarding-bg-orbs .orb-2 {
+  width: 240px !important;
+  height: 240px !important;
+  background: #34C759 !important; /* iOS Green */
+  bottom: -40px !important;
+  right: -40px !important;
+  animation: floatOrb2 14s infinite alternate ease-in-out !important;
+}
+
+.dashboard-theme .onboarding-bg-orbs .orb-3 {
+  width: 220px !important;
+  height: 220px !important;
+  background: #0A84FF !important; /* iOS Blue */
+  top: 40% !important;
+  left: 35% !important;
+  animation: floatOrb3 18s infinite alternate ease-in-out !important;
+}
+
+@keyframes floatOrb1 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(60px, 80px) scale(1.2); }
+}
+
+@keyframes floatOrb2 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-60px, -60px) scale(1.15); }
+}
+
+@keyframes floatOrb3 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-40px, 50px) scale(1.1); }
+}
+
+/* 2. Glassmorphic Modal Panels */
+.dashboard-theme .onboarding-panel,
+.dashboard-theme .user-panel {
+  position: relative !important;
+  z-index: 10 !important;
+  border-radius: 30px !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(40px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(190%) !important;
+  box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  padding: 2.2rem 1.8rem !important;
+  width: min(100%, 580px) !important;
+  max-height: min(92svh, 800px) !important;
+  transition: all 0.3s ease !important;
+}
+
+.dashboard-theme.theme-dark .onboarding-panel,
+.dashboard-theme.theme-dark .user-panel {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(30, 30, 30, 0.55) !important;
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+.dashboard-theme .user-panel-head {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  margin: -2.2rem -1.8rem 1.5rem !important;
+  padding: 2rem 1.8rem 1.2rem !important;
+}
+
+.dashboard-theme.theme-dark .user-panel-head {
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* 3. Onboarding Steps Overhaul */
+.dashboard-theme .onboarding-icon {
+  background: linear-gradient(135deg, var(--theme-accent) 0%, color-mix(in srgb, var(--theme-accent) 60%, white) 100%) !important;
+  color: var(--theme-ink-contrast, #ffffff) !important;
+  border-radius: 18px !important;
+  border: none !important;
+  box-shadow: 0 10px 25px -8px color-mix(in srgb, var(--theme-accent) 45%, transparent) !important;
+}
+
+.dashboard-theme .onboarding-steps div {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 18px !important;
+  padding: 0.9rem 1.1rem !important;
+  gap: 0.9rem !important;
+}
+
+.dashboard-theme.theme-dark .onboarding-steps div {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dashboard-theme .onboarding-steps strong {
+  background: var(--theme-accent-soft) !important;
+  color: var(--theme-accent) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+}
+
+.dashboard-theme.theme-dark .onboarding-steps strong {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--theme-accent) !important;
+}
+
+.dashboard-theme .onboarding-steps span {
+  font-family: var(--font-sans) !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: -0.01em !important;
+  color: var(--theme-ink) !important;
+}
+
+/* 4. Section Picker Headers & Layout Grids */
+.dashboard-theme .user-tutorial-title {
+  font-family: var(--font-sans) !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: -0.015em !important;
+  color: var(--theme-accent) !important;
+  margin-bottom: 0.9rem !important;
+}
+
+.dashboard-theme .section-choice-grid {
+  display: grid !important;
+  grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  gap: 0.75rem !important;
+}
+
+@media (min-width: 580px) {
+  .dashboard-theme .section-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+.dashboard-theme .section-choice-grid.is-compact {
+  display: grid !important;
+  grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  gap: 0.75rem !important;
+}
+
+@media (min-width: 580px) {
+  .dashboard-theme .section-choice-grid.is-compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* 5. Section Choice Cards (iOS 26 Widget Style) */
+.dashboard-theme .section-choice-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.9rem !important;
+  min-height: 4.8rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(20px) saturate(1.3) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.3) !important;
+  color: var(--theme-ink) !important;
+  padding: 0.85rem 1rem !important;
+  position: relative !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.dashboard-theme.theme-dark .section-choice-card {
+  background: rgba(44, 44, 46, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dashboard-theme .section-choice-card:hover {
+  transform: translateY(-2px) !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.06) !important;
+}
+
+.dashboard-theme.theme-dark .section-choice-card:hover {
+  background: rgba(44, 44, 46, 0.6) !important;
+}
+
+/* Selected iOS card */
+.dashboard-theme .section-choice-card.is-selected {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: var(--theme-accent) !important;
+  border-width: 1.5px !important;
+  box-shadow: 0 10px 25px -5px color-mix(in srgb, var(--theme-accent) 15%, transparent) !important;
+}
+
+.dashboard-theme.theme-dark .section-choice-card.is-selected {
+  background: rgba(44, 44, 46, 0.85) !important;
+}
+
+/* iOS circular checkmark badge */
+.dashboard-theme .section-choice-card.is-selected::after {
+  content: '✓' !important;
+  position: absolute !important;
+  top: -8px !important;
+  right: -8px !important;
+  width: 22px !important;
+  height: 22px !important;
+  background: var(--theme-accent) !important;
+  color: white !important;
+  font-size: 11px !important;
+  font-weight: bold !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15) !important;
+  border: 2px solid var(--theme-panel, #ffffff) !important;
+  animation: checkPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+@keyframes checkPop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+/* Icon Squircle Wrapper & Colors */
+.dashboard-theme .section-card-icon-wrapper {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 11px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+.dashboard-theme .section-card-routine .section-card-icon-wrapper {
+  background: linear-gradient(135deg, #FF5E3A, #FF2A68) !important;
+  color: white !important;
+}
+.dashboard-theme .section-card-finance .section-card-icon-wrapper {
+  background: linear-gradient(135deg, #34C759, #00802B) !important;
+  color: white !important;
+}
+.dashboard-theme .section-card-fitness .section-card-icon-wrapper {
+  background: linear-gradient(135deg, #FF9F0A, #FF3B30) !important;
+  color: white !important;
+}
+.dashboard-theme .section-card-diet .section-card-icon-wrapper {
+  background: linear-gradient(135deg, #BF5AF2, #FF2D55) !important;
+  color: white !important;
+}
+.dashboard-theme .section-card-shopping .section-card-icon-wrapper {
+  background: linear-gradient(135deg, #0A84FF, #00C6FF) !important;
+  color: white !important;
+}
+.dashboard-theme .section-card-trophies .section-card-icon-wrapper {
+  background: linear-gradient(135deg, #FFD60A, #FF9F0A) !important;
+  color: white !important;
+}
+.dashboard-theme .section-card-themes .section-card-icon-wrapper {
+  background: linear-gradient(135deg, #AF52DE, #5E5CE6) !important;
+  color: white !important;
+}
+.dashboard-theme .section-card-bible .section-card-icon-wrapper {
+  background: linear-gradient(135deg, #5E5CE6, #BF5AF2) !important;
+  color: white !important;
+}
+.dashboard-theme .section-card-ai-coach .section-card-icon-wrapper {
+  background: linear-gradient(135deg, #7F00FF, #FF007F) !important;
+  color: white !important;
+}
+
+/* Typography settings for widgets */
+.dashboard-theme .section-choice-card .section-card-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.15rem !important;
+  min-width: 0 !important;
+  flex-grow: 1 !important;
+  text-align: left !important;
+}
+
+.dashboard-theme .section-choice-card .section-card-info span {
+  font-family: var(--font-sans) !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: var(--theme-ink) !important;
+  text-transform: none !important;
+  letter-spacing: -0.015em !important;
+}
+
+.dashboard-theme .section-choice-card .section-card-info small {
+  font-family: var(--font-sans) !important;
+  font-size: 0.72rem !important;
+  font-weight: 400 !important;
+  color: color-mix(in srgb, var(--theme-ink) 58%, transparent) !important;
+  text-transform: none !important;
+  line-height: 1.3 !important;
+  letter-spacing: normal !important;
+}
+
+.dashboard-theme .section-only-action {
+  position: absolute !important;
+  bottom: 8px !important;
+  right: 8px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.65rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  color: var(--theme-accent) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  opacity: 0.8 !important;
+}
+
+.dashboard-theme .section-only-action:hover {
+  text-decoration: underline !important;
+  opacity: 1 !important;
+}
+
+.dashboard-theme .section-choice-grid.is-compact .section-choice-card {
+  padding-bottom: 1.7rem !important;
+}
+
+/* 6. Settings Panel Form and Stats Alignment */
+.dashboard-theme .user-profile-form,
+.dashboard-theme .user-tutorial,
+.dashboard-theme .section-picker,
+.dashboard-theme .user-sections-editor {
+  border: 1px solid color-mix(in srgb, var(--theme-border) 8%, transparent) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01) !important;
+  padding: 1.1rem !important;
+}
+
+.dashboard-theme.theme-dark .user-profile-form,
+.dashboard-theme.theme-dark .user-tutorial,
+.dashboard-theme.theme-dark .section-picker,
+.dashboard-theme.theme-dark .user-sections-editor {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dashboard-theme .user-profile-form label > span {
+  font-family: var(--font-sans) !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  color: color-mix(in srgb, var(--theme-ink) 56%, transparent) !important;
+  letter-spacing: normal !important;
+}
+
+.dashboard-theme .user-panel-stats {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 0.75rem !important;
+  margin-bottom: 1.25rem !important;
+}
+
+@media (max-width: 480px) {
+  .dashboard-theme .user-panel-stats {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.dashboard-theme .user-panel-stats div {
+  border: 1px solid color-mix(in srgb, var(--theme-border) 8%, transparent) !important;
+  border-radius: 18px !important;
+  padding: 0.85rem !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  text-align: center !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.01) !important;
+}
+
+.dashboard-theme.theme-dark .user-panel-stats div {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dashboard-theme .user-panel-stats span {
+  font-family: var(--font-sans) !important;
+  font-size: 1.4rem !important;
+  font-weight: 800 !important;
+  color: var(--theme-accent) !important;
+  letter-spacing: -0.03em !important;
+}
+
+.dashboard-theme .user-panel-stats p {
+  font-family: var(--font-sans) !important;
+  font-size: 0.68rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: color-mix(in srgb, var(--theme-ink) 60%, transparent) !important;
+  margin-top: 0.15rem !important;
+}
+
+
+
+
+
+/* ════════════════════════════════════════════════════════════════════
+   THEME CARD: LIQUID GLASS (ThemeStudio Preview)
+   ════════════════════════════════════════════════════════════════════ */
+.dashboard-theme .theme-card-theme-liquid-glass {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(15px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(15px) saturate(190%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+  color: #1C1C1E !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 0 10px 30px rgba(0, 0, 0, 0.03) !important;
+}
+
+.theme-card-theme-liquid-glass .text-gray-500,
+.theme-card-theme-liquid-glass .text-gray-600,
+.theme-card-theme-liquid-glass .text-gray-400 {
+  color: rgba(28, 28, 30, 0.55) !important;
+}
+
+.theme-card-theme-liquid-glass .font-mono {
+  color: rgba(28, 28, 30, 0.6) !important;
+}
+
+.theme-card-theme-liquid-glass .bg-white {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  color: #1C1C1E !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.theme-card-theme-liquid-glass .bg-black {
+  background: linear-gradient(135deg, #00d2ff 0%, #a600ff 50%, #ff007f 100%) !important;
   color: #ffffff !important;
 }
 
-/* text-offwhite-orange inside these cards → use each theme's own accent */
-.theme-card-theme-offwhite .text-offwhite-orange { color: #FF5C00 !important; }
-.theme-card-theme-blue .text-offwhite-orange { color: #2B59FF !important; }
-.theme-card-theme-forest .text-offwhite-orange { color: #388E3C !important; }
-.theme-card-theme-sunset .text-offwhite-orange { color: #E8521A !important; }
-
-/* border-black inside light cards */
-.theme-card-theme-offwhite .border-black,
-.theme-card-theme-blue .border-black,
-.theme-card-theme-forest .border-black,
-.theme-card-theme-sunset .border-black { border-color: rgba(9,9,9,0.5) !important; }
-
-/* Dark Invincible card: explicit dark text override must NOT bleed — already isolated */
-.theme-card-theme-invincible-v2 { color: #F0E6C8 !important; }
-.theme-card-theme-invincible-v2 .text-gray-500,
-.theme-card-theme-invincible-v2 .text-gray-600 { color: rgba(240,230,200,0.55) !important; }
-.theme-card-theme-invincible-v2 .font-mono { color: rgba(240,230,200,0.6) !important; }
-.theme-card-theme-invincible-v2 .text-offwhite-orange { color: #FFD400 !important; }
-
-/* Dark card icon badge */
-.theme-card-theme-dark { color: #E8E8E8 !important; }
-.theme-card-theme-dark .text-gray-500,
-.theme-card-theme-dark .text-gray-600 { color: rgba(232,232,232,0.5) !important; }
-.theme-card-theme-dark .font-mono { color: rgba(232,232,232,0.6) !important; }
-.theme-card-theme-dark .text-offwhite-orange { color: #00FF94 !important; }
-.theme-card-theme-dark .bg-white {
-  background-color: #1A1A1A !important;
-  color: #E8E8E8 !important;
-  border-color: #2A2A2A !important;
+.theme-card-theme-liquid-glass .text-offwhite-orange {
+  color: #a600ff !important;
 }
-.theme-card-theme-dark .bg-black {
-  background-color: #00FF94 !important;
+
+.theme-card-theme-liquid-glass .border-black {
+  border-color: rgba(28, 28, 30, 0.2) !important;
+}
+
+.theme-card-theme-liquid-glass p {
+  color: rgba(28, 28, 30, 0.65) !important;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+   THEME: LIQUID GLASS  /  theme-liquid-glass (SIRI NEON & LIQUID GLASS)
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Root and Background with moving Siri Orbs */
+
+/* iOS 26 Liquid Glass Bottom Tab Bar */
+.dashboard-theme.theme-liquid-glass .mobile-nav-shell {
+  padding: 0 16px 24px 16px !important; /* Space from bottom */
+  background: transparent !important;
+}
+
+.dashboard-theme.theme-liquid-glass .mobile-nav-shell > div {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(40px) saturate(250%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(250%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  border-radius: 9999px !important;
+  padding: 8px 12px !important;
+}
+
+.dashboard-theme.theme-liquid-glass .mobile-nav-shell button {
+  border-radius: 9999px !important;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
+  color: rgba(28, 28, 30, 0.5) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .mobile-nav-shell button.bg-black {
+  background: #ffffff !important;
+  color: #a600ff !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .mobile-nav-shell button.bg-black svg {
+  stroke: url(#siri-gradient) !important; /* Optional if we define an SVG gradient */
+}
+
+/* Adjust main content padding so it doesn't overlap with the floating bar */
+.dashboard-theme.theme-liquid-glass .main-shell {
+  padding-bottom: 100px !important;
+}
+
+.dashboard-theme.theme-liquid-glass {
+  background: 
+    radial-gradient(circle at 15% 20%, rgba(0, 210, 255, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(166, 0, 255, 0.15) 0%, transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(255, 0, 127, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(0, 102, 255, 0.1) 0%, transparent 40%),
+    #F2F2F7 !important;
+  background-attachment: fixed !important;
+  color: #1C1C1E !important;
+}
+
+/* Translucent macOS-style Sidebar & Mobile Nav */
+.dashboard-theme.theme-liquid-glass .sidebar-shell {
+  background-color: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(35px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(35px) saturate(210%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: none !important;
+}
+
+.dashboard-theme.theme-liquid-glass .sidebar-shell .dashboard-brand {
+  background: linear-gradient(135deg, #00d2ff 0%, #a600ff 50%, #ff007f 100%);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  font-weight: 900 !important;
+}
+
+.dashboard-theme.theme-liquid-glass .sidebar-shell nav button {
+  color: rgba(28, 28, 30, 0.6) !important;
+  background: transparent !important;
+}
+
+.dashboard-theme.theme-liquid-glass .sidebar-shell nav button:hover {
+  background: rgba(166, 0, 255, 0.08) !important;
+  color: #a600ff !important;
+}
+
+.dashboard-theme.theme-liquid-glass .sidebar-shell nav button.bg-black {
+  background: linear-gradient(135deg, rgba(0, 210, 255, 0.12) 0%, rgba(166, 0, 255, 0.12) 50%, rgba(255, 0, 127, 0.12) 100%) !important;
+  color: #a600ff !important;
+  font-weight: 700 !important;
+}
+
+.dashboard-theme.theme-liquid-glass .sidebar-shell .border-t-2 {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .sidebar-shell .text-gray-400 {
+  color: rgba(28, 28, 30, 0.4) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .sidebar-shell .text-offwhite-orange {
+  color: #a600ff !important;
+}
+
+/* Main content and panels: Real Liquid Glass Bevel and Highlight */
+.dashboard-theme.theme-liquid-glass .main-shell {
+  background: transparent !important;
+}
+
+.dashboard-theme.theme-liquid-glass .offwhite-border,
+.dashboard-theme.theme-liquid-glass .offwhite-panel,
+.dashboard-theme.theme-liquid-glass .hero-panel,
+.dashboard-theme.theme-liquid-glass .betterme-card {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(28px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(210%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+  border-radius: 20px !important;
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 
+    0 12px 30px -10px rgba(0, 0, 0, 0.04), 
+    0 4px 12px -5px rgba(0, 0, 0, 0.02) !important;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Hover Siri Glow */
+.dashboard-theme.theme-liquid-glass .offwhite-panel:hover,
+.dashboard-theme.theme-liquid-glass .betterme-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.75), 
+    0 20px 40px -15px rgba(166, 0, 255, 0.12), 
+    0 4px 10px rgba(0, 0, 0, 0.03) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .offwhite-label {
+  background-color: rgba(166, 0, 255, 0.1) !important;
+  color: #a600ff !important;
+  border-color: rgba(166, 0, 255, 0.2) !important;
+}
+
+/* Mobile top header */
+.dashboard-theme.theme-liquid-glass .sidebar-shell.md\:hidden {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+.dashboard-theme.theme-liquid-glass .sidebar-shell.md\:hidden .dashboard-brand {
+  background: linear-gradient(135deg, #00d2ff 0%, #a600ff 50%, #ff007f 100%);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+.dashboard-theme.theme-liquid-glass .sidebar-shell.md\:hidden .text-black {
+  color: #1C1C1E !important;
+}
+
+/* Accent override to Siri colors */
+.dashboard-theme.theme-liquid-glass .text-offwhite-orange {
+  color: #a600ff !important;
+}
+
+/* HUD & Check In Circle */
+.dashboard-theme.theme-liquid-glass .home-level-circle {
+  border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(10px) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .home-level-circle strong {
+  color: #a600ff !important;
+}
+
+.dashboard-theme.theme-liquid-glass .home-level-fill {
+  background: linear-gradient(90deg, #00d2ff 0%, #a600ff 50%, #ff007f 100%) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .home-level-track {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Check Button with Siri Gradient */
+.dashboard-theme.theme-liquid-glass .home-check-button {
+  background: linear-gradient(135deg, #00d2ff 0%, #a600ff 50%, #ff007f 100%) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px -4px rgba(166, 0, 255, 0.3) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .home-check-button:hover {
+  filter: brightness(1.08) !important;
+  box-shadow: 0 12px 24px -4px rgba(166, 0, 255, 0.4) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .home-check-button.is-complete {
+  background: linear-gradient(135deg, #34C759 0%, #28a745 100%) !important;
+  box-shadow: 0 8px 20px -4px rgba(52, 199, 89, 0.3) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .home-check-copy,
+.dashboard-theme.theme-liquid-glass .home-check-copy * {
+  color: #ffffff !important;
+}
+
+/* Cards */
+.dashboard-theme.theme-liquid-glass .home-metric-card,
+.dashboard-theme.theme-liquid-glass .home-wide-card {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(28px) saturate(210%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+  color: #1C1C1E !important;
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6), 
+    0 10px 25px -10px rgba(0, 0, 0, 0.03) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .home-user-button {
+  background-color: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+  color: #1C1C1E !important;
+}
+
+/* Weekly Goals & Prizes */
+.dashboard-theme.theme-liquid-glass .weekly-goal-card {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.65) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .weekly-goal-card.is-active {
+  border-color: #a600ff !important;
+  background-color: rgba(166, 0, 255, 0.08) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .weekly-prize-panel {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .weekly-prize-button:not(:disabled) {
+  background: linear-gradient(135deg, #00d2ff 0%, #a600ff 50%, #ff007f 100%) !important;
+  color: #ffffff !important;
+}
+
+/* Theme Studio Previews */
+.dashboard-theme.theme-liquid-glass .theme-chip-panel,
+.dashboard-theme.theme-liquid-glass .theme-live-preview,
+.dashboard-theme.theme-liquid-glass .theme-live-tile,
+.dashboard-theme.theme-liquid-glass .theme-card-preview {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.65) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .theme-live-banner {
+  background: linear-gradient(135deg, #00d2ff 0%, #a600ff 50%, #ff007f 100%) !important;
+  color: #ffffff !important;
+}
+
+/* Inputs and Forms */
+.dashboard-theme.theme-liquid-glass input,
+.dashboard-theme.theme-liquid-glass textarea,
+.dashboard-theme.theme-liquid-glass select {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.65) !important;
+  color: #1C1C1E !important;
+}
+
+.dashboard-theme.theme-liquid-glass input:focus,
+.dashboard-theme.theme-liquid-glass textarea:focus,
+.dashboard-theme.theme-liquid-glass select:focus {
+  border-color: #a600ff !important;
+  box-shadow: 0 0 0 3px rgba(166, 0, 255, 0.15) !important;
+}
+
+/* Text styles */
+.dashboard-theme.theme-liquid-glass .text-gray-500 { color: rgba(28, 28, 30, 0.55) !important; }
+.dashboard-theme.theme-liquid-glass .text-gray-600 { color: rgba(28, 28, 30, 0.65) !important; }
+.dashboard-theme.theme-liquid-glass .text-gray-400 { color: rgba(28, 28, 30, 0.45) !important; }
+.dashboard-theme.theme-liquid-glass .text-black { color: #1C1C1E !important; }
+.dashboard-theme.theme-liquid-glass h1, 
+.dashboard-theme.theme-liquid-glass h2, 
+.dashboard-theme.theme-liquid-glass h3 { color: #1C1C1E !important; }
+
+/* Scrollbar */
+.dashboard-theme.theme-liquid-glass ::-webkit-scrollbar-track { background: transparent; }
+.dashboard-theme.theme-liquid-glass ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.12); }
+
+/* Mobile Bottom Nav */
+.dashboard-theme.theme-liquid-glass .mobile-nav {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(20px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .mobile-nav-item {
+  color: rgba(28, 28, 30, 0.45) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .mobile-nav-item.active {
+  color: #a600ff !important;
+}
+
+.dashboard-theme.theme-liquid-glass .mobile-nav-orbit {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .mobile-nav-orbit-item {
+  color: rgba(28, 28, 30, 0.5) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .mobile-nav-orbit-item.is-active {
+  background: linear-gradient(135deg, rgba(0, 210, 255, 0.12) 0%, rgba(166, 0, 255, 0.12) 50%, rgba(255, 0, 127, 0.12) 100%) !important;
+  border-color: rgba(166, 0, 255, 0.3) !important;
+  color: #a600ff !important;
+}
+
+/* Bible Verse reading highlight */
+.dashboard-theme.theme-liquid-glass .bible-verse-line.is-reading {
+  background: rgba(166, 0, 255, 0.08) !important;
+}
+
+
+/* Liquid Glass Dynamic Island Player */
+.dashboard-theme.theme-liquid-glass .bible-audio-bar {
+  position: fixed !important;
+  bottom: 120px !important;
+  left: 50% !important;
+  transform: translateX(-50%) scale(0.95) !important;
+  width: max-content !important;
+  max-width: 90vw !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(40px) saturate(250%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(250%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  margin: 0 !important;
+  padding: 8px 16px !important;
+  z-index: 100 !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dashboard-theme.theme-liquid-glass .bible-audio-bar.is-active,
+.dashboard-theme.theme-liquid-glass .bible-audio-bar:focus-within,
+.dashboard-theme.theme-liquid-glass .bible-audio-bar:hover {
+  transform: translateX(-50%) scale(1) !important;
+  opacity: 1;
+  pointer-events: all;
+}
+
+.dashboard-theme.theme-liquid-glass .bible-audio-controls {
+  padding: 0 !important;
+  justify-content: center !important;
+  gap: 12px !important;
+}
+
+.dashboard-theme.theme-liquid-glass .bible-audio-progress-track {
+  position: absolute !important;
+  bottom: -1px !important;
+  left: 24px !important;
+  right: 24px !important;
+  width: auto !important;
+  border-radius: 9999px !important;
+}
+
+.dashboard-theme.theme-liquid-glass .bible-audio-progress-fill {
+  background: linear-gradient(90deg, #00d2ff, #a600ff, #ff007f) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .bible-audio-btn {
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .bible-audio-btn:hover {
+  color: #a600ff !important;
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .bible-audio-btn-play {
+  background: linear-gradient(135deg, rgba(0, 210, 255, 0.1) 0%, rgba(166, 0, 255, 0.2) 50%, rgba(255, 0, 127, 0.1) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  color: #a600ff !important;
+}
+
+/* Old overrides below */
+.dashboard-theme.theme-liquid-glass .old-bible-audio-bar {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(15px) !important;
+  border-top-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.dashboard-theme.theme-liquid-glass .bible-audio-bar.is-active {
+  border-top-color: #a600ff !important;
+  box-shadow: 0 -4px 20px rgba(166, 0, 255, 0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK THEME OVERRIDES
+   theme-offwhite-dark + theme-liquid-glass-dark
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Off White Dark: pure black/dark grey with white text + orange accent */
+.dashboard-theme.theme-offwhite-dark {
+  background-color: #0A0A0A !important;
+  color: #F5F5F0 !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .sidebar-shell,
+.dashboard-theme.theme-offwhite-dark .main-shell,
+.dashboard-theme.theme-offwhite-dark .mobile-nav-shell {
+  background-color: var(--theme-panel) !important;
+  color: var(--theme-ink) !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .offwhite-border,
+.dashboard-theme.theme-offwhite-dark .offwhite-panel,
+.dashboard-theme.theme-offwhite-dark .hero-panel,
+.dashboard-theme.theme-offwhite-dark .betterme-card,
+.dashboard-theme.theme-offwhite-dark .welcome-home-shell {
+  background-color: #141414 !important;
+  border-color: rgba(245, 245, 240, 0.1) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .offwhite-label,
+.dashboard-theme.theme-offwhite-dark .betterme-label {
+  background-color: rgba(255, 92, 0, 0.12) !important;
+  color: #FF5C00 !important;
+  border-color: rgba(255, 92, 0, 0.2) !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .bg-white { background-color: #1E1E1E !important; }
+.dashboard-theme.theme-offwhite-dark .bg-gray-50 { background-color: #141414 !important; }
+.dashboard-theme.theme-offwhite-dark .bg-gray-100 { background-color: #1A1A1A !important; }
+.dashboard-theme.theme-offwhite-dark .border-black { border-color: rgba(245, 245, 240, 0.15) !important; }
+.dashboard-theme.theme-offwhite-dark .border-black\/20 { border-color: rgba(245, 245, 240, 0.10) !important; }
+.dashboard-theme.theme-offwhite-dark .text-black { color: #F5F5F0 !important; }
+.dashboard-theme.theme-offwhite-dark .text-gray-500 { color: rgba(245, 245, 240, 0.5) !important; }
+.dashboard-theme.theme-offwhite-dark .text-gray-400 { color: rgba(245, 245, 240, 0.4) !important; }
+.dashboard-theme.theme-offwhite-dark .text-gray-600 { color: rgba(245, 245, 240, 0.6) !important; }
+.dashboard-theme.theme-offwhite-dark h1, 
+.dashboard-theme.theme-offwhite-dark h2, 
+.dashboard-theme.theme-offwhite-dark h3 { color: #F5F5F0 !important; }
+
+.dashboard-theme.theme-offwhite-dark .sidebar-shell {
+  background-color: #0D0D0D !important;
+  border-right-color: rgba(245, 245, 240, 0.07) !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .sidebar-shell nav button {
+  color: rgba(245, 245, 240, 0.55) !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .sidebar-shell nav button:hover {
+  background-color: rgba(255, 92, 0, 0.08) !important;
+  color: #FF5C00 !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .sidebar-shell nav button.bg-black {
+  background-color: rgba(255, 92, 0, 0.12) !important;
+  color: #FF5C00 !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .mobile-nav-shell {
+  background-color: rgba(13, 13, 13, 0.92) !important;
+  border-top-color: rgba(245, 245, 240, 0.07) !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .mobile-nav-orbit {
+  background-color: rgba(20, 20, 20, 0.95) !important;
+  border-color: rgba(245, 245, 240, 0.08) !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .mobile-nav-orbit-item {
+  color: rgba(245, 245, 240, 0.45) !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .mobile-nav-orbit-item.is-active {
+  background-color: rgba(255, 92, 0, 0.12) !important;
+  color: #FF5C00 !important;
+}
+
+.dashboard-theme.theme-offwhite-dark input,
+.dashboard-theme.theme-offwhite-dark textarea,
+.dashboard-theme.theme-offwhite-dark select {
+  background-color: #1A1A1A !important;
+  border-color: rgba(245, 245, 240, 0.1) !important;
+  color: #F5F5F0 !important;
+}
+
+.dashboard-theme.theme-offwhite-dark input::placeholder,
+.dashboard-theme.theme-offwhite-dark textarea::placeholder {
+  color: rgba(245, 245, 240, 0.3) !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .offwhite-marquee {
+  background-color: rgba(255, 92, 0, 0.08) !important;
+  color: rgba(255, 92, 0, 0.85) !important;
+  border-bottom-color: rgba(245, 245, 240, 0.07) !important;
+}
+
+.dashboard-theme.theme-offwhite-dark .bg-black {
+  background-color: #F5F5F0 !important;
   color: #0A0A0A !important;
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   MOBILE NAV ORBIT — dark theme overrides
-   Base .mobile-nav-orbit uses rgba(white,0.86) — wrong for dark themes
-   ════════════════════════════════════════════════════════════════════ */
+.dashboard-theme.theme-offwhite-dark .text-white { color: #0A0A0A !important; }
 
-/* MIDNIGHT */
-.dashboard-theme.theme-dark .mobile-nav-orbit {
-  background: linear-gradient(180deg, #1C1C1C, #111111) !important;
-  border-color: #303030 !important;
-  box-shadow: 0 18px 36px rgba(0,0,0,0.5), 0 6px 16px rgba(0,255,148,0.06), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+/* Home metrics dark */
+.dashboard-theme.theme-offwhite-dark .home-metric-card,
+.dashboard-theme.theme-offwhite-dark .home-wide-card {
+  background-color: #141414 !important;
+  border-color: rgba(245, 245, 240, 0.08) !important;
+  color: #F5F5F0 !important;
 }
-.dashboard-theme.theme-dark .mobile-nav-orbit-item {
-  color: rgba(232,232,232,0.45) !important;
-}
-.dashboard-theme.theme-dark .mobile-nav-orbit-item.is-active {
-  background: linear-gradient(180deg, rgba(0,255,148,0.22), rgba(0,255,148,0.10)) !important;
-  border-color: rgba(0,255,148,0.45) !important;
-  color: #00FF94 !important;
-  box-shadow: 0 8px 20px rgba(0,255,148,0.18) !important;
-}
-/* Override the text-white Tailwind class React adds on active */
-.dashboard-theme.theme-dark .mobile-nav-orbit-item.is-active.text-white { color: #00FF94 !important; }
 
-/* INVINCIBLE V2 */
-.dashboard-theme.theme-invincible-v2 .mobile-nav-orbit {
-  background: linear-gradient(180deg, #0C1D35, #071527) !important;
-  border-color: rgba(255,212,0,0.25) !important;
-  box-shadow: 0 18px 36px rgba(0,0,0,0.6), 0 6px 16px rgba(255,212,0,0.05), inset 0 1px 0 rgba(255,212,0,0.08) !important;
+.dashboard-theme.theme-offwhite-dark .home-level-fill {
+  background-color: #FF5C00 !important;
 }
-.dashboard-theme.theme-invincible-v2 .mobile-nav-orbit-item {
-  color: rgba(255,212,0,0.38) !important;
-}
-.dashboard-theme.theme-invincible-v2 .mobile-nav-orbit-item.is-active {
-  background: linear-gradient(180deg, rgba(255,212,0,0.22), rgba(255,212,0,0.08)) !important;
-  border-color: rgba(255,212,0,0.55) !important;
-  color: #FFD400 !important;
-  box-shadow: 0 6px 18px rgba(255,212,0,0.15) !important;
-}
-.dashboard-theme.theme-invincible-v2 .mobile-nav-orbit-item.is-active.text-white { color: #FFD400 !important; }
 
-/* FOREST — pill on light bg: slightly tinted dark-green */
-.dashboard-theme.theme-forest .mobile-nav-orbit {
-  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(232,245,233,0.88)) !important;
-  border-color: rgba(27,46,27,0.2) !important;
+.dashboard-theme.theme-offwhite-dark .home-level-track {
+  background-color: rgba(245, 245, 240, 0.08) !important;
 }
-.dashboard-theme.theme-forest .mobile-nav-orbit-item { color: rgba(27,46,27,0.55) !important; }
-.dashboard-theme.theme-forest .mobile-nav-orbit-item.is-active {
-  background: linear-gradient(180deg, rgba(76,175,80,0.22), rgba(76,175,80,0.10)) !important;
-  border-color: rgba(76,175,80,0.5) !important;
-  color: #2E7D32 !important;
-}
-.dashboard-theme.theme-forest .mobile-nav-orbit-item.is-active.text-white { color: #2E7D32 !important; }
 
-/* SUNSET — warm tint */
-.dashboard-theme.theme-sunset .mobile-nav-orbit {
-  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,240,234,0.88)) !important;
-  border-color: rgba(45,27,16,0.18) !important;
-}
-.dashboard-theme.theme-sunset .mobile-nav-orbit-item { color: rgba(45,27,16,0.5) !important; }
-.dashboard-theme.theme-sunset .mobile-nav-orbit-item.is-active {
-  background: linear-gradient(180deg, rgba(255,107,53,0.2), rgba(255,107,53,0.08)) !important;
-  border-color: rgba(255,107,53,0.5) !important;
-  color: #C84010 !important;
-}
-.dashboard-theme.theme-sunset .mobile-nav-orbit-item.is-active.text-white { color: #C84010 !important; }
+/* ─── Liquid Glass Dark ────────────────────────────────────────────────────── */
 
-/* BLUE — keep white pill but strengthen active */
-.dashboard-theme.theme-blue .mobile-nav-orbit {
-  background: linear-gradient(180deg, rgba(248,250,255,0.95), rgba(220,230,255,0.88)) !important;
-  border-color: rgba(15,23,42,0.15) !important;
+.dashboard-theme.theme-liquid-glass-dark {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(120, 40, 200, 0.18) 0%, transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(80, 0, 180, 0.15) 0%, transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(150, 0, 100, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(40, 0, 120, 0.1) 0%, transparent 40%),
+    #000000 !important;
+  background-attachment: fixed !important;
+  color: #EBEBF5 !important;
 }
-.dashboard-theme.theme-blue .mobile-nav-orbit-item { color: rgba(15,23,42,0.5) !important; }
-.dashboard-theme.theme-blue .mobile-nav-orbit-item.is-active {
-  background: linear-gradient(180deg, rgba(43,89,255,0.2), rgba(43,89,255,0.08)) !important;
-  border-color: rgba(43,89,255,0.5) !important;
-  color: #1a3bcc !important;
+
+.dashboard-theme.theme-liquid-glass-dark .sidebar-shell {
+  background-color: rgba(20, 20, 22, 0.8) !important;
+  backdrop-filter: blur(35px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(35px) saturate(180%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
-.dashboard-theme.theme-blue .mobile-nav-orbit-item.is-active.text-white { color: #1a3bcc !important; }
 
-/* ════════════════════════════════════════════════════════════════════
-   CARD DESCRIPTION TEXT — stronger opacity for readability
-   ════════════════════════════════════════════════════════════════════ */
-.theme-card-theme-forest .font-mono,
-.theme-card-theme-forest p { color: rgba(9,9,9,0.65) !important; }
-.theme-card-theme-sunset .font-mono,
-.theme-card-theme-sunset p { color: rgba(9,9,9,0.65) !important; }
-.theme-card-theme-blue .font-mono,
-.theme-card-theme-blue p { color: rgba(15,23,42,0.65) !important; }
-.theme-card-theme-offwhite .font-mono,
-.theme-card-theme-offwhite p { color: rgba(9,9,9,0.6) !important; }
+.dashboard-theme.theme-liquid-glass-dark .sidebar-shell .dashboard-brand {
+  background: linear-gradient(135deg, #a78bfa 0%, #bf5af2 50%, #f472b6 100%);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  font-weight: 900 !important;
+}
 
-/* Dark/Invincible card description text */
-.theme-card-theme-dark .font-mono,
-.theme-card-theme-dark p { color: rgba(232,232,232,0.6) !important; }
-.theme-card-theme-invincible-v2 .font-mono,
-.theme-card-theme-invincible-v2 p { color: rgba(240,230,200,0.6) !important; }
+.dashboard-theme.theme-liquid-glass-dark .sidebar-shell nav button {
+  color: rgba(235, 235, 245, 0.5) !important;
+  background: transparent !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .sidebar-shell nav button:hover {
+  background: rgba(191, 90, 242, 0.1) !important;
+  color: #bf5af2 !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .sidebar-shell nav button.bg-black {
+  background: linear-gradient(135deg, rgba(120, 40, 200, 0.18) 0%, rgba(191, 90, 242, 0.18) 100%) !important;
+  color: #bf5af2 !important;
+  font-weight: 700 !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .main-shell {
+  background: transparent !important;
+  padding-bottom: 100px !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .offwhite-border,
+.dashboard-theme.theme-liquid-glass-dark .offwhite-panel,
+.dashboard-theme.theme-liquid-glass-dark .hero-panel,
+.dashboard-theme.theme-liquid-glass-dark .betterme-card {
+  background-color: rgba(28, 28, 30, 0.7) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 20px !important;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+    0 12px 30px -10px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .offwhite-label,
+.dashboard-theme.theme-liquid-glass-dark .betterme-label {
+  background-color: rgba(191, 90, 242, 0.12) !important;
+  color: #bf5af2 !important;
+  border-color: rgba(191, 90, 242, 0.2) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .text-black { color: #EBEBF5 !important; }
+.dashboard-theme.theme-liquid-glass-dark .text-gray-500 { color: rgba(235, 235, 245, 0.5) !important; }
+.dashboard-theme.theme-liquid-glass-dark .text-gray-600 { color: rgba(235, 235, 245, 0.6) !important; }
+.dashboard-theme.theme-liquid-glass-dark .text-gray-400 { color: rgba(235, 235, 245, 0.4) !important; }
+.dashboard-theme.theme-liquid-glass-dark h1,
+.dashboard-theme.theme-liquid-glass-dark h2,
+.dashboard-theme.theme-liquid-glass-dark h3 { color: #EBEBF5 !important; }
+
+.dashboard-theme.theme-liquid-glass-dark .bg-white { background-color: rgba(28, 28, 30, 0.65) !important; }
+.dashboard-theme.theme-liquid-glass-dark .bg-gray-50 { background-color: rgba(20, 20, 22, 0.4) !important; }
+.dashboard-theme.theme-liquid-glass-dark .bg-gray-100 { background-color: rgba(25, 25, 27, 0.5) !important; }
+.dashboard-theme.theme-liquid-glass-dark .border-black { border-color: rgba(255, 255, 255, 0.1) !important; }
+.dashboard-theme.theme-liquid-glass-dark .border-black\/20 { border-color: rgba(255, 255, 255, 0.07) !important; }
+
+.dashboard-theme.theme-liquid-glass-dark input,
+.dashboard-theme.theme-liquid-glass-dark textarea,
+.dashboard-theme.theme-liquid-glass-dark select {
+  background-color: rgba(28, 28, 30, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #EBEBF5 !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark input::placeholder,
+.dashboard-theme.theme-liquid-glass-dark textarea::placeholder {
+  color: rgba(235, 235, 245, 0.3) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .mobile-nav-shell {
+  background-color: rgba(10, 10, 12, 0.88) !important;
+  border-top-color: rgba(255, 255, 255, 0.07) !important;
+  backdrop-filter: blur(30px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .mobile-nav-orbit {
+  background: rgba(20, 20, 22, 0.85) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .mobile-nav-orbit-item {
+  color: rgba(235, 235, 245, 0.4) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .mobile-nav-orbit-item.is-active {
+  background: linear-gradient(135deg, rgba(120, 40, 200, 0.18) 0%, rgba(191, 90, 242, 0.18) 100%) !important;
+  border-color: rgba(191, 90, 242, 0.3) !important;
+  color: #bf5af2 !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .sidebar-shell.md\:hidden {
+  background-color: rgba(10, 10, 12, 0.85) !important;
+  backdrop-filter: blur(25px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .sidebar-shell.md\:hidden .dashboard-brand {
+  background: linear-gradient(135deg, #a78bfa 0%, #bf5af2 50%, #f472b6 100%);
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .sidebar-shell.md\:hidden .text-black {
+  color: #EBEBF5 !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .text-offwhite-orange {
+  color: #bf5af2 !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .home-metric-card,
+.dashboard-theme.theme-liquid-glass-dark .home-wide-card {
+  background-color: rgba(28, 28, 30, 0.65) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.09) !important;
+  color: #EBEBF5 !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .home-level-fill {
+  background: linear-gradient(90deg, #7c3aed 0%, #bf5af2 50%, #f472b6 100%) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .home-level-track {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .home-check-button {
+  background: linear-gradient(135deg, #7c3aed 0%, #bf5af2 50%, #db2777 100%) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px -4px rgba(191, 90, 242, 0.4) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .home-level-circle {
+  border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(28, 28, 30, 0.6) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .home-level-circle strong {
+  color: #bf5af2 !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .welcome-home-shell {
+  background-color: rgba(28, 28, 30, 0.65) !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .offwhite-marquee {
+  background: rgba(191, 90, 242, 0.08) !important;
+  color: rgba(191, 90, 242, 0.85) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ─── Premium Marquee Status Bar Redesign (both themes) ─────────────────────── */
+.dashboard-theme .offwhite-marquee {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* ─── Premium Mobile Nav Cleanup (both themes) ──────────────────────────────── */
+.dashboard-theme .mobile-nav-orbit-item span:last-child {
+  font-size: 0.58rem !important;
+  letter-spacing: 0.02em !important;
+  text-transform: capitalize !important;
+  font-weight: 500 !important;
+}
+
+/* ─── Off-White x iOS 26 Tasteful Typography Details ────────────────────────── */
+/* Only the brand title gets the Off-White industrial treatment, not everything */
+.dashboard-theme .dashboard-brand {
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+  text-transform: uppercase !important;
+}
+
+/* Section headers get elegant Inter typography, not cluttered labels */
+.dashboard-theme .offwhite-header-title {
+  font-size: clamp(1.4rem, 5vw, 2rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.1 !important;
+}
+
+/* Premium card hover effects across all themes */
+.dashboard-theme .offwhite-border:hover,
+.dashboard-theme .betterme-card:hover {
+  transform: translateY(-2px) !important;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Fix the Daily Reward modal dark bg for dark themes */
+.dashboard-theme.theme-offwhite-dark .bg-white.dark\:bg-gray-900,
+.dashboard-theme.theme-liquid-glass-dark .bg-white.dark\:bg-gray-900 {
+  background: #141414 !important;
+}
+
+
+/* ─── Liquid Glass: Diet tab switcher & recipe cards ────────────────────── */
+.dashboard-theme.theme-liquid-glass .bg-gray-100,
+.dashboard-theme.theme-liquid-glass .bg-gray-50 {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Active tab: use Liquid Glass style, not black pill */
+.dashboard-theme.theme-liquid-glass .bg-black.text-white:not(.mobile-nav-orbit-item):not(button[class*="sidebar"]):not(nav button) {
+  background: rgba(166, 0, 255, 0.12) !important;
+  color: #a600ff !important;
+  border-radius: 8px !important;
+}
+
+/* Recipe cards in Liquid Glass */
+.dashboard-theme.theme-liquid-glass .flex.flex-col.border-2.border-black.bg-white,
+.dashboard-theme.theme-liquid-glass-dark .flex.flex-col.border-2.border-black.bg-white {
+  background-color: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.65) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .flex.flex-col.border-2.border-black.bg-white {
+  background-color: rgba(28, 28, 30, 0.7) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Save button in recipe cards for Liquid Glass */
+.dashboard-theme.theme-liquid-glass .border-black.bg-black.text-white {
+  background: rgba(166, 0, 255, 0.15) !important;
+  border-color: rgba(166, 0, 255, 0.3) !important;
+  color: #a600ff !important;
+  border-radius: 10px !important;
+}
+
+/* ─── Liquid Glass: SectionHeader title accent ─────────────────────────── */
+.dashboard-theme.theme-liquid-glass .offwhite-header-title,
+.dashboard-theme.theme-liquid-glass-dark .offwhite-header-title {
+  background: linear-gradient(135deg, #1C1C1E 0%, #a600ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dashboard-theme.theme-liquid-glass-dark .offwhite-header-title {
+  background: linear-gradient(135deg, #EBEBF5 0%, #bf5af2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Off-White Dark: recipe cards ─────────────────────────────────────── */
+.dashboard-theme.theme-offwhite-dark .flex.flex-col.border-2.border-black.bg-white {
+  background-color: #1A1A1A !important;
+  border-color: rgba(245, 245, 240, 0.1) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+/* ═══════════════════════════════════════════════
+   THEME: SELAH × OFF-WHITE  (warm dark premium)
+   ═══════════════════════════════════════════════ */
+
+/* Dark Mode: Selah */
+.dashboard-theme.theme-selah {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(232, 103, 26, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(200, 130, 50, 0.06) 0%, transparent 40%),
+    #1C1A18 !important;
+  background-attachment: fixed !important;
+  color: #FFF8EF !important;
+}
+
+/* Light Mode: Selah Luce */
+.dashboard-theme.theme-selah-light {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(232, 103, 26, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(200, 130, 50, 0.03) 0%, transparent 40%),
+    #FFFBF5 !important;
+  background-attachment: fixed !important;
+  color: #1C1007 !important;
+}
+
+/* Common Font Families */
+.dashboard-theme.theme-selah,
+.dashboard-theme.theme-selah-light {
+  font-family: var(--font-sans) !important;
+}
+
+/* Card layout & panels: extreme rounded glass */
+.dashboard-theme.theme-selah .offwhite-border,
+.dashboard-theme.theme-selah .offwhite-panel,
+.dashboard-theme.theme-selah .hero-panel,
+.dashboard-theme.theme-selah .betterme-card,
+.dashboard-theme.theme-selah .welcome-home-shell,
+.dashboard-theme.theme-selah .home-metric-card,
+.dashboard-theme.theme-selah .home-wide-card {
+  background-color: rgba(36, 34, 32, 0.85) !important;
+  backdrop-filter: blur(20px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+  border: 1px solid rgba(255, 248, 239, 0.08) !important;
+  border-radius: 26px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+  padding: 1.5rem !important;
+}
+
+.dashboard-theme.theme-selah-light .offwhite-border,
+.dashboard-theme.theme-selah-light .offwhite-panel,
+.dashboard-theme.theme-selah-light .hero-panel,
+.dashboard-theme.theme-selah-light .betterme-card,
+.dashboard-theme.theme-selah-light .welcome-home-shell,
+.dashboard-theme.theme-selah-light .home-metric-card,
+.dashboard-theme.theme-selah-light .home-wide-card {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(20px) saturate(1.1) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.1) !important;
+  border: 1px solid rgba(155, 76, 40, 0.12) !important;
+  border-radius: 26px !important;
+  box-shadow: 0 6px 20px rgba(100, 50, 20, 0.04) !important;
+  padding: 1.5rem !important;
+}
+
+/* Card hover animation */
+.dashboard-theme.theme-selah .offwhite-border:hover,
+.dashboard-theme.theme-selah .betterme-card:hover,
+.dashboard-theme.theme-selah .home-metric-card:hover,
+.dashboard-theme.theme-selah .home-wide-card:hover,
+.dashboard-theme.theme-selah-light .offwhite-border:hover,
+.dashboard-theme.theme-selah-light .betterme-card:hover,
+.dashboard-theme.theme-selah-light .home-metric-card:hover,
+.dashboard-theme.theme-selah-light .home-wide-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3) !important;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Eyebrow Label (offwhite-label / betterme-label) */
+.dashboard-theme.theme-selah .offwhite-label,
+.dashboard-theme.theme-selah .betterme-label {
+  display: inline-block !important;
+  background-color: rgba(232, 103, 26, 0.12) !important;
+  color: #E8671A !important;
+  border: 1px solid rgba(232, 103, 26, 0.22) !important;
+  border-radius: 999px !important;
+  padding: 0.25rem 0.75rem !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 800 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.dashboard-theme.theme-selah-light .offwhite-label,
+.dashboard-theme.theme-selah-light .betterme-label {
+  display: inline-block !important;
+  background-color: rgba(200, 90, 20, 0.1) !important;
+  color: #C85A14 !important;
+  border: 1px solid rgba(200, 90, 20, 0.18) !important;
+  border-radius: 999px !important;
+  padding: 0.25rem 0.75rem !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 800 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 0.75rem !important;
+}
+
+/* Section headers (Serif Display style like Selah) */
+.dashboard-theme.theme-selah .offwhite-header-title {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+  font-size: clamp(2.2rem, 8vw, 3.4rem) !important;
+  font-weight: 700 !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.04em !important;
+  text-transform: none !important;
+  color: #FFF8EF !important;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+.dashboard-theme.theme-selah-light .offwhite-header-title {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+  font-size: clamp(2.2rem, 8vw, 3.4rem) !important;
+  font-weight: 700 !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.04em !important;
+  text-transform: none !important;
+  color: #1C1007 !important;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+/* Subtitle below SectionHeader */
+.dashboard-theme.theme-selah .offwhite-header-title + * + * + p,
+.dashboard-theme.theme-selah p.font-mono,
+.dashboard-theme.theme-selah p[class*="font-mono"] {
+  font-family: var(--font-sans) !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.06em !important;
+  color: rgba(255, 248, 239, 0.55) !important;
+  text-transform: uppercase !important;
+}
+
+.dashboard-theme.theme-selah-light .offwhite-header-title + * + * + p,
+.dashboard-theme.theme-selah-light p.font-mono,
+.dashboard-theme.theme-selah-light p[class*="font-mono"] {
+  font-family: var(--font-sans) !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.06em !important;
+  color: rgba(28, 16, 7, 0.6) !important;
+  text-transform: uppercase !important;
+}
+
+/* Remove offwhite barcode and hide thin line or replace it with subtle border */
+.dashboard-theme.theme-selah .offwhite-barcode,
+.dashboard-theme.theme-selah-light .offwhite-barcode {
+  display: none !important;
+}
+.dashboard-theme.theme-selah .h-0\.5.bg-black {
+  background-color: rgba(255, 248, 239, 0.08) !important;
+  height: 1px !important;
+}
+.dashboard-theme.theme-selah-light .h-0\.5.bg-black {
+  background-color: rgba(155, 76, 40, 0.12) !important;
+  height: 1px !important;
+}
+
+/* Sidebar Shell (Desktop Layout) */
+.dashboard-theme.theme-selah .sidebar-shell {
+  background-color: rgba(24, 22, 20, 0.96) !important;
+  border-right: 1px solid rgba(255, 248, 239, 0.06) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+.dashboard-theme.theme-selah-light .sidebar-shell {
+  background-color: rgba(255, 251, 245, 0.96) !important;
+  border-right: 1px solid rgba(155, 76, 40, 0.1) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+/* Sidebar navigation buttons */
+.dashboard-theme.theme-selah .sidebar-shell nav button {
+  color: rgba(255, 248, 239, 0.55) !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease !important;
+}
+.dashboard-theme.theme-selah .sidebar-shell nav button:hover {
+  background-color: rgba(232, 103, 26, 0.06) !important;
+  color: #E8671A !important;
+}
+.dashboard-theme.theme-selah .sidebar-shell nav button.bg-black {
+  background: linear-gradient(180deg, rgba(146, 66, 32, 0.94), rgba(108, 43, 18, 0.96)) !important;
+  color: #FFF8EF !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(113, 49, 24, 0.25) !important;
+}
+
+.dashboard-theme.theme-selah-light .sidebar-shell nav button {
+  color: rgba(28, 16, 7, 0.55) !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease !important;
+}
+.dashboard-theme.theme-selah-light .sidebar-shell nav button:hover {
+  background-color: rgba(200, 90, 20, 0.05) !important;
+  color: #C85A14 !important;
+}
+.dashboard-theme.theme-selah-light .sidebar-shell nav button.bg-black {
+  background: linear-gradient(180deg, #C85A14, #A5450B) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(200, 90, 20, 0.18) !important;
+}
+
+/* Sidebar Header Brand block */
+.dashboard-theme.theme-selah .sidebar-shell .dashboard-brand {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+  background: linear-gradient(135deg, #FFF8EF 0%, #E8671A 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-transform: none !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+}
+
+.dashboard-theme.theme-selah-light .sidebar-shell .dashboard-brand {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+  background: linear-gradient(135deg, #1C1007 0%, #C85A14 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-transform: none !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+}
+
+/* Mobile Top Nav (Sticky header shell on mobile if present) */
+.dashboard-theme.theme-selah .sidebar-shell.md\:hidden {
+  background-color: rgba(24, 22, 20, 0.92) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(255, 248, 239, 0.06) !important;
+}
+.dashboard-theme.theme-selah-light .sidebar-shell.md\:hidden {
+  background-color: rgba(255, 251, 245, 0.92) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(155, 76, 40, 0.1) !important;
+}
+
+/* Mobile Navigation Orbit (Bottom bar pill container) */
+.dashboard-theme.theme-selah .mobile-nav-shell {
+  background-color: rgba(28, 26, 24, 0.85) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  border-top: 1px solid rgba(255, 248, 239, 0.06) !important;
+}
+.dashboard-theme.theme-selah-light .mobile-nav-shell {
+  background-color: rgba(255, 251, 245, 0.85) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  border-top: 1px solid rgba(155, 76, 40, 0.1) !important;
+}
+
+.dashboard-theme.theme-selah .mobile-nav-orbit {
+  background: rgba(36, 34, 32, 0.96) !important;
+  border: 1px solid rgba(255, 248, 239, 0.08) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+  border-radius: 22px !important;
+}
+.dashboard-theme.theme-selah-light .mobile-nav-orbit {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(155, 76, 40, 0.12) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 6px 20px rgba(100, 50, 20, 0.05) !important;
+  border-radius: 22px !important;
+}
+
+.dashboard-theme.theme-selah .mobile-nav-orbit-item {
+  color: rgba(255, 248, 239, 0.55) !important;
+  border-radius: 14px !important;
+}
+.dashboard-theme.theme-selah-light .mobile-nav-orbit-item {
+  color: rgba(28, 16, 7, 0.55) !important;
+  border-radius: 14px !important;
+}
+
+.dashboard-theme.theme-selah .mobile-nav-orbit-item.is-active {
+  background: linear-gradient(180deg, rgba(146, 66, 32, 0.94), rgba(108, 43, 18, 0.96)) !important;
+  color: #FFF8EF !important;
+  box-shadow: 0 6px 15px rgba(113, 49, 24, 0.3) !important;
+}
+.dashboard-theme.theme-selah-light .mobile-nav-orbit-item.is-active {
+  background: linear-gradient(180deg, #C85A14, #A5450B) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(200, 90, 20, 0.22) !important;
+}
+
+/* Primary Action Buttons */
+.dashboard-theme.theme-selah .bg-black:not(.mobile-nav-orbit):not(.tabbar):not(.sidebar-shell button) {
+  background: linear-gradient(180deg, #E8671A, #C85A14) !important;
+  color: #FFF8EF !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 14px rgba(232, 103, 26, 0.3) !important;
+}
+.dashboard-theme.theme-selah-light .bg-black:not(.mobile-nav-orbit):not(.tabbar):not(.sidebar-shell button) {
+  background: linear-gradient(180deg, #C85A14, #A5450B) !important;
+  color: #FFFFFF !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 14px rgba(200, 90, 20, 0.25) !important;
+}
+
+/* Input Fields, Textareas & Selects */
+.dashboard-theme.theme-selah input,
+.dashboard-theme.theme-selah textarea,
+.dashboard-theme.theme-selah select {
+  background-color: rgba(28, 26, 24, 0.9) !important;
+  border: 1.5px solid rgba(255, 248, 239, 0.1) !important;
+  color: #FFF8EF !important;
+  border-radius: 14px !important;
+  padding: 0.6rem 0.9rem !important;
+}
+.dashboard-theme.theme-selah input:focus,
+.dashboard-theme.theme-selah textarea:focus,
+.dashboard-theme.theme-selah select:focus {
+  border-color: #E8671A !important;
+  box-shadow: 0 0 0 3px rgba(232, 103, 26, 0.15) !important;
+}
+
+.dashboard-theme.theme-selah-light input,
+.dashboard-theme.theme-selah-light textarea,
+.dashboard-theme.theme-selah-light select {
+  background-color: #FFFFFF !important;
+  border: 1.5px solid rgba(155, 76, 40, 0.15) !important;
+  color: #1C1007 !important;
+  border-radius: 14px !important;
+  padding: 0.6rem 0.9rem !important;
+}
+.dashboard-theme.theme-selah-light input:focus,
+.dashboard-theme.theme-selah-light textarea:focus,
+.dashboard-theme.theme-selah-light select:focus {
+  border-color: #C85A14 !important;
+  box-shadow: 0 0 0 3px rgba(200, 90, 20, 0.12) !important;
+}
+
+/* Progress bar level tracker */
+.dashboard-theme.theme-selah .home-level-fill {
+  background: linear-gradient(90deg, #E8671A, #C85A14) !important;
+}
+.dashboard-theme.theme-selah .home-level-track {
+  background-color: rgba(255, 248, 239, 0.08) !important;
+}
+.dashboard-theme.theme-selah-light .home-level-fill {
+  background: linear-gradient(90deg, #C85A14, #A5450B) !important;
+}
+.dashboard-theme.theme-selah-light .home-level-track {
+  background-color: rgba(155, 76, 40, 0.08) !important;
+}
+
+/* Marquee News Ticker */
+.dashboard-theme.theme-selah .offwhite-marquee {
+  background: rgba(24, 22, 20, 0.98) !important;
+  color: rgba(232, 103, 26, 0.8) !important;
+  border-bottom: 1px solid rgba(255, 248, 239, 0.06) !important;
+}
+.dashboard-theme.theme-selah-light .offwhite-marquee {
+  background: #FFF4E8 !important;
+  color: #C85A14 !important;
+  border-bottom: 1px solid rgba(155, 76, 40, 0.1) !important;
+}
+
+/* Scrollbars */
+.dashboard-theme.theme-selah ::-webkit-scrollbar-track { background: transparent; }
+.dashboard-theme.theme-selah ::-webkit-scrollbar-thumb { background: rgba(255, 248, 239, 0.12); border-radius: 99px; }
+.dashboard-theme.theme-selah-light ::-webkit-scrollbar-track { background: transparent; }
+.dashboard-theme.theme-selah-light ::-webkit-scrollbar-thumb { background: rgba(155, 76, 40, 0.15); border-radius: 99px; }
+
+/* Text colors and custom elements in tabs (e.g. Diet recipe cards, tab selectors) */
+.dashboard-theme.theme-selah .bg-gray-100,
+.dashboard-theme.theme-selah .bg-gray-50 {
+  background-color: rgba(28, 26, 24, 0.6) !important;
+}
+.dashboard-theme.theme-selah-light .bg-gray-100,
+.dashboard-theme.theme-selah-light .bg-gray-50 {
+  background-color: #FFF4E8 !important;
+}
+
+/* Tab Switcher Buttons (Diet, Fitness splits) */
+.dashboard-theme.theme-selah .bg-black.text-white:not(.mobile-nav-orbit-item):not(button[class*="sidebar"]):not(nav button) {
+  background: rgba(232, 103, 26, 0.15) !important;
+  color: #E8671A !important;
+  border-radius: 12px !important;
+}
+.dashboard-theme.theme-selah-light .bg-black.text-white:not(.mobile-nav-orbit-item):not(button[class*="sidebar"]):not(nav button) {
+  background: rgba(200, 90, 20, 0.1) !important;
+  color: #C85A14 !important;
+  border-radius: 12px !important;
+}
+
+/* Recipe details cards */
+.dashboard-theme.theme-selah .flex.flex-col.border-2.border-black.bg-white {
+  background-color: rgba(36, 34, 32, 0.85) !important;
+  border: 1px solid rgba(255, 248, 239, 0.08) !important;
+  border-radius: 20px !important;
+}
+.dashboard-theme.theme-selah-light .flex.flex-col.border-2.border-black.bg-white {
+  background-color: #FFFFFF !important;
+  border: 1px solid rgba(155, 76, 40, 0.12) !important;
+  border-radius: 20px !important;
+}
+
+.dashboard-theme.theme-selah .border-black.bg-black.text-white {
+  background: linear-gradient(180deg, #E8671A, #C85A14) !important;
+  border-color: transparent !important;
+  color: #FFF8EF !important;
+  border-radius: 999px !important;
+}
+.dashboard-theme.theme-selah-light .border-black.bg-black.text-white {
+  background: linear-gradient(180deg, #C85A14, #A5450B) !important;
+  border-color: transparent !important;
+  color: #FFFFFF !important;
+  border-radius: 999px !important;
+}
+
+/* Daily Reward modal popup background override */
+.dashboard-theme.theme-selah .bg-white.dark\:bg-gray-900 {
+  background: #242220 !important;
+}
+.dashboard-theme.theme-selah-light .bg-white.dark\:bg-gray-900 {
+  background: #FFFFFF !important;
+}
+
+/* Fix text contrast in list rows and items */
+.dashboard-theme.theme-selah .text-gray-400 { color: rgba(255, 248, 239, 0.45) !important; }
+.dashboard-theme.theme-selah-light .text-gray-400 { color: rgba(28, 16, 7, 0.45) !important; }
+
+/* Habit check buttons */
+.dashboard-theme.theme-selah .home-check-button {
+  background: linear-gradient(180deg, #E8671A, #C85A14) !important;
+  color: #FFF8EF !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(232, 103, 26, 0.2) !important;
+}
+.dashboard-theme.theme-selah-light .home-check-button {
+  background: linear-gradient(180deg, #C85A14, #A5450B) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(200, 90, 20, 0.15) !important;
+}
+
+.dashboard-theme.theme-selah .home-check-button.is-complete {
+  background: rgba(232, 103, 26, 0.12) !important;
+  color: rgba(232, 103, 26, 0.8) !important;
+  border-color: rgba(232, 103, 26, 0.22) !important;
+  box-shadow: none !important;
+}
+.dashboard-theme.theme-selah-light .home-check-button.is-complete {
+  background: rgba(200, 90, 20, 0.1) !important;
+  color: rgba(200, 90, 20, 0.8) !important;
+  border-color: rgba(200, 90, 20, 0.18) !important;
+  box-shadow: none !important;
+}
+
+/* Dynamic Island Audio Bar */
+.dashboard-theme.theme-selah .bible-audio-bar {
+  background: rgba(36, 34, 32, 0.9) !important;
+  border: 1px solid rgba(255, 248, 239, 0.08) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
+}
+.dashboard-theme.theme-selah-light .bible-audio-bar {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(155, 76, 40, 0.12) !important;
+  box-shadow: 0 10px 30px rgba(100, 50, 20, 0.08) !important;
+}
+.dashboard-theme.theme-selah .bible-audio-progress-fill {
+  background: linear-gradient(90deg, #E8671A, #C85A14) !important;
+}
+.dashboard-theme.theme-selah-light .bible-audio-progress-fill {
+  background: linear-gradient(90deg, #C85A14, #A5450B) !important;
+}
+.dashboard-theme.theme-selah .bible-audio-btn {
+  color: rgba(255, 248, 239, 0.75) !important;
+}
+.dashboard-theme.theme-selah-light .bible-audio-btn {
+  color: rgba(28, 16, 7, 0.75) !important;
+}
+.dashboard-theme.theme-selah .bible-audio-btn-play {
+  background: linear-gradient(180deg, #E8671A, #C85A14) !important;
+  color: #FFF8EF !important;
+}
+.dashboard-theme.theme-selah-light .bible-audio-btn-play {
+  background: linear-gradient(180deg, #C85A14, #A5450B) !important;
+  color: #FFFFFF !important;
+}
+
+/* Unified Border Overrides for nested Tailwind components */
+.dashboard-theme.theme-selah [class*="border-black"],
+.dashboard-theme.theme-selah [class*="border-gray"],
+.dashboard-theme.theme-selah [class*="divide-black"],
+.dashboard-theme.theme-selah [class*="divide-gray"] {
+  border-color: rgba(255, 248, 239, 0.08) !important;
+}
+.dashboard-theme.theme-selah-light [class*="border-black"],
+.dashboard-theme.theme-selah-light [class*="border-gray"],
+.dashboard-theme.theme-selah-light [class*="divide-black"],
+.dashboard-theme.theme-selah-light [class*="divide-gray"] {
+  border-color: rgba(155, 76, 40, 0.12) !important;
+}
+
+/* DailyRoutine progress block overrides */
+.dashboard-theme.theme-selah .mt-8.p-6.bg-black,
+.dashboard-theme.theme-selah-light .mt-8.p-6.bg-black {
+  background-color: rgba(36, 34, 32, 0.85) !important;
+  border: 1px solid rgba(255, 248, 239, 0.08) !important;
+  border-radius: 26px !important;
+}
+.dashboard-theme.theme-selah-light .mt-8.p-6.bg-black {
+  background-color: #FFFFFF !important;
+  border: 1px solid rgba(155, 76, 40, 0.12) !important;
+}
+
+/* UserPanel and OnboardingPanel rounded corners */
+.dashboard-theme.theme-selah .user-panel,
+.dashboard-theme.theme-selah .onboarding-panel,
+.dashboard-theme.theme-selah-light .user-panel,
+.dashboard-theme.theme-selah-light .onboarding-panel {
+  border-radius: 26px !important;
+  border-width: 1px !important;
+}
+
+/* Shimmer Reflection Sweep & Hover animations */
+.shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease-out, border-color 0.22s ease-out !important;
+}
+.shimmer-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08) 20%,
+    rgba(255, 255, 255, 0.22) 60%,
+    transparent
+  );
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+.shimmer-sweep:hover::after {
+  animation: shimmer-effect 0.88s cubic-bezier(0.25, 1, 0.5, 1);
+}
+@keyframes shimmer-effect {
+  100% {
+    left: 150%;
+  }
+}
+
+/* Active Scale Feedback on Click / Press */
+.active-press-scale {
+  transition: transform 0.12s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+.active-press-scale:active {
+  transform: scale(0.97) !important;
+}
+
+/* Active Sliding Pills Layout */
+.mobile-nav-active-pill,
+.sidebar-active-pill {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  border: 1px solid transparent !important;
+}
+
+.mobile-nav-active-pill {
+  border-radius: 14px !important;
+}
+.sidebar-active-pill {
+  border-radius: 12px !important;
+}
+
+/* Theme active pill backgrounds */
+.dashboard-theme.theme-selah .mobile-nav-active-pill,
+.dashboard-theme.theme-selah .sidebar-active-pill {
+  background: linear-gradient(180deg, rgba(146, 66, 32, 0.94), rgba(108, 43, 18, 0.96)) !important;
+  box-shadow: 0 4px 12px rgba(113, 49, 24, 0.25) !important;
+}
+.dashboard-theme.theme-selah-light .mobile-nav-active-pill,
+.dashboard-theme.theme-selah-light .sidebar-active-pill {
+  background: linear-gradient(180deg, #E8671A, #C85A14) !important;
+  box-shadow: 0 4px 12px rgba(200, 90, 20, 0.2) !important;
+}
+.dashboard-theme.theme-liquid-glass .mobile-nav-active-pill,
+.dashboard-theme.theme-liquid-glass .sidebar-active-pill {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.8), rgba(79, 70, 229, 0.8)) !important;
+  box-shadow: 0 6px 16px rgba(147, 51, 234, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+.dashboard-theme.theme-liquid-glass-dark .mobile-nav-active-pill,
+.dashboard-theme.theme-liquid-glass-dark .sidebar-active-pill {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.8), rgba(99, 102, 241, 0.8)) !important;
+  box-shadow: 0 6px 16px rgba(168, 85, 247, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.dashboard-theme.theme-offwhite .mobile-nav-active-pill,
+.dashboard-theme.theme-offwhite .sidebar-active-pill {
+  background: #000000 !important;
+}
+.dashboard-theme.theme-offwhite-dark .mobile-nav-active-pill,
+.dashboard-theme.theme-offwhite-dark .sidebar-active-pill {
+  background: #FFFFFF !important;
+}
+
+/* Remove default static button backgrounds to let active indicators slide */
+.dashboard-theme .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-selah .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-selah-light .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-liquid-glass .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-liquid-glass-dark .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-offwhite-dark .mobile-nav-orbit-item.is-active,
+.dashboard-theme .sidebar-shell nav button.bg-black,
+.dashboard-theme.theme-selah .sidebar-shell nav button.bg-black,
+.dashboard-theme.theme-selah-light .sidebar-shell nav button.bg-black,
+.dashboard-theme.theme-liquid-glass .sidebar-shell nav button.bg-black,
+.dashboard-theme.theme-liquid-glass-dark .sidebar-shell nav button.bg-black,
+.dashboard-theme.theme-offwhite-dark .sidebar-shell nav button.bg-black {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Set contrast text and icon colors inside active sliding indicators */
+.dashboard-theme.theme-selah .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-selah .sidebar-shell nav button.bg-black {
+  color: #FFF8EF !important;
+}
+.dashboard-theme.theme-selah-light .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-selah-light .sidebar-shell nav button.bg-black {
+  color: #FFFFFF !important;
+}
+.dashboard-theme.theme-offwhite-dark .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-offwhite-dark .sidebar-shell nav button.bg-black {
+  color: #000000 !important;
+}
+.dashboard-theme.theme-offwhite .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-offwhite .sidebar-shell nav button.bg-black {
+  color: #FFFFFF !important;
+}
+.dashboard-theme.theme-liquid-glass .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-liquid-glass-dark .mobile-nav-orbit-item.is-active,
+.dashboard-theme.theme-liquid-glass .sidebar-shell nav button.bg-black,
+.dashboard-theme.theme-liquid-glass-dark .sidebar-shell nav button.bg-black {
+  color: #FFFFFF !important;
+}
+
+/* Skeleton loader overrides for Selah themes */
+.dashboard-theme.theme-selah .offwhite-border.animate-pulse,
+.dashboard-theme.theme-selah .offwhite-border.animate-pulse div {
+  background-color: rgba(36, 34, 32, 0.8) !important;
+  border-color: rgba(255, 248, 239, 0.08) !important;
+  color: transparent !important;
+}
+.dashboard-theme.theme-selah-light .offwhite-border.animate-pulse,
+.dashboard-theme.theme-selah-light .offwhite-border.animate-pulse div {
+  background-color: rgba(255, 251, 245, 0.8) !important;
+  border-color: rgba(155, 76, 40, 0.12) !important;
+  color: transparent !important;
+}
+
+
+
+

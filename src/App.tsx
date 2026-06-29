@@ -6,26 +6,25 @@
 import React, { Suspense, lazy, useState } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, type User } from 'firebase/auth';
 import { addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, type Timestamp, updateDoc, where } from 'firebase/firestore';
-import { BookOpen, Calendar, Check, CircleHelp, Dumbbell, Flame, Heart, LayoutDashboard, LogOut, Mail, Menu, MessageCircle, PencilLine, Send, ShoppingBag, Sparkles, SwatchBook, Trophy, Utensils, UserRound, Wallet, X } from 'lucide-react';
+import { BookOpen, Moon, Sun, Calendar, Check, CircleHelp, Dumbbell, Flame, Heart, LayoutDashboard, LogOut, Mail, Menu, MessageCircle, PencilLine, Send, ShoppingBag, Sparkles, SwatchBook, Trophy, Utensils, UserRound, Wallet, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getThemeCssClass, getThemeDefinition, normalizeThemeId } from './lib/themes';
+import { getThemeCssClass, getThemeDefinition, isThemeDark, toggleThemeDark, normalizeThemeId, DASHBOARD_THEMES } from './lib/themes';
 import { getDailyVerse } from './data/dailyVerses';
 import { auth, db } from './lib/firebase';
 import { initializeFirebaseSync, markDashboardStateChanged, resetFirebaseSync, syncDashboardStateNow } from './lib/firebaseSync';
 import { ACCOUNT_LEVELS, awardUserPoints, getAccountLevelInfo, getStoredUserStats, saveUserStats } from './lib/account';
 import { PROFILE_AVATARS } from './lib/avatars';
 
-const Finance = lazy(() => import('./components/Finance').then((module) => ({ default: module.Finance })));
-const Fitness = lazy(() => import('./components/Fitness').then((module) => ({ default: module.Fitness })));
 const Diet = lazy(() => import('./components/Diet').then((module) => ({ default: module.Diet })));
+const Finance = lazy(() => import('./components/Finance').then((module) => ({ default: module.Finance })));
 const Shopping = lazy(() => import('./components/Shopping').then((module) => ({ default: module.Shopping })));
+const Fitness = lazy(() => import('./components/Fitness').then((module) => ({ default: module.Fitness })));
 const Trophies = lazy(() => import('./components/Trophies').then((module) => ({ default: module.Trophies })));
 const DailyRoutine = lazy(() => import('./components/DailyRoutine').then((module) => ({ default: module.DailyRoutine })));
-const ThemeStudio = lazy(() => import('./components/ThemeStudio').then((module) => ({ default: module.ThemeStudio })));
 const Bible = lazy(() => import('./components/Bible').then((module) => ({ default: module.Bible })));
 const AICoach = lazy(() => import('./components/AICoach').then((module) => ({ default: module.AICoach })));
 
-type Tab = 'dashboard' | 'finance' | 'fitness' | 'diet' | 'shopping' | 'trophies' | 'routine' | 'themes' | 'bible' | 'ai-coach';
+type Tab = 'dashboard' | 'ai-coach' | 'trophies' | 'routine' | 'diet' | 'bible' | 'finance' | 'shopping' | 'fitness';
 type SectionTab = Exclude<Tab, 'dashboard'>;
 type AuthMode = 'login' | 'register';
 
@@ -40,15 +39,14 @@ const SECTION_CHOICES: Array<{
   description: string;
   icon: React.ComponentType<{ size?: number }>;
 }> = [
-  { id: 'routine', label: 'Routine', description: 'To-do, credits e ritmo giornaliero.', icon: Calendar },
-  { id: 'finance', label: 'Portafoglio', description: 'Conti, spese, entrate e abbonamenti.', icon: Wallet },
-  { id: 'fitness', label: 'Allenamento', description: 'Schede e sessioni workout.', icon: Dumbbell },
-  { id: 'diet', label: 'Alimentazione', description: 'Pasti, calorie e ricette.', icon: Utensils },
-  { id: 'shopping', label: 'Spesa', description: 'Lista acquisti e articoli presi.', icon: ShoppingBag },
-  { id: 'trophies', label: 'Obiettivi', description: 'Missioni settimanali e premi.', icon: Trophy },
-  { id: 'themes', label: 'Temi', description: 'Personalizzazione visuale.', icon: SwatchBook },
-  { id: 'bible', label: 'Bibbia', description: 'Versetto, lettura e riflessioni personali.', icon: BookOpen },
-  { id: 'ai-coach', label: 'Coach IA', description: 'Consigli e analisi personalizzate basate su Gemini.', icon: Sparkles },
+  { id: 'ai-coach', label: 'Produttività', description: 'Coach IA e task.', icon: Sparkles },
+  { id: 'trophies', label: 'Rafforzamento', description: 'Obiettivi e statistiche.', icon: Trophy },
+  { id: 'routine', label: 'Abitudini', description: 'Ritmo e tracker.', icon: Calendar },
+  { id: 'diet', label: 'Alimentazione', description: 'Ricette e macro.', icon: Utensils },
+  { id: 'bible', label: 'Fede', description: 'Bibbia e preghiera.', icon: BookOpen },
+  { id: 'fitness', label: 'Allenamento', description: 'Schede e workout.', icon: Dumbbell },
+  { id: 'finance', label: 'Finanza', description: 'Spese e budget.', icon: Wallet },
+  { id: 'shopping', label: 'Spesa', description: 'Lista supermercato.', icon: ShoppingBag },
 ];
 
 const DEFAULT_ENABLED_SECTIONS = SECTION_CHOICES.map((section) => section.id);
@@ -113,9 +111,14 @@ function getStoredEnabledSections(): SectionTab[] {
   try {
     const parsed = JSON.parse(saved);
     if (!Array.isArray(parsed)) return DEFAULT_ENABLED_SECTIONS;
-    const enabled = parsed.filter((section): section is SectionTab =>
+    let enabled = parsed.filter((section): section is SectionTab =>
       SECTION_CHOICES.some((choice) => choice.id === section),
     );
+    // Force include finance, shopping, fitness if they were excluded by the previous cache
+    const forceInclude: SectionTab[] = ['finance', 'shopping', 'fitness'];
+    forceInclude.forEach(sec => {
+        if (!enabled.includes(sec)) enabled.push(sec);
+    });
     return enabled.length > 0 ? enabled : DEFAULT_ENABLED_SECTIONS;
   } catch {
     return DEFAULT_ENABLED_SECTIONS;
@@ -414,7 +417,13 @@ function AuthScreen() {
 
 function TabPanel({ children, panelKey }: { children: React.ReactNode; panelKey: string }) {
   return (
-    <motion.div key={panelKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div
+      key={panelKey}
+      initial={{ opacity: 0, y: 16, scale: 0.99 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10, scale: 0.99 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+    >
       <Suspense fallback={<SectionFallback />}>{children}</Suspense>
     </motion.div>
   );
@@ -431,8 +440,11 @@ function UserPanel({
   checkinStreak,
   enabledSections,
   avatarId,
+  activeThemeId,
   onProfileSave,
   onSectionsSave,
+  onThemeChange,
+  onAvatarChange,
   onClose,
   onLogout,
 }: {
@@ -446,8 +458,11 @@ function UserPanel({
   checkinStreak: number;
   enabledSections: SectionTab[];
   avatarId?: string | null;
+  activeThemeId: string;
   onProfileSave: (profile: UserProfile) => void;
   onSectionsSave: (sections: SectionTab[]) => void;
+  onThemeChange: (themeId: string) => void;
+  onAvatarChange: (avatarId: string) => void;
   onClose: () => void;
   onLogout: () => void;
 }) {
@@ -588,12 +603,27 @@ function UserPanel({
               const active = sectionDraft.includes(section.id);
 
               return (
-                <div key={section.id} className={`section-choice-card ${active ? 'is-selected' : ''}`}>
-                  <button type="button" onClick={() => toggleSection(section.id)} className="section-choice-main">
-                    <Icon size={18} />
-                    <span>{section.label}</span>
-                    <small>{active ? 'Attiva' : 'Nascosta'}</small>
-                  </button>
+                <div key={section.id} className={`section-choice-card section-card-${section.id} ${active ? 'is-selected' : ''}`}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggleSection(section.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSection(section.id);
+                      }
+                    }}
+                    className="section-choice-main cursor-pointer"
+                  >
+                    <div className="section-card-icon-wrapper">
+                      <Icon size={18} />
+                    </div>
+                    <div className="section-card-info">
+                      <span>{section.label}</span>
+                      <small>{active ? 'Attiva' : 'Nascosta'}</small>
+                    </div>
+                  </div>
                   <button type="button" onClick={() => selectOnlySection(section.id)} className="section-only-action">
                     Solo questa
                   </button>
@@ -605,6 +635,70 @@ function UserPanel({
             {areSectionsSaved ? <Check size={16} /> : <LayoutDashboard size={16} />}
             {areSectionsSaved ? 'Sezioni salvate' : 'Salva sezioni'}
           </button>
+        </section>
+
+        <section className="user-sections-editor mt-6">
+          <div className="user-tutorial-title">
+            <SwatchBook size={18} />
+            <span>Tema Attivo</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            {DASHBOARD_THEMES.map((theme) => {
+              const active = theme.id === activeThemeId;
+              return (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => onThemeChange(theme.id)}
+                  className={`flex flex-col items-start p-3 border-2 text-left rounded-xl transition-all ${
+                    active 
+                      ? 'border-black bg-black/5 dark:bg-white/5' 
+                      : 'border-black/10 hover:border-black'
+                  }`}
+                  style={{
+                    borderColor: active ? 'var(--theme-accent)' : 'rgba(255,255,255,0.08)'
+                  }}
+                >
+                  <span className="text-xs font-bold font-mono tracking-wide">{theme.name}</span>
+                  <span className="text-[8px] opacity-60 uppercase mt-0.5">{theme.badge}</span>
+                  <div className="flex gap-1.5 mt-2">
+                    <span className="h-3.5 w-3.5 rounded-full border border-black/20" style={{ backgroundColor: theme.accent }} />
+                    <span className="h-3.5 w-3.5 rounded-full border border-black/20" style={{ backgroundColor: theme.background }} />
+                    <span className="h-3.5 w-3.5 rounded-full border border-black/20" style={{ backgroundColor: theme.ink }} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="user-sections-editor mt-6">
+          <div className="user-tutorial-title">
+            <UserRound size={18} />
+            <span>Scegli Avatar</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto py-2.5 px-0.5 scrollbar-thin">
+            {PROFILE_AVATARS.map((av) => {
+              const active = av.id === avatarId;
+              return (
+                <button
+                  key={av.id}
+                  type="button"
+                  onClick={() => onAvatarChange(av.id)}
+                  className={`shrink-0 h-12 w-12 rounded-full border-2 transition-all flex items-center justify-center overflow-hidden ${
+                    active ? 'border-black' : 'border-black/10 hover:border-black'
+                  }`}
+                  style={{
+                    borderColor: active ? 'var(--theme-accent)' : 'rgba(255,255,255,0.1)',
+                    backgroundColor: av.bgColor
+                  }}
+                  title={av.name}
+                >
+                  <img src={av.imageUrl} alt={av.name} className="h-full w-full object-cover object-top" />
+                </button>
+              );
+            })}
+          </div>
         </section>
 
         <div className="user-tutorial">
@@ -645,6 +739,11 @@ function OnboardingTutorial({ onComplete }: { onComplete: (sections: SectionTab[
 
   return (
     <motion.div className="user-panel-backdrop onboarding-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <div className="onboarding-bg-orbs" aria-hidden="true">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+      </div>
       <motion.section
         className="onboarding-panel"
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -677,16 +776,27 @@ function OnboardingTutorial({ onComplete }: { onComplete: (sections: SectionTab[
               const active = selectedSections.includes(section.id);
 
               return (
-                <button
+                <div
                   key={section.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => toggleSection(section.id)}
-                  className={`section-choice-card ${active ? 'is-selected' : ''}`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleSection(section.id);
+                    }
+                  }}
+                  className={`section-choice-card cursor-pointer section-card-${section.id} ${active ? 'is-selected' : ''}`}
                 >
-                  <Icon size={18} />
-                  <span>{section.label}</span>
-                  <small>{section.description}</small>
-                </button>
+                  <div className="section-card-icon-wrapper">
+                    <Icon size={18} />
+                  </div>
+                  <div className="section-card-info">
+                    <span>{section.label}</span>
+                    <small>{section.description}</small>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -707,6 +817,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [stats, setStats] = useState(() => getStoredStats());
+  const isDarkMode = isThemeDark(stats.activeTheme);
+  const toggleDarkMode = () => {
+    const nextThemeId = toggleThemeDark(stats.activeTheme);
+    const nextStats = saveUserStats({ ...stats, activeTheme: nextThemeId });
+    setStats({ ...nextStats });
+  };
   const [profile, setProfile] = useState(() => getStoredProfile());
   const [homeMetrics, setHomeMetrics] = useState(() => getHomeMetrics());
   const [showLaunchScreen, setShowLaunchScreen] = useState(true);
@@ -722,6 +838,23 @@ export default function App() {
   const [verseCommentError, setVerseCommentError] = useState('');
   const [verseReactionReady, setVerseReactionReady] = useState<Record<string, boolean>>({});
   const [showVerseChat, setShowVerseChat] = useState(false);
+
+  const [showDailyReward, setShowDailyReward] = useState(false);
+  
+  React.useEffect(() => {
+    const today = getLocalDateKey();
+    const lastRewardDate = localStorage.getItem('betterme_last_reward_date');
+    if (lastRewardDate !== today) {
+      setShowDailyReward(true);
+    }
+  }, []);
+
+  const claimDailyReward = () => {
+    awardPoints(25);
+    localStorage.setItem('betterme_last_reward_date', getLocalDateKey());
+    setShowDailyReward(false);
+  };
+
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState('');
   const [levelUpCelebration, setLevelUpCelebration] = useState<{ level: number; title: string } | null>(null);
@@ -1012,16 +1145,15 @@ export default function App() {
     : 'Livello massimo attuale raggiunto';
 
   const allNavItems = [
-    { id: 'dashboard', label: 'HOME', icon: LayoutDashboard },
-    { id: 'routine', label: 'ROUTINE GIORNALIERA', icon: Calendar },
-    { id: 'finance', label: 'PORTAFOGLIO', icon: Wallet },
-    { id: 'fitness', label: 'ALLENAMENTO', icon: Dumbbell },
-    { id: 'diet', label: 'ALIMENTAZIONE', icon: Utensils },
-    { id: 'shopping', label: 'SPESA', icon: ShoppingBag },
-    { id: 'trophies', label: 'OBIETTIVI', icon: Trophy },
-    { id: 'themes', label: 'TEMI', icon: SwatchBook },
-    { id: 'bible', label: 'BIBBIA', icon: BookOpen },
-    { id: 'ai-coach', label: 'COACH IA', icon: Sparkles },
+    { id: 'dashboard', label: 'Hub', icon: LayoutDashboard },
+    { id: 'ai-coach', label: 'Coach', icon: Sparkles },
+    { id: 'trophies', label: 'Trofei', icon: Trophy },
+    { id: 'routine', label: 'Routine', icon: Calendar },
+    { id: 'diet', label: 'Dieta', icon: Utensils },
+    { id: 'bible', label: 'Fede', icon: BookOpen },
+    { id: 'fitness', label: 'Fitness', icon: Dumbbell },
+    { id: 'finance', label: 'Finanze', icon: Wallet },
+    { id: 'shopping', label: 'Spesa', icon: ShoppingBag },
   ];
 
   const navItems = allNavItems.filter((item) => item.id === 'dashboard' || enabledSections.includes(item.id as SectionTab));
@@ -1165,7 +1297,7 @@ export default function App() {
 
   return (
     <div 
-      className={`dashboard-theme ${getThemeCssClass(stats.activeTheme)} flex min-h-svh flex-col overflow-x-hidden md:h-dvh md:min-h-dvh md:overflow-hidden md:flex-row`}
+      className={`dashboard-theme ${getThemeCssClass(stats.activeTheme)} flex min-h-svh flex-col overflow-x-hidden md:h-dvh md:min-h-dvh md:overflow-hidden`}
       style={{
         '--color-offwhite-orange': activeTheme.accent,
         '--theme-accent': activeTheme.accent,
@@ -1181,6 +1313,32 @@ export default function App() {
         '--sidebar-w': isSidebarOpen ? '280px' : '80px',
       } as React.CSSProperties}
     >
+      {/* Scrolling caution marquee */}
+      <div className="offwhite-marquee shrink-0">
+        <div className="offwhite-marquee-content">
+          <span className="offwhite-marquee-text">
+            <span>[ SYSTEM STATUS: ACTIVE ]</span>
+            <span>[ BETTER CREDITS: {displayPoints} ]</span>
+            <span>[ LEVEL: {displayLevel} · {displayLevelTitle.toUpperCase()} ]</span>
+            <span>[ DAILY STREAK: {checkinStreak} DAYS ]</span>
+            <span>[ SYSTEM VERSION: RELEASE_V2.5 ]</span>
+            <span>[ ACTIVE THEME: {activeTheme.name.toUpperCase()} ]</span>
+            <span>[ USER IDENTIFICATION: {displayName.toUpperCase()} ]</span>
+          </span>
+          <span className="offwhite-marquee-text">
+            <span>[ SYSTEM STATUS: ACTIVE ]</span>
+            <span>[ BETTER CREDITS: {displayPoints} ]</span>
+            <span>[ LEVEL: {displayLevel} · {displayLevelTitle.toUpperCase()} ]</span>
+            <span>[ DAILY STREAK: {checkinStreak} DAYS ]</span>
+            <span>[ SYSTEM VERSION: RELEASE_V2.5 ]</span>
+            <span>[ ACTIVE THEME: {activeTheme.name.toUpperCase()} ]</span>
+            <span>[ USER IDENTIFICATION: {displayName.toUpperCase()} ]</span>
+          </span>
+        </div>
+      </div>
+      
+      {/* Inner layout row container */}
+      <div className="flex flex-1 flex-col overflow-x-hidden md:h-full md:overflow-hidden md:flex-row">
       <AnimatePresence>
         {showLaunchScreen && (
           <motion.div
@@ -1220,8 +1378,23 @@ export default function App() {
             checkinStreak={checkinStreak}
             enabledSections={enabledSections}
             avatarId={stats.avatarId}
+            activeThemeId={stats.activeTheme}
             onProfileSave={handleProfileSave}
             onSectionsSave={handleSectionsSave}
+            onThemeChange={(themeId) => {
+              const nextStats = saveUserStats({ ...stats, activeTheme: themeId });
+              setStats({ ...nextStats });
+              markDashboardStateChanged();
+              void syncDashboardStateNow();
+            }}
+            onAvatarChange={(avatarId) => {
+              const av = PROFILE_AVATARS.find(a => a.id === avatarId);
+              if (!av) return;
+              const nextStats = saveUserStats({ ...stats, avatarId, avatarUrl: av.imageUrl });
+              setStats({ ...nextStats });
+              markDashboardStateChanged();
+              void syncDashboardStateNow();
+            }}
             onClose={() => setIsUserPanelOpen(false)}
             onLogout={handleLogout}
           />
@@ -1394,6 +1567,7 @@ export default function App() {
       <motion.aside 
         initial={false}
         animate={{ width: isSidebarOpen ? 280 : 80 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="sidebar-shell hidden h-full flex-shrink-0 flex-col border-r-2 border-black relative z-50 md:flex"
       >
         <div className="p-6 mb-8 flex items-center justify-between">
@@ -1409,29 +1583,41 @@ export default function App() {
         </div>
 
         <nav className="flex-1 px-4 space-y-2">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id as Tab)}
-              className={`w-full flex items-center p-3 transition-all group relative ${
-                activeTab === item.id ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
-              }`}
-            >
-              <item.icon size={20} />
-              <AnimatePresence>
-                {isSidebarOpen && (
-                  <motion.span 
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    className="ml-4 font-mono text-[10px] font-bold uppercase tracking-widest"
-                  >
-                    {item.label}
-                  </motion.span>
+          {navItems.map((item) => {
+            const active = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as Tab)}
+                className={`w-full flex items-center p-3 transition-all group relative rounded-xl overflow-hidden active-press-scale ${
+                  active ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
+                }`}
+              >
+                {active && (
+                  <motion.div
+                    layoutId="sidebar-active-pill"
+                    className="sidebar-active-pill"
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                  />
                 )}
-              </AnimatePresence>
-            </button>
-          ))}
+                <span className="relative z-10 flex items-center">
+                  <item.icon size={20} />
+                  <AnimatePresence>
+                    {isSidebarOpen && (
+                      <motion.span 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        className="ml-4 font-mono text-[10px] font-bold uppercase tracking-widest"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </span>
+              </button>
+            );
+          })}
         </nav>
 
         <div className="p-6 border-t-2 border-black">
@@ -1444,6 +1630,14 @@ export default function App() {
               Livello {displayLevel} · {displayLevelTitle}{isAdmin ? ' · ADMIN' : ''}
             </div>
           </div>
+          <button
+            type="button"
+            onClick={toggleDarkMode}
+            className="mb-2 flex w-full items-center gap-3 border-2 border-black bg-white dark:bg-black dark:border-white dark:text-white p-3 font-mono text-[10px] font-black uppercase tracking-widest transition-all hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+          >
+            {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+            {isSidebarOpen ? <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span> : null}
+          </button>
           <button
             type="button"
             onClick={handleLogout}
@@ -1462,11 +1656,14 @@ export default function App() {
 
       {/* MOBILE HEADER */}
       <header className={`sidebar-shell md:hidden border-b-2 border-black p-4 justify-between items-center z-50 shrink-0 ${isFinanceFullscreen || activeTab === 'dashboard' ? 'hidden' : 'flex'}`}>
-        <div className="dashboard-brand font-black text-xl tracking-tighter">BETTER ME</div>
+        <div className="dashboard-brand font-black text-xl tracking-tighter">Better Me</div>
         <div className="flex items-center gap-3">
           <div className="font-mono text-[10px] font-black text-offwhite-orange">{displayPoints} PTS</div>
           <div className="font-mono text-[10px] font-black uppercase tracking-widest opacity-50">L{displayLevel}</div>
-          <button type="button" onClick={handleLogout} className="text-black" aria-label="Esci">
+          <button type="button" onClick={toggleDarkMode} className="text-black dark:text-white" aria-label="Toggle Dark Mode">
+            {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+          <button type="button" onClick={handleLogout} className="text-black dark:text-white" aria-label="Esci">
             <LogOut size={17} />
           </button>
           <div className="font-mono text-[10px] uppercase tracking-widest opacity-50">
@@ -1485,15 +1682,16 @@ export default function App() {
           </div>
         </div>
         
-        <div className="mx-auto w-full max-w-7xl min-w-0 overflow-x-clip">
+        <div className={activeTab === 'finance' ? "w-full h-full" : "mx-auto w-full max-w-7xl min-w-0 overflow-x-clip"}>
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && (
               <motion.div 
                 key="dashboard"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="home-app-stage"
+                initial={{ opacity: 0, y: 16, scale: 0.99 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.99 }}
+                transition={{ duration: 0.22 }}
+                className="home-app-stage relative"
               >
                 <section className="home-app-shell">
                   <div className="home-top-rail">
@@ -1524,7 +1722,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => setIsUserPanelOpen(true)}
-                      className="home-user-button"
+                      className="home-user-button active-press-scale"
                       aria-label="Apri area utente"
                     >
                       {stats.avatarId ? (
@@ -1546,7 +1744,6 @@ export default function App() {
                   <div className="home-app-glow home-app-glow-mint" />
                   <div className="home-app-glow home-app-glow-blue" />
 
-
                   <div className="home-check-zone">
                     <div className="home-check-card-label">
                       <span>Daily rhythm</span>
@@ -1558,7 +1755,7 @@ export default function App() {
                       transition={{ duration: 0.65, ease: 'easeOut' }}
                       onClick={handleCheckIn}
                       disabled={hasCheckedInToday}
-                      className={`home-check-button ${hasCheckedInToday ? 'is-complete' : ''} ${showCheckinBurst ? 'is-celebrating' : ''}`}
+                      className={`home-check-button active-press-scale ${hasCheckedInToday ? 'is-complete' : ''} ${showCheckinBurst ? 'is-celebrating' : ''}`}
                     >
                       <span className="home-check-flame" aria-hidden="true">
                         <Flame size={24} fill="currentColor" />
@@ -1596,10 +1793,9 @@ export default function App() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-
                   </div>
 
-                  <article className="home-verse-card home-verse-card-enhanced">
+                  <article className="home-verse-card home-verse-card-enhanced shimmer-sweep active-press-scale">
                     <div className="home-verse-main">
                       <div className="home-verse-icon">
                         <BookOpen size={20} strokeWidth={2.1} />
@@ -1615,17 +1811,17 @@ export default function App() {
                       <button
                         type="button"
                         onClick={toggleDailyVerseLike}
-                        className={`home-verse-action ${dailyVerseReaction.liked ? 'is-liked' : ''}`}
+                        className={`home-verse-action active-press-scale ${dailyVerseReaction.liked ? 'is-liked' : ''}`}
                       >
                         <Heart size={16} fill={dailyVerseReaction.liked ? 'currentColor' : 'none'} />
                         <span>{isDailyVerseReactionReady ? dailyVerseReaction.likes : '...'}</span>
                       </button>
-                      <button type="button" className="home-verse-action" onClick={() => setShowVerseChat(true)}>
+                      <button type="button" className="home-verse-action active-press-scale" onClick={() => setShowVerseChat(true)}>
                         <MessageCircle size={16} />
                         <span>{visibleVerseComments.length}</span>
                       </button>
                       {enabledSections.includes('bible') ? (
-                        <button type="button" onClick={() => setActiveTab('bible')} className="home-verse-read-button">
+                        <button type="button" onClick={() => setActiveTab('bible')} className="home-verse-read-button active-press-scale">
                           Leggi Bibbia
                         </button>
                       ) : null}
@@ -1635,7 +1831,7 @@ export default function App() {
                       <input
                         value={verseCommentDraft}
                         onChange={(event) => setVerseCommentDraft(event.target.value)}
-                        placeholder="Aggiungi una riflessione"
+                        placeholder="Condividi una riflessione..."
                         maxLength={180}
                       />
                       <button type="submit" disabled={!verseCommentDraft.trim()} aria-label="Salva commento">
@@ -1648,7 +1844,7 @@ export default function App() {
 
                   <div className="home-metric-grid">
                     {enabledSections.includes('diet') && (
-                      <button onClick={() => setActiveTab('diet')} className="home-metric-card home-metric-diet">
+                      <button onClick={() => setActiveTab('diet')} className="home-metric-card home-metric-diet shimmer-sweep active-press-scale">
                         <div className="home-card-title">Diet</div>
                         <div className="home-donut" style={{ '--progress': `${vaultRecipePercent}%` } as React.CSSProperties}>
                           <span>{vaultRecipeCount}</span>
@@ -1660,7 +1856,7 @@ export default function App() {
                     )}
 
                     {enabledSections.includes('finance') && (
-                      <button onClick={() => setActiveTab('finance')} className="home-metric-card home-metric-expenses">
+                      <button onClick={() => setActiveTab('finance')} className="home-metric-card home-metric-expenses shimmer-sweep active-press-scale">
                         <div className="home-card-title">Expenses</div>
                         <svg viewBox="0 0 180 92" className="home-sparkline" aria-hidden="true">
                           <path d="M18 62 L58 38 L94 50 L132 24 L162 10" />
@@ -1677,7 +1873,7 @@ export default function App() {
                     )}
 
                     {enabledSections.includes('shopping') && (
-                      <button onClick={() => setActiveTab('shopping')} className="home-wide-card home-shopping-card">
+                      <button onClick={() => setActiveTab('shopping')} className="home-wide-card home-shopping-card shimmer-sweep active-press-scale">
                         <div>
                           <div className="home-card-title">Shopping</div>
                           <p>Pending items</p>
@@ -1692,7 +1888,7 @@ export default function App() {
                     )}
 
                     {enabledSections.includes('fitness') && (
-                      <button onClick={() => setActiveTab('fitness')} className="home-metric-card home-workout-card">
+                      <button onClick={() => setActiveTab('fitness')} className="home-metric-card home-workout-card shimmer-sweep active-press-scale">
                         <div className="home-card-title">Workouts</div>
                         <div className="home-workout-visual">
                           <Dumbbell size={42} strokeWidth={2.1} />
@@ -1715,39 +1911,15 @@ export default function App() {
               </TabPanel>
             )}
 
-            {activeTab === 'finance' && enabledSections.includes('finance') && (
-              <TabPanel panelKey="finance">
-                <Finance />
-              </TabPanel>
-            )}
-
-            {activeTab === 'fitness' && enabledSections.includes('fitness') && (
-              <TabPanel panelKey="fitness">
-                <Fitness ownerEmail={authUser?.email ?? null} />
-              </TabPanel>
-            )}
-
             {activeTab === 'diet' && enabledSections.includes('diet') && (
               <TabPanel panelKey="diet">
                 <Diet ownerEmail={authUser?.email ?? null} />
               </TabPanel>
             )}
 
-            {activeTab === 'shopping' && enabledSections.includes('shopping') && (
-              <TabPanel panelKey="shopping">
-                <Shopping />
-              </TabPanel>
-            )}
-
             {activeTab === 'trophies' && enabledSections.includes('trophies') && (
               <TabPanel panelKey="trophies">
                 <Trophies />
-              </TabPanel>
-            )}
-
-            {activeTab === 'themes' && enabledSections.includes('themes') && (
-              <TabPanel panelKey="themes">
-                <ThemeStudio ownerEmail={authUser?.email ?? null} />
               </TabPanel>
             )}
 
@@ -1762,9 +1934,28 @@ export default function App() {
                 <AICoach />
               </TabPanel>
             )}
+
+            {activeTab === 'finance' && (
+              <TabPanel panelKey="finance">
+                <Finance />
+              </TabPanel>
+            )}
+
+            {activeTab === 'shopping' && (
+              <TabPanel panelKey="shopping">
+                <Shopping />
+              </TabPanel>
+            )}
+
+            {activeTab === 'fitness' && (
+              <TabPanel panelKey="fitness">
+                <Fitness ownerEmail={authUser?.email ?? null} />
+              </TabPanel>
+            )}
           </AnimatePresence>
         </div>
-      </main>
+
+        </main>
 
       {/* MOBILE BOTTOM NAVIGATION */}
       <nav className="mobile-nav-shell mobile-safe-area md:hidden fixed bottom-0 left-0 right-0 z-50 px-3 py-2">
@@ -1773,12 +1964,19 @@ export default function App() {
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id as Tab)}
-            className={`mobile-nav-orbit-item flex min-w-[76px] flex-none flex-col items-center justify-center gap-1.5 px-2 py-3 transition-all ${
+            className={`mobile-nav-orbit-item relative flex min-w-[76px] flex-none flex-col items-center justify-center gap-1.5 px-2 py-3 transition-all active-press-scale ${
               activeTab === item.id
                 ? 'is-active text-white'
                 : 'text-[color:var(--theme-ink)]/78'
             }`}
           >
+            {activeTab === item.id && (
+              <motion.div
+                layoutId="mobile-nav-indicator"
+                className="mobile-nav-active-pill"
+                transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              />
+            )}
             <span className="flex h-5 items-center justify-center">
               <item.icon size={20} strokeWidth={2.1} />
             </span>
@@ -1856,6 +2054,44 @@ export default function App() {
           </div>
         </div>
       )}
+      
+      <AnimatePresence>
+        {showDailyReward && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={{
+                backgroundColor: 'var(--theme-panel)',
+                borderColor: 'var(--theme-accent)',
+                color: 'var(--theme-ink)',
+              }}
+              className="border-2 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute inset-0 opacity-15 pointer-events-none" style={{ background: `radial-gradient(circle at center, var(--theme-accent), transparent 70%)` }} />
+              <div className="relative z-10">
+                <div className="w-16 h-16 mx-auto mb-5 rounded-full flex items-center justify-center" style={{ background: `color-mix(in srgb, var(--theme-accent) 15%, transparent)`, border: `1.5px solid color-mix(in srgb, var(--theme-accent) 25%, transparent)` }}>
+                  <Sparkles size={32} style={{ color: 'var(--theme-accent)' }} />
+                </div>
+                <h2 className="text-2xl font-black mb-2" style={{ color: 'var(--theme-ink)' }}>Bentornato!</h2>
+                <p className="text-sm font-medium mb-6" style={{ color: `color-mix(in srgb, var(--theme-ink) 65%, transparent)` }}>
+                  La costanza è la chiave del successo. Ecco <strong style={{ color: 'var(--theme-accent)' }}>+25 XP</strong> gratuiti per aver aperto l'app oggi!
+                </p>
+                <button
+                  onClick={claimDailyReward}
+                  className="w-full rounded-2xl px-6 py-4 font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
+                  style={{ background: `linear-gradient(135deg, var(--theme-accent), color-mix(in srgb, var(--theme-accent) 70%, #000))` }}
+                >
+                  Riscatta +25 XP
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      </div> {/* <-- End inner layout row container */}
     </div>
   );
 }

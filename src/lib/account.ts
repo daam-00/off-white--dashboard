@@ -2,7 +2,7 @@ import type { UserStats } from '../types';
 import { normalizeThemeId } from './themes';
 
 const USER_STATS_KEY = 'offwhite_user_stats';
-const DEFAULT_THEME_ID = 'theme-offwhite';
+const DEFAULT_THEME_ID = 'theme-selah';
 
 export type AccountTier = 'starter' | 'core' | 'pro' | 'elite' | 'master' | 'legend' | 'apex';
 
@@ -29,37 +29,37 @@ export const ACCOUNT_LEVELS: Array<{
     perks: ['Accesso base alla dashboard', 'Tema Off White incluso', 'Avatar Bot Hero incluso'],
   },
   {
-    minPoints: 150,
+    minPoints: 50,
     tier: 'core',
     title: 'Core',
-    perks: ['Check-in giornalieri attivi', 'Sblocco temi da 200–400 credits', 'Storico obiettivi settimanali'],
+    perks: ['Check-in giornalieri attivi', 'Sblocco temi base', 'Storico obiettivi settimanali'],
   },
   {
-    minPoints: 450,
+    minPoints: 150,
     tier: 'pro',
     title: 'Pro',
     perks: ['Sblocco tema Forest e Sunset', 'Avatar rari sbloccabili', 'Streak bonus +10% credits'],
   },
   {
-    minPoints: 900,
+    minPoints: 300,
     tier: 'elite',
     title: 'Elite',
     perks: ['Sblocco tema Dark (800cr)', 'Avatar epici sbloccabili', 'Badge Elite sul profilo'],
   },
   {
-    minPoints: 1500,
+    minPoints: 500,
     tier: 'master',
     title: 'Master',
-    perks: ['Sblocco avatar Invincible (Mark + Eve)', 'Accesso anticipato nuovi temi', 'Badge animato Master'],
+    perks: ['Sblocco avatar Invincible', 'Accesso anticipato nuovi temi', 'Badge animato Master'],
   },
   {
-    minPoints: 2500,
+    minPoints: 1000,
     tier: 'legend',
     title: 'Legend',
-    perks: ['Sblocco avatar Omni-Man e Viltrumite', 'Tema Invincible V2 sbloccabile', 'Border speciale leggendaria'],
+    perks: ['Sblocco avatar leggendari', 'Badge leggendario speciale', 'Border speciale leggendaria'],
   },
   {
-    minPoints: 4000,
+    minPoints: 2000,
     tier: 'apex',
     title: 'Apex',
     perks: ['Sblocco Gold Titan avatar', 'Accesso a tutti i contenuti futuri', 'Titolo Apex sul profilo'],

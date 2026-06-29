@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SectionHeader } from './SectionHeader';
 import { CircleCheck, Circle, Trophy as TrophyIcon, Plus, Trash2, PencilLine } from 'lucide-react';
 import { motion } from 'motion/react';
+import { Heatmap } from './Heatmap';
 import { awardUserPoints } from '../lib/account';
 
 interface RoutineTask {
@@ -155,12 +156,20 @@ export const DailyRoutine: React.FC = () => {
   };
 
   const progress = tasks.length ? (tasks.filter(t => t.completed).length / tasks.length) * 100 : 0;
+  
+  const [completedDates, setCompletedDates] = useState<string[]>([]);
+  useEffect(() => {
+    const saved = localStorage.getItem(ROUTINE_COMPLETED_DATES_KEY);
+    if (saved) {
+      setCompletedDates(JSON.parse(saved));
+    }
+  }, [tasks]);
 
   return (
-    <div className="offwhite-border h-full">
+    <div className="h-full rounded-3xl bg-white/70 dark:bg-white/5 backdrop-blur-3xl border border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col p-6">
       <SectionHeader title="ROUTINE GIORNALIERA" label="TRACCIATORE_ROUTINE_V1.0" />
 
-      <div className="mb-6 border-2 border-black bg-gray-50 p-4 md:p-5">
+      <div className="mb-6 rounded-3xl border border-white/80 bg-white/80 dark:bg-white/10 backdrop-blur-xl p-5 md:p-6 shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <div className="offwhite-label mb-1">OBIETTIVI_PERSONALI</div>
@@ -178,12 +187,12 @@ export const DailyRoutine: React.FC = () => {
             value={customGoal}
             onChange={(event) => setCustomGoal(event.target.value)}
             placeholder="SCRIVI L OBIETTIVO DI OGGI"
-            className="min-w-0 flex-1 border-2 border-black bg-white px-4 py-3 font-mono text-xs uppercase tracking-widest outline-none placeholder:text-gray-300 focus:border-offwhite-orange"
+            className="min-w-0 flex-1 rounded-2xl bg-white/80 backdrop-blur-md border border-white/80 px-5 py-3.5 font-medium text-sm outline-none placeholder:text-gray-400 focus:border-[#a600ff] focus:ring-2 focus:ring-[#a600ff]/20 shadow-inner transition-all"
             maxLength={80}
           />
           <button
             type="submit"
-            className="flex items-center justify-center gap-2 border-2 border-black bg-black px-5 py-3 font-mono text-xs uppercase tracking-widest text-white transition-all hover:bg-offwhite-orange"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#a600ff] to-[#ff007f] px-6 py-3.5 font-bold text-sm text-white shadow-lg transition-all hover:scale-105 hover:opacity-90"
           >
             <Plus size={16} />
             Salva To-Do
@@ -191,9 +200,16 @@ export const DailyRoutine: React.FC = () => {
         </form>
       </div>
       
+      
+      <div className="mb-6 rounded-3xl border border-white/80 bg-white/80 dark:bg-white/10 backdrop-blur-xl p-5 md:p-6 shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
+        <div className="offwhite-label mb-3">ACTIVITY_HEATMAP</div>
+        <Heatmap dates={completedDates} />
+      </div>
+
       <div className="space-y-3">
+
         {tasks.length === 0 ? (
-          <div className="border-2 border-dashed border-black/25 bg-white p-6 text-center">
+          <div className="rounded-3xl border-2 border-dashed border-[#a600ff]/30 bg-white/70 dark:bg-white/5 backdrop-blur-xl p-8 text-center shadow-inner">
             <PencilLine size={28} className="mx-auto mb-3 text-offwhite-orange" />
             <div className="mb-2 text-xl font-black uppercase tracking-tighter">Nessun to-do</div>
             <p className="mx-auto max-w-md font-mono text-[10px] uppercase leading-relaxed tracking-widest text-gray-500">
@@ -209,23 +225,23 @@ export const DailyRoutine: React.FC = () => {
                 onClick={() => toggleTask(task.id)}
                 className={`w-full flex items-center justify-between p-4 border-2 transition-all ${
                   task.completed 
-                    ? 'border-black bg-black text-white' 
+                    ? 'border-black bg-black text-black dark:text-white dark:text-white' 
                     : 'border-gray-100 bg-white text-gray-400 hover:border-black'
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-4">
-                  <div className={`p-2 ${task.completed ? 'bg-white text-black' : 'bg-gray-50 text-gray-300'}`}>
+                  <div className={`p-2 ${task.completed ? 'bg-white text-black dark:text-white' : 'bg-gray-50 text-gray-300'}`}>
                     <Icon size={18} />
                   </div>
-                  <span className={`font-black text-sm uppercase tracking-tighter ${task.completed ? 'text-white' : 'text-gray-600'}`}>
+                  <span className={`font-black text-sm uppercase tracking-tighter ${task.completed ? 'text-black dark:text-white dark:text-white' : 'text-gray-600'}`}>
                     {task.label}
                   </span>
-                  <span className={`shrink-0 font-mono text-[9px] font-black uppercase tracking-widest ${task.completed ? 'text-white/70' : 'text-offwhite-orange'}`}>
+                  <span className={`shrink-0 font-mono text-[9px] font-black uppercase tracking-widest ${task.completed ? 'text-black dark:text-white dark:text-white/70' : 'text-offwhite-orange'}`}>
                     +{task.points ?? TASK_POINTS}
                   </span>
                 </div>
                 {task.completed ? (
-                  <CircleCheck size={20} className="shrink-0 text-white" />
+                  <CircleCheck size={20} className="shrink-0 text-black dark:text-white dark:text-white" />
                 ) : (
                   <Circle size={20} className="shrink-0 text-gray-200" />
                 )}
@@ -235,7 +251,7 @@ export const DailyRoutine: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => removeCustomTask(task.id)}
-                  className="shrink-0 border-2 border-black px-4 text-black transition-all hover:bg-black hover:text-white"
+                  className="shrink-0 border-2 border-black px-4 text-black dark:text-white transition-all hover:bg-black hover:text-black dark:text-white dark:text-white"
                   aria-label={`Rimuovi ${task.label}`}
                 >
                   <Trash2 size={18} />
@@ -246,7 +262,7 @@ export const DailyRoutine: React.FC = () => {
         }))}
       </div>
 
-      <div className="mt-8 p-6 bg-black text-white relative overflow-hidden border-2 border-black">
+      <div className="mt-8 p-6 bg-black text-black dark:text-white dark:text-white relative overflow-hidden border-2 border-black">
         <div className="relative z-10">
           <div className="flex justify-between items-end mb-4">
             <div>

@@ -10,11 +10,7 @@ const ADMIN_EMAIL = 'thsedici@gmail.com';
 
 const THEME_COSTS: Record<string, number> = {
   'theme-offwhite': 0,
-  'theme-blue': 500,
-  'theme-forest': 600,
-  'theme-sunset': 600,
-  'theme-dark': 800,
-  'theme-invincible-v2': 2000,
+  'theme-liquid-glass': 600,
 };
 
 interface ThemeStudioProps {

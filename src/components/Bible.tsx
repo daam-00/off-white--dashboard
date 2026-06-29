@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, ChevronLeft, ChevronRight, MoreHorizontal, Search } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BookOpen, ChevronLeft, ChevronRight, Mic, MicOff, MoreHorizontal, Pause, Play, Search, SkipBack, SkipForward, Square, Volume2, X } from 'lucide-react';
 import { BibleChapter, bibleLibrary } from '../data/bibleLibrary';
+import { useSpeechSynthesis } from '../lib/useSpeechSynthesis';
 
 const BIBLE_XML_PATH = '/bible/italian_nr2006.xml';
 
@@ -73,6 +74,15 @@ const ITALIAN_BOOK_NAMES: Record<string, string> = {
   Revelation: 'Apocalisse',
 };
 
+const SPEED_OPTIONS = [
+  { label: '0.5×', value: 0.5 },
+  { label: '0.75×', value: 0.75 },
+  { label: '1×', value: 1 },
+  { label: '1.25×', value: 1.25 },
+  { label: '1.5×', value: 1.5 },
+  { label: '2×', value: 2 },
+];
+
 const getBookName = (rawName: string) => ITALIAN_BOOK_NAMES[rawName] ?? rawName;
 
 const parseBibleXml = (xmlText: string): BibleChapter[] => {
@@ -117,6 +127,25 @@ export const Bible: React.FC = () => {
   const [highlightedVerses, setHighlightedVerses] = useState<Set<string>>(
     () => new Set(JSON.parse(localStorage.getItem('bible_highlighted_verses') || '[]'))
   );
+
+  // Voice reading state
+  const [speechRate, setSpeechRate] = useState(1);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>('');
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const [showSpeedPicker, setShowSpeedPicker] = useState(false);
+  const versesContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleVerseStart = useCallback((index: number) => {
+    const el = document.getElementById(`bible-verse-${index}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
+
+  const speech = useSpeechSynthesis({
+    lang: 'it-IT',
+    rate: speechRate,
+    voiceURI: selectedVoiceURI || undefined,
+    onVerseStart: handleVerseStart,
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -169,12 +198,14 @@ export const Bible: React.FC = () => {
   );
 
   const goToChapter = (direction: -1 | 1) => {
+    speech.stop();
     const nextIndex = Math.min(Math.max(selectedIndex + direction, 0), chapters.length - 1);
     setSelectedChapterId(chapters[nextIndex].id);
     setSelectedVerseIndex(0);
   };
 
   const chooseBook = (book: string) => {
+    speech.stop();
     const firstChapter = chapters.find((chapter) => chapter.book === book);
     if (firstChapter) {
       setSelectedChapterId(firstChapter.id);
@@ -183,6 +214,7 @@ export const Bible: React.FC = () => {
   };
 
   const chooseChapter = (chapterId: string) => {
+    speech.stop();
     setSelectedChapterId(chapterId);
     setSelectedVerseIndex(0);
   };
@@ -220,6 +252,46 @@ export const Bible: React.FC = () => {
     );
   };
 
+  // Voice reading handlers
+  const handlePlayChapter = () => {
+    if (speech.status === 'idle') {
+      speech.speakAll(selectedChapter.verses, 0);
+    } else {
+      speech.togglePlayPause(selectedChapter.verses);
+    }
+  };
+
+  const handlePlayFromVerse = (index: number) => {
+    speech.speakAll(selectedChapter.verses, index);
+  };
+
+  const handleSpeakSingleVerse = (index: number) => {
+    speech.speakSingle(selectedChapter.verses[index], index);
+  };
+
+  const handleSkipBack = () => {
+    const prev = Math.max(0, speech.currentVerseIndex - 1);
+    speech.speakAll(selectedChapter.verses, prev);
+  };
+
+  const handleSkipForward = () => {
+    const next = Math.min(selectedChapter.verses.length - 1, speech.currentVerseIndex + 1);
+    speech.speakAll(selectedChapter.verses, next);
+  };
+
+  // Stop speech when chapter changes
+  useEffect(() => {
+    return () => {
+      speech.stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChapterId]);
+
+  const isReading = speech.status !== 'idle';
+  const readingProgress = speech.currentVerseIndex >= 0 
+    ? Math.round(((speech.currentVerseIndex + 1) / selectedChapter.verses.length) * 100) 
+    : 0;
+
   return (
     <section className="bible-app-shell">
       <header className="bible-app-topbar">
@@ -251,7 +323,12 @@ export const Bible: React.FC = () => {
           <button type="button" className="bible-app-icon-button" aria-label="Cerca">
             <Search size={28} />
           </button>
-          <button type="button" className="bible-app-icon-button" aria-label="Opzioni">
+          <button 
+            type="button" 
+            className="bible-app-icon-button" 
+            aria-label="Impostazioni voce"
+            onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+          >
             <MoreHorizontal size={30} />
           </button>
         </div>
@@ -298,6 +375,57 @@ export const Bible: React.FC = () => {
         ) : null}
       </header>
 
+      {/* Voice Settings Panel */}
+      {showVoiceSettings && (
+        <div className="bible-voice-settings">
+          <div className="bible-voice-settings-header">
+            <span>Impostazioni Voce</span>
+            <button type="button" onClick={() => setShowVoiceSettings(false)} aria-label="Chiudi">
+              <X size={16} />
+            </button>
+          </div>
+          <div className="bible-voice-settings-body">
+            {speech.availableVoices.length > 0 && (
+              <label className="bible-voice-select-label">
+                <span>Voce</span>
+                <select
+                  value={selectedVoiceURI}
+                  onChange={(e) => setSelectedVoiceURI(e.target.value)}
+                  className="bible-voice-select"
+                >
+                  <option value="">Automatica</option>
+                  {speech.availableVoices.map((voice) => (
+                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                      {voice.name} ({voice.lang})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <label className="bible-voice-select-label">
+              <span>Velocità</span>
+              <div className="bible-speed-chips">
+                {SPEED_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`bible-speed-chip ${speechRate === opt.value ? 'is-active' : ''}`}
+                    onClick={() => setSpeechRate(opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </label>
+            {!speech.isSupported && (
+              <p className="bible-voice-unsupported">
+                Il tuo browser non supporta la sintesi vocale.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <article className="bible-app-page">
         <div className="bible-app-status">
           <span>{selectedChapter.testament} Testamento</span>
@@ -307,21 +435,95 @@ export const Bible: React.FC = () => {
 
         <h2>{selectedChapter.book} {selectedChapter.chapter}</h2>
 
-        <div className="bible-app-verses">
+        {/* Dedicated Inline Audio Control Panel */}
+        {speech.isSupported && (
+          <div className="bible-inline-audio-panel">
+            <span className="bible-inline-audio-title">Lettura Vocale</span>
+            <div className="bible-inline-audio-actions">
+              <button
+                type="button"
+                className={`bible-inline-audio-btn play-btn ${speech.status === 'playing' ? 'active' : ''}`}
+                onClick={handlePlayChapter}
+                aria-label={speech.status === 'playing' ? 'Metti in pausa' : 'Leggi capitolo'}
+              >
+                {speech.status === 'playing' ? <Pause size={16} /> : <Play size={16} />}
+                <span>{speech.status === 'playing' ? 'Pausa' : 'Avvia'}</span>
+              </button>
+
+              {speech.status !== 'idle' && (
+                <button
+                  type="button"
+                  className="bible-inline-audio-btn stop-btn"
+                  onClick={speech.stop}
+                  aria-label="Ferma"
+                >
+                  <Square size={14} />
+                  <span>Ferma</span>
+                </button>
+              )}
+
+              <div className="bible-inline-audio-divider" />
+
+              <button
+                type="button"
+                className="bible-inline-audio-btn speed-btn"
+                onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+                title="Impostazioni voce"
+              >
+                <Volume2 size={15} />
+                <span>Voce ({speechRate}x)</span>
+              </button>
+            </div>
+            {speech.status !== 'idle' && (
+              <div className="bible-inline-audio-status">
+                <div className="bible-inline-audio-progress-bar">
+                  <div 
+                    className="bible-inline-audio-progress-fill" 
+                    style={{ width: `${readingProgress}%` }}
+                  />
+                </div>
+                <span className="bible-inline-audio-status-text">
+                  Versetto {speech.currentVerseIndex + 1} di {selectedChapter.verses.length}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="bible-app-verses" ref={versesContainerRef}>
           {selectedChapter.verses.map((verse, index) => {
             const verseId = `${selectedChapter.id}-${index}`;
             const isHighlighted = highlightedVerses.has(verseId);
+            const isBeingRead = speech.currentVerseIndex === index && isReading;
 
             return (
               <p
                 key={verseId}
-                id={`${selectedChapter.id}-verse-${index + 1}`}
-                className={`${index === selectedVerseIndex ? 'is-selected' : ''} ${isHighlighted ? 'is-highlighted' : ''}`}
+                id={`bible-verse-${index}`}
+                className={`bible-verse-line ${index === selectedVerseIndex ? 'is-selected' : ''} ${isHighlighted ? 'is-highlighted' : ''} ${isBeingRead ? 'is-reading' : ''}`}
                 onClick={() => toggleHighlight(verseId)}
                 style={{ cursor: 'pointer' }}
               >
                 <sup>{index + 1}</sup>
                 {highlightSearchTerms(verse, query)}
+                {speech.isSupported && (
+                  <button
+                    type="button"
+                    className="bible-verse-speak-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isBeingRead) {
+                        speech.stop();
+                      } else {
+                        handleSpeakSingleVerse(index);
+                      }
+                    }}
+                    aria-label={isBeingRead ? 'Ferma lettura' : `Leggi versetto ${index + 1}`}
+                    title={isBeingRead ? 'Ferma' : 'Leggi questo versetto'}
+                  >
+                    {isBeingRead ? <MicOff size={13} /> : <Volume2 size={13} />}
+                  </button>
+                )}
               </p>
             );
           })}
@@ -346,6 +548,98 @@ export const Bible: React.FC = () => {
       >
         <ChevronRight size={34} />
       </button>
+
+      {/* Floating Audio Controls Bar */}
+      {speech.isSupported && (
+        <div className={`bible-audio-bar ${isReading ? 'is-active' : ''}`}>
+          {isReading && (
+            <div className="bible-audio-progress-track">
+              <div 
+                className="bible-audio-progress-fill" 
+                style={{ width: `${readingProgress}%` }} 
+              />
+            </div>
+          )}
+          <div className="bible-audio-controls">
+            <button
+              type="button"
+              className="bible-audio-btn bible-audio-btn-skip"
+              onClick={handleSkipBack}
+              disabled={!isReading || speech.currentVerseIndex <= 0}
+              aria-label="Versetto precedente"
+            >
+              <SkipBack size={16} />
+            </button>
+
+            <button
+              type="button"
+              className="bible-audio-btn bible-audio-btn-play"
+              onClick={handlePlayChapter}
+              aria-label={speech.status === 'playing' ? 'Pausa' : 'Leggi capitolo'}
+            >
+              {speech.status === 'playing' ? <Pause size={20} /> : <Play size={20} />}
+            </button>
+
+            <button
+              type="button"
+              className="bible-audio-btn bible-audio-btn-stop"
+              onClick={speech.stop}
+              disabled={!isReading}
+              aria-label="Stop"
+            >
+              <Square size={16} />
+            </button>
+
+            <button
+              type="button"
+              className="bible-audio-btn bible-audio-btn-skip"
+              onClick={handleSkipForward}
+              disabled={!isReading || speech.currentVerseIndex >= selectedChapter.verses.length - 1}
+              aria-label="Versetto successivo"
+            >
+              <SkipForward size={16} />
+            </button>
+
+            <div className="bible-audio-info">
+              {isReading ? (
+                <>
+                  <span className="bible-audio-verse-num">v.{speech.currentVerseIndex + 1}/{selectedChapter.verses.length}</span>
+                  <span className="bible-audio-dot">·</span>
+                </>
+              ) : (
+                <span className="bible-audio-label">Ascolta</span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              className="bible-audio-btn bible-audio-btn-speed"
+              onClick={() => setShowSpeedPicker(!showSpeedPicker)}
+              aria-label="Velocità"
+            >
+              {speechRate}×
+            </button>
+
+            {showSpeedPicker && (
+              <div className="bible-speed-popup">
+                {SPEED_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`bible-speed-popup-btn ${speechRate === opt.value ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setSpeechRate(opt.value);
+                      setShowSpeedPicker(false);
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 };
