@@ -292,6 +292,29 @@ export const Bible: React.FC = () => {
     localStorage.setItem('bible_highlighted_verses', JSON.stringify(Array.from(highlightedVerses)));
   }, [highlightedVerses]);
 
+  useEffect(() => {
+    if (!selectedChapter) return;
+    try {
+      const saved = localStorage.getItem('offwhite_bible_verse_interactions');
+      const list = saved ? JSON.parse(saved) as Array<{ id: string; book: string; chapter: string; date: string }> : [];
+      const today = new Date().toISOString().split('T')[0];
+      const entryId = `${today}-${selectedChapter.id}`;
+      
+      if (!list.some(x => x.id === entryId)) {
+        const nextList = [...list, {
+          id: entryId,
+          book: selectedChapter.book,
+          chapter: selectedChapter.chapter,
+          date: new Date().toISOString()
+        }];
+        localStorage.setItem('offwhite_bible_verse_interactions', JSON.stringify(nextList));
+        window.dispatchEvent(new CustomEvent('dashboard-data-update'));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [selectedChapterId, selectedChapter]);
+
   const toggleHighlight = (verseId: string) => {
     setHighlightedVerses((prev) => {
       const next = new Set(prev);

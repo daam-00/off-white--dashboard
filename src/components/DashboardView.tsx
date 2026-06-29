@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Flame, BookOpen, Heart, MessageCircle, Send, Utensils, Dumbbell, X, Plus, Sparkles, Check, ChevronRight, GripVertical, Calendar as CalendarIcon, DollarSign, ListTodo } from 'lucide-react';
+import { Flame, BookOpen, Heart, MessageCircle, Send, Utensils, Dumbbell, X, Plus, Sparkles, Check, ChevronRight, GripVertical, Calendar as CalendarIcon, DollarSign, ListTodo, BrainCircuit, AlertTriangle, CheckCircle, TrendingUp, Info } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { doc, getDocs, collection, query, where, onSnapshot, orderBy, type Timestamp, addDoc, serverTimestamp, setDoc, deleteDoc } from 'firebase/firestore';
 import { useDashboard, type SectionTab } from '../context/DashboardContext';
@@ -34,6 +34,9 @@ interface DashboardViewProps {
 }
 
 const DEFAULT_WIDGET_ORDER = [
+  'life-score',
+  'daily-brief-2',
+  'relationship-alerts',
   'ai-insight',
   'rhythm-checkin',
   'focus-day',
@@ -370,7 +373,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenUserPanel })
 
   // Timeline Data Aggregations
   const timelineItems = useMemo(() => {
-    const items: Array<{ id: string; time: string; label: string; type: 'checkin' | 'meal' | 'transaction' | 'task' }> = [];
+    const items: Array<{ id: string; time: string; label: string; type: 'checkin' | 'meal' | 'transaction' | 'task' | 'fitness' | 'bible' }> = [];
     
     // 1. Checkin
     if (hasCheckedInToday) {
@@ -423,8 +426,151 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenUserPanel })
       }
     });
 
+    // 5. Workouts completed
+    const workouts = parseStoredArray<{ id: string; name: string; completedAt?: string; date?: string; duration?: number }>('offwhite_workouts');
+    workouts.forEach(w => {
+      const ts = w.completedAt || w.date;
+      if (w && typeof ts === 'string' && ts.startsWith(today)) {
+        items.push({
+          id: w.id || Math.random().toString(),
+          time: formatTime(ts),
+          label: `WORKOUT COMPLETATO: "${w.name.toUpperCase()}" (${w.duration || 0} MIN)`,
+          type: 'fitness'
+        });
+      }
+    });
+
+    // 6. Bible Chapter Reads
+    const bibleReads = parseStoredArray<{ id: string; book: string; chapter: string; date: string }>('offwhite_bible_verse_interactions');
+    bibleReads.forEach(b => {
+      if (b && typeof b.date === 'string' && b.date.startsWith(today)) {
+        items.push({
+          id: b.id || Math.random().toString(),
+          time: formatTime(b.date),
+          label: `LETTURA SCRITTURE: "${b.book.toUpperCase()} ${b.chapter}"`,
+          type: 'bible'
+        });
+      }
+    });
+
     return items.sort((a, b) => a.time.localeCompare(b.time));
   }, [hasCheckedInToday, today]);
+
+  // Calculate Life Score
+  const lifeScore = useMemo(() => {
+    // 1. Routine (30%)
+    const routineTasks = parseStoredArray<{ id: string; completed: boolean }>('offwhite_daily_tasks');
+    const completedRoutineCount = routineTasks.filter(t => t && t.completed).length;
+    const totalRoutineCount = routineTasks.length;
+    const routineScore = totalRoutineCount > 0 ? (completedRoutineCount / totalRoutineCount) * 100 : 0;
+
+    // 2. Dieta (20%)
+    const meals = parseStoredArray<LoggedMeal>('offwhite_meals');
+    const todayMeals = meals.filter(m => m && typeof m.timestamp === 'string' && m.timestamp.startsWith(today));
+    const caloriesConsumed = todayMeals.reduce((sum, m) => sum + (Number(m.calories) || 0), 0);
+    const caloriesTarget = homeMetrics.caloriesTarget || 2000;
+    const diffPercent = Math.min(100, (Math.abs(caloriesConsumed - caloriesTarget) / caloriesTarget) * 100);
+    const dietScore = 100 - diffPercent;
+
+    // 3. Fitness (20%)
+    const workoutsCompleted = homeMetrics.workoutsCompleted || 0;
+    const workoutsTarget = homeMetrics.workoutsTarget || 3;
+    const fitnessScore = workoutsTarget > 0 ? Math.min(100, (workoutsCompleted / workoutsTarget) * 100) : 0;
+
+    // 4. Finanze (15%)
+    const monthlySpent = homeMetrics.monthlySpent || 0;
+    const monthlyBudget = homeMetrics.monthlyBudget || 1000;
+    const spentRatio = monthlyBudget > 0 ? monthlySpent / monthlyBudget : 0;
+    const financeScore = spentRatio <= 1 ? (1 - spentRatio) * 100 : Math.max(0, 100 - (spentRatio - 1) * 100);
+
+    // 5. Spiritualità (15%)
+    const bibleInteractions = parseStoredArray<{ date: string }>('offwhite_bible_verse_interactions');
+    const todayBibleReads = bibleInteractions.filter(x => x && typeof x.date === 'string' && x.date.startsWith(today));
+    const spiritualScore = todayBibleReads.length > 0 ? 100 : (hasCheckedInToday ? 50 : 0);
+
+    const weightedScore = (0.30 * routineScore) + (0.20 * dietScore) + (0.20 * fitnessScore) + (0.15 * financeScore) + (0.15 * spiritualScore);
+    return Math.round(weightedScore);
+  }, [homeMetrics, checkins, hasCheckedInToday, today]);
+
+  // Relationship Engine Alerts
+  const relationshipAlerts = useMemo(() => {
+    const alerts: Array<{ title: string; desc: string; type: 'warning' | 'info' | 'success' }> = [];
+
+    const meals = parseStoredArray<LoggedMeal>('offwhite_meals');
+    const todayMeals = meals.filter(m => m && typeof m.timestamp === 'string' && m.timestamp.startsWith(today));
+    const caloriesConsumed = todayMeals.reduce((sum, m) => sum + (Number(m.calories) || 0), 0);
+
+    const workouts = parseStoredArray<{ completedAt?: string; date?: string }>('offwhite_workouts');
+    const todayWorkout = workouts.find(w => {
+      const ts = w?.completedAt || w?.date;
+      return w && typeof ts === 'string' && ts.startsWith(today);
+    });
+
+    const routineTasks = parseStoredArray<{ label: string; completed: boolean }>('offwhite_daily_tasks');
+    const lowSleepOrEnergy = routineTasks.some(t => 
+      t && (t.label.toLowerCase().includes('dormi') || t.label.toLowerCase().includes('riposo') || t.label.toLowerCase().includes('sonno')) && !t.completed
+    );
+
+    const monthlySpent = homeMetrics.monthlySpent || 0;
+    const monthlyBudget = homeMetrics.monthlyBudget || 1;
+
+    if (todayWorkout && caloriesConsumed < 1500) {
+      alerts.push({
+        title: "REINTEGRO NUTRIZIONALE RICHIESTO",
+        desc: "Hai completato un allenamento oggi ma il tuo apporto calorico totale è ancora molto basso. Assicurati di consumare proteine stasera per favorire la riparazione muscolare.",
+        type: 'warning'
+      });
+    }
+
+    if (todayWorkout && lowSleepOrEnergy) {
+      alerts.push({
+        title: "FOCALIZZAZIONE RECUPERO ATTIVO",
+        desc: "Hai registrato uno sforzo fisico ma la tua routine segnala riposo incompleto. Prioritizza 8 ore di sonno stasera per massimizzare la crescita.",
+        type: 'info'
+      });
+    }
+
+    if (monthlySpent / monthlyBudget > 0.8) {
+      alerts.push({
+        title: "ATTENZIONE AL BUDGET",
+        desc: `Le tue spese mensili hanno superato l'80% del budget programmato (${Math.round((monthlySpent / monthlyBudget) * 100)}%). Valuta di rimandare acquisti non essenziali.`,
+        type: 'warning'
+      });
+    }
+
+    if (checkinStreak >= 3) {
+      alerts.push({
+        title: "STRISCIA CONSISTENZA ATTIVA",
+        desc: `Stai andando alla grande! Sei al check-in n. ${checkinStreak} consecutivo. Completa anche i to-do odierni per spingere il Life Score al massimo.`,
+        type: 'success'
+      });
+    }
+
+    return alerts;
+  }, [homeMetrics, checkinStreak, today]);
+
+  // Daily Brief Info
+  const dailyBriefInfo = useMemo(() => {
+    const routineTasks = parseStoredArray<{ label: string; completed: boolean }>('offwhite_daily_tasks');
+    const pendingTasks = routineTasks.filter(t => t && !t.completed);
+    
+    let statusText = "PICCO_PRODUTTIVITÀ";
+    let statusDesc = "Consistenza elevata. Ottimo bilanciamento.";
+    if (lifeScore < 50) {
+      statusText = "RIPRISTINO_NECESSARIO";
+      statusDesc = "Diversi moduli trascurati. Fai un check-in o completa un to-do.";
+    } else if (lifeScore < 75) {
+      statusText = "IN_RIEQUILIBRIO";
+      statusDesc = "Buona base. Focus sulla routine di oggi.";
+    }
+
+    return {
+      statusText,
+      statusDesc,
+      nextPendingTask: pendingTasks[0]?.label || "Nessun to-do rimasto per oggi",
+      hasPending: pendingTasks.length > 0
+    };
+  }, [lifeScore]);
 
   // Horizontal Calendar Strip
   const last7Days = useMemo(() => {
@@ -679,6 +825,114 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenUserPanel })
       <Reorder.Group axis="y" values={widgetOrder} onReorder={setWidgetOrder} className="space-y-5 mt-6 px-4 md:px-0">
         {widgetOrder.map((widgetId) => (
           <Reorder.Item key={widgetId} value={widgetId} dragListener={false} className="w-full">
+            {/* WIDGET: LIFE SCORE */}
+            {widgetId === 'life-score' && (
+              <div className="widget-card relative pr-10">
+                <div className="absolute top-4 right-4 drag-handle cursor-grab" onPointerDown={(e) => e.currentTarget.parentElement?.dispatchEvent(new MouseEvent('mousedown'))}>
+                  <GripVertical size={16} />
+                </div>
+                <div className="flex items-center gap-6">
+                  {/* SVG Progress Circle */}
+                  <div className="relative w-20 h-20 shrink-0">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle cx="40" cy="40" r="34" className="stroke-black/5 dark:stroke-white/5 fill-transparent" strokeWidth="6" />
+                      <circle 
+                        cx="40" 
+                        cy="40" 
+                        r="34" 
+                        className="fill-transparent transition-all duration-500" 
+                        strokeWidth="6" 
+                        stroke="url(#lifeScoreGradient)" 
+                        strokeDasharray={2 * Math.PI * 34} 
+                        strokeDashoffset={2 * Math.PI * 34 - (lifeScore / 100) * (2 * Math.PI * 34)} 
+                        strokeLinecap="round"
+                      />
+                      <defs>
+                        <linearGradient id="lifeScoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#ef4444" />
+                          <stop offset="60%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#22c55e" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="font-mono text-base font-black">{lifeScore}%</span>
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <span className="font-mono text-[9px] uppercase tracking-widest text-offwhite-orange block">LIFE_OPERATING_SYSTEM // LIFE_SCORE</span>
+                    <h3 className="text-sm font-black uppercase mt-0.5 tracking-tight">Consistenza Globale</h3>
+                    <p className={`text-[10px] font-mono font-black uppercase mt-1 tracking-wider ${
+                      lifeScore >= 80 ? 'text-green-600' : lifeScore >= 60 ? 'text-amber-500' : 'text-red-500'
+                    }`}>
+                      {dailyBriefInfo.statusText}
+                    </p>
+                    <p className="text-[11px] opacity-60 leading-tight mt-0.5">{dailyBriefInfo.statusDesc}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* WIDGET: DAILY BRIEF 2.0 */}
+            {widgetId === 'daily-brief-2' && (
+              <div className="widget-card relative pr-10">
+                <div className="absolute top-4 right-4 drag-handle cursor-grab" onPointerDown={(e) => e.currentTarget.parentElement?.dispatchEvent(new MouseEvent('mousedown'))}>
+                  <GripVertical size={16} />
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <CalendarIcon size={16} className="text-black dark:text-white" />
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-gray-500">PLANNING_ODIERNO // DAILY_BRIEF</span>
+                </div>
+                <h3 className="text-base font-black uppercase tracking-tight">Daily Briefing 2.0</h3>
+                <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2 select-text">
+                  Oggi è il {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}. 
+                  {stats.points > 0 ? ` Hai accumulato ${stats.points} Better Credits.` : ''} 
+                  {lifeScore >= 80 ? " La tua consistenza è eccellente, continua così!" : " Completa i tuoi to-do della routine per ristabilire l'equilibrio."}
+                </p>
+                
+                {/* Priority block */}
+                <div className="mt-4 border border-black/10 rounded-2xl p-3 bg-black/[0.01] space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="font-mono text-[8px] uppercase tracking-widest text-gray-400 block font-bold">Focus Attivo</span>
+                      <strong className="text-xs font-mono">{focusState.text || "NESSUN OBIETTIVO DEFINITO"}</strong>
+                    </div>
+                    {focusState.completed && <span className="bg-green-100 text-green-700 font-mono text-[7px] font-bold px-1.5 py-0.5 rounded uppercase">COMPLETATO</span>}
+                  </div>
+                  <div className="border-t border-black/5 pt-2">
+                    <span className="font-mono text-[8px] uppercase tracking-widest text-gray-400 block font-bold">Prossimo To-Do Routine</span>
+                    <span className="text-xs font-mono opacity-80">{dailyBriefInfo.nextPendingTask}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* WIDGET: RELATIONSHIP ALERTS */}
+            {widgetId === 'relationship-alerts' && relationshipAlerts.length > 0 && (
+              <div className="widget-card relative pr-10 border-l-4 border-l-offwhite-orange bg-amber-50/5">
+                <div className="absolute top-4 right-4 drag-handle cursor-grab" onPointerDown={(e) => e.currentTarget.parentElement?.dispatchEvent(new MouseEvent('mousedown'))}>
+                  <GripVertical size={16} />
+                </div>
+                <div className="flex items-center gap-2 mb-3">
+                  <BrainCircuit size={16} className="text-offwhite-orange animate-pulse" />
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-offwhite-orange">RELATIONSHIP_ENGINE // INSIGHTS</span>
+                </div>
+                <div className="space-y-3">
+                  {relationshipAlerts.map((alert, idx) => (
+                    <div key={idx} className="flex gap-2.5 p-3 rounded-2xl border border-black/5 bg-white/70 dark:bg-black/20 shadow-sm">
+                      <Info size={14} className="shrink-0 mt-0.5 text-offwhite-orange" />
+                      <div>
+                        <strong className="text-[10px] font-mono uppercase tracking-wide block text-black/80">{alert.title}</strong>
+                        <p className="text-[11px] leading-tight text-gray-600 dark:text-gray-300 mt-0.5">{alert.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* WIDGET: AI SMART INSIGHT */}
             {widgetId === 'ai-insight' && (
               <div className="widget-card relative pr-10">
@@ -980,14 +1234,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenUserPanel })
                     Ancora nessuna attività registrata oggi.
                   </div>
                 ) : (
-                  <div className="timeline-track">
+                  <div className="space-y-3">
                     {timelineItems.map((item) => (
-                      <div key={item.id} className="timeline-item flex flex-col items-start">
-                        <span className="timeline-dot" />
-                        <span className="font-mono text-[8px] opacity-40">{item.time}</span>
-                        <p className="font-mono text-[9px] font-bold tracking-wide uppercase mt-0.5 leading-snug">
-                          {item.label}
-                        </p>
+                      <div key={item.id} className="flex items-center gap-3 py-2 border-b border-black/5 last:border-0 dark:border-white/5">
+                        <div className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0 border border-black/10 dark:border-white/10 shadow-sm">
+                          {item.type === 'checkin' && <Flame size={12} className="text-offwhite-orange" />}
+                          {item.type === 'meal' && <Utensils size={12} className="text-black dark:text-white" />}
+                          {item.type === 'transaction' && <DollarSign size={12} className="text-black dark:text-white" />}
+                          {item.type === 'task' && <ListTodo size={12} className="text-black dark:text-white" />}
+                          {item.type === 'fitness' && <Dumbbell size={12} className="text-black dark:text-white" />}
+                          {item.type === 'bible' && <BookOpen size={12} className="text-black dark:text-white" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-mono text-[9px] font-black tracking-wide uppercase leading-tight truncate">
+                              {item.label}
+                            </p>
+                            <span className="font-mono text-[8px] opacity-40 shrink-0">{item.time}</span>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
