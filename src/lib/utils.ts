@@ -26,9 +26,10 @@ export function parseStoredArray<T>(key: string): T[] {
 }
 
 export function formatCurrencyCompact(value: number) {
+  const num = typeof value === 'number' && !isNaN(value) ? value : 0;
   return new Intl.NumberFormat('it-IT', {
     style: 'currency',
     currency: 'EUR',
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(num);
 }

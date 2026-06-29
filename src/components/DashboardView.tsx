@@ -385,12 +385,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenUserPanel })
     // 2. Meals
     const meals = parseStoredArray<LoggedMeal>('offwhite_meals');
     meals.forEach(m => {
-      // Considera solo i pasti di oggi
-      if (m.timestamp && m.timestamp.startsWith(today)) {
+      if (m && typeof m.timestamp === 'string' && m.timestamp.startsWith(today)) {
         items.push({
-          id: m.id,
+          id: m.id || Math.random().toString(),
           time: formatTime(m.timestamp),
-          label: `LOG PASTO: ${m.name.toUpperCase()} (+${m.calories} KCAL)`,
+          label: `LOG PASTO: ${(m.name || 'Pasto').toUpperCase()} (+${m.calories || 0} KCAL)`,
           type: 'meal'
         });
       }
@@ -399,13 +398,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenUserPanel })
     // 3. Transactions
     const transactions = parseStoredArray<{ id: string; amount: number; description: string; date: string; type: string }>('offwhite_transactions');
     transactions.forEach(tx => {
-      if (tx.date && tx.date.startsWith(today)) {
+      if (tx && typeof tx.date === 'string' && tx.date.startsWith(today)) {
         items.push({
-          id: tx.id,
+          id: tx.id || Math.random().toString(),
           time: formatTime(tx.date),
           label: tx.type === 'income'
-            ? `ENTRATA REGISTRATA: +${formatCurrencyCompact(tx.amount)} (${tx.description})`
-            : `SPESA REGISTRATA: -${formatCurrencyCompact(tx.amount)} (${tx.description})`,
+            ? `ENTRATA REGISTRATA: +${formatCurrencyCompact(tx.amount || 0)} (${(tx.description || '').toUpperCase()})`
+            : `SPESA REGISTRATA: -${formatCurrencyCompact(tx.amount || 0)} (${(tx.description || '').toUpperCase()})`,
           type: 'transaction'
         });
       }
@@ -414,17 +413,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenUserPanel })
     // 4. Tasks completed
     const taskLog = parseStoredArray<{ id: string; label: string; date: string }>('offwhite_task_completion_log');
     taskLog.forEach(log => {
-      if (log.date === today) {
+      if (log && typeof log.date === 'string' && log.date === today) {
         items.push({
-          id: log.id,
+          id: log.id || Math.random().toString(),
           time: '12:00',
-          label: `ABITUDINE COMPLETATA: "${log.label.toUpperCase()}"`,
+          label: `ABITUDINE COMPLETATA: "${(log.label || '').toUpperCase()}"`,
           type: 'task'
         });
       }
     });
 
-    // Ordina per orario
     return items.sort((a, b) => a.time.localeCompare(b.time));
   }, [hasCheckedInToday, today]);
 
@@ -441,7 +439,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onOpenUserPanel })
         dayName: dateNames[d.getDay()],
         dayNumber: d.getDate(),
         isToday: i === 0,
-        checkedIn: checkins.includes(dateKey),
+        checkedIn: Array.isArray(checkins) && checkins.includes(dateKey),
         routineBonus: localStorage.getItem(`offwhite_daily_routine_bonus_awarded_${dateKey}`) === 'true',
       });
     }
