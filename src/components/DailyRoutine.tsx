@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SectionHeader } from './SectionHeader';
-import { CircleCheck, Circle, Trophy as TrophyIcon, Plus, Trash2, PencilLine } from 'lucide-react';
+import { CircleCheck, Circle, Trophy as TrophyIcon, Plus, Trash2, PencilLine, Sparkles, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Heatmap } from './Heatmap';
 import { awardUserPoints } from '../lib/account';
@@ -68,17 +68,22 @@ export const DailyRoutine: React.FC = () => {
     const lastUpdate = localStorage.getItem(TASKS_UPDATED_KEY);
     const today = getTodayKey();
 
-    if (lastUpdate !== today) {
-      return [];
-    }
-
     if (!saved) {
       return [];
     }
 
     try {
       const parsed = JSON.parse(saved) as RoutineTask[];
-      return normalizeTasks(parsed).filter((task) => task.kind === 'custom');
+      const normalized = normalizeTasks(parsed).filter((task) => task.kind === 'custom');
+      
+      if (lastUpdate !== today) {
+        return normalized.map(task => ({
+          ...task,
+          completed: false,
+          awarded: false
+        }));
+      }
+      return normalized;
     } catch {
       return [];
     }
@@ -165,9 +170,131 @@ export const DailyRoutine: React.FC = () => {
     }
   }, [tasks]);
 
+  // Routine AI Advisor States
+  const [apiKey] = useState<string>(() => {
+    const local = localStorage.getItem('betterme_gemini_api_key');
+    if (local) return local;
+    try { return (process.env.GEMINI_API_KEY as string) || ''; } catch { return ''; }
+  });
+
+  const [aiAdvice, setAiAdvice] = useState<string>(() => {
+    const todayKey = getTodayKey();
+    return localStorage.getItem(`betterme_routine_ai_advice_${todayKey}`) || '';
+  });
+  const [loadingAdvice, setLoadingAdvice] = useState(false);
+  const [errorAdvice, setErrorAdvice] = useState('');
+
+  const fetchRoutineAIAdvice = async () => {
+    if (!apiKey) return;
+    setLoadingAdvice(true);
+    setErrorAdvice('');
+
+    const todayKey = getTodayKey();
+    const completedStreak = completedDates.length;
+
+    const promptText = `Fornisci un consiglio personalizzato ed estremamente conciso in italiano per migliorare la costanza della routine quotidiana:
+- To-do di oggi: ${tasks.map(t => `${t.label} (${t.completed ? 'completata' : 'in attesa'})`).join(', ') || 'Nessun to-do impostato oggi'}.
+- Numero totale di giorni di routine completati in passato (dati heatmap): ${completedStreak}.
+
+Il consiglio deve spingere all'azione, suggerire come superare blocchi di procrastinazione (es. regola dei 2 minuti) ed essere specifico per i to-do elencati. Massimo 3 frasi, stile minimalista ed elegante (off-white design).`;
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: promptText }]
+            }
+          ],
+          generationConfig: {
+            maxOutputTokens: 250,
+            temperature: 0.7,
+          }
+        })
+      });
+
+      if (!response.ok) throw new Error("Errore API");
+      const data = await response.json();
+      const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!answer) throw new Error("Nessuna risposta");
+
+      setAiAdvice(answer);
+      localStorage.setItem(`betterme_routine_ai_advice_${todayKey}`, answer);
+    } catch (e) {
+      console.error(e);
+      setErrorAdvice("Impossibile caricare il consiglio. Riprova.");
+    } finally {
+      setLoadingAdvice(false);
+    }
+  };
+
   return (
     <div className="h-full rounded-3xl bg-white/70 dark:bg-white/5 backdrop-blur-3xl border border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col p-6">
       <SectionHeader title="ROUTINE GIORNALIERA" label="TRACCIATORE_ROUTINE_V1.0" />
+
+      {/* AI CONTEXTUAL ADVISOR CARD */}
+      <div className="border-2 border-black rounded-3xl p-5 bg-gradient-to-br from-white via-purple-50/10 to-pink-50/10 relative overflow-hidden shadow-sm mb-6 mt-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles size={18} className="text-offwhite-orange animate-pulse" />
+          <div>
+            <span className="font-mono text-[9px] uppercase tracking-widest text-offwhite-orange block">ROUTINE_AI_ADVISOR</span>
+            <h3 className="text-xs font-bold uppercase tracking-tight">Consulente Routine IA</h3>
+          </div>
+        </div>
+
+        {aiAdvice ? (
+          <div className="space-y-3">
+            <p className="text-sm font-mono leading-relaxed bg-black/5 p-3 rounded-2xl border border-black/5 text-black/80">
+              {aiAdvice}
+            </p>
+            <div className="flex justify-end">
+              <button 
+                onClick={fetchRoutineAIAdvice}
+                disabled={loadingAdvice || !apiKey}
+                className="flex items-center gap-1.5 border border-black px-2.5 py-1 rounded-xl text-[9px] font-mono uppercase bg-white hover:bg-black hover:text-white transition-colors"
+              >
+                <RefreshCw size={10} className={loadingAdvice ? 'animate-spin' : ''} />
+                Aggiorna Insight
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2">
+            <p className="text-xs font-mono text-gray-500 uppercase tracking-wide max-w-md">
+              {apiKey 
+                ? "Ottieni un consiglio per massimizzare la costanza dei tuoi obiettivi e battere la procrastinazione."
+                : "Configura la chiave API Gemini nell'AI Companion per sbloccare i consigli per le tue abitudini."
+              }
+            </p>
+            {apiKey && (
+              <button
+                onClick={fetchRoutineAIAdvice}
+                disabled={loadingAdvice}
+                className="flex items-center justify-center gap-1.5 border-2 border-black bg-black text-white hover:bg-offwhite-orange hover:border-offwhite-orange hover:text-black rounded-xl px-4 py-2 text-[10px] font-mono uppercase tracking-widest transition-all shrink-0 font-bold"
+              >
+                {loadingAdvice ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin" />
+                    Analisi...
+                  </>
+                ) : (
+                  <>
+                    Chiedi all'IA
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
+        {errorAdvice && (
+          <p className="mt-2 text-[10px] font-mono text-red-500 uppercase tracking-wider">{errorAdvice}</p>
+        )}
+      </div>
 
       <div className="mb-6 rounded-3xl border border-white/80 bg-white/80 dark:bg-white/10 backdrop-blur-xl p-5 md:p-6 shadow-[0_8px_32px_rgba(0,0,0,0.04)]">
         <div className="mb-3 flex items-center justify-between gap-3">

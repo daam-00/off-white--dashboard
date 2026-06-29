@@ -523,6 +523,77 @@ export const Diet: React.FC<DietProps> = ({ ownerEmail }) => {
   const [loadingDaily, setLoadingDaily] = useState(true);
   const [recipeSource, setRecipeSource] = useState<'IA' | 'LOCAL'>('LOCAL');
 
+  // Diet AI Advisor States
+  const [aiAdvice, setAiAdvice] = useState<string>(() => {
+    return localStorage.getItem(`betterme_diet_ai_advice_${todayKey}`) || '';
+  });
+  const [loadingAdvice, setLoadingAdvice] = useState(false);
+  const [errorAdvice, setErrorAdvice] = useState('');
+
+  const fetchDietAIAdvice = async () => {
+    if (!apiKey) return;
+    setLoadingAdvice(true);
+    setErrorAdvice('');
+
+    const dayNamesIt = ['DOMENICA', 'LUNEDÌ', 'MARTEDÌ', 'MERCOLEDÌ', 'GIOVEDÌ', 'VENERDÌ', 'SABATO'];
+    const dayOfWeek = dayNamesIt[new Date().getDay()];
+    const carbSchedule = DIET_PLAN.schedule[dayOfWeek as keyof typeof DIET_PLAN.schedule] || 'MEDIUM CARB';
+
+    // Parse current meals
+    const loggedMeals = (() => {
+      try {
+        return JSON.parse(localStorage.getItem('offwhite_meals') || '[]');
+      } catch {
+        return [];
+      }
+    })();
+    const todayMeals = loggedMeals.filter((m: any) => m && typeof m.timestamp === 'string' && m.timestamp.startsWith(todayKey));
+    const caloriesEaten = todayMeals.reduce((sum: number, m: any) => sum + (Number(m.calories) || 0), 0);
+
+    const promptText = `Fornisci un consiglio nutrizionale personalizzato e specifico in italiano per la giornata di oggi:
+- Oggi è: ${dayOfWeek}.
+- Piano nutrizionale carb cycling programmato per oggi: ${carbSchedule}.
+- Calorie consumate oggi finora: ${caloriesEaten} kcal.
+- Pasti loggati oggi: ${todayMeals.map((m: any) => `${m.name} (${m.calories} kcal)`).join(', ') || 'Nessun pasto registrato ancora'}.
+- BMI note dell'utente: ${DIET_PLAN.bmi.note}.
+
+Il consiglio deve essere di massimo 3 frasi, pratico, e contenere un suggerimento specifico (es: cosa mangiare a cena o come raggiungere la quota proteica/carboidrati di oggi). Usa uno stile motivante ed elegante (off-white design).`;
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: promptText }]
+            }
+          ],
+          generationConfig: {
+            maxOutputTokens: 250,
+            temperature: 0.7,
+          }
+        })
+      });
+
+      if (!response.ok) throw new Error("Errore API");
+      const data = await response.json();
+      const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!answer) throw new Error("Nessuna risposta");
+
+      setAiAdvice(answer);
+      localStorage.setItem(`betterme_diet_ai_advice_${todayKey}`, answer);
+    } catch (e) {
+      console.error(e);
+      setErrorAdvice("Impossibile caricare il consiglio. Riprova.");
+    } finally {
+      setLoadingAdvice(false);
+    }
+  };
+
   const fetchDailyRecipes = async (dateKey: string, forceRegenerate = false) => {
     setLoadingDaily(true);
 
@@ -723,6 +794,65 @@ Restituisci ESCLUSIVAMENTE un array JSON valido in lingua italiana secondo lo sc
 
       {activeView === 'TRACKER' ? (
         <div className="mt-6 space-y-8">
+
+          {/* AI CONTEXTUAL ADVISOR CARD */}
+          <div className="border-2 border-black rounded-3xl p-5 bg-gradient-to-br from-white via-amber-50/10 to-orange-50/10 relative overflow-hidden shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles size={18} className="text-offwhite-orange animate-pulse" />
+              <div>
+                <span className="font-mono text-[9px] uppercase tracking-widest text-offwhite-orange block">DIET_AI_ADVISOR</span>
+                <h3 className="text-xs font-bold uppercase tracking-tight">Consulente Alimentare IA</h3>
+              </div>
+            </div>
+
+            {aiAdvice ? (
+              <div className="space-y-3">
+                <p className="text-sm font-mono leading-relaxed bg-black/5 p-3 rounded-2xl border border-black/5 text-black/80">
+                  {aiAdvice}
+                </p>
+                <div className="flex justify-end">
+                  <button 
+                    onClick={fetchDietAIAdvice}
+                    disabled={loadingAdvice || !apiKey}
+                    className="flex items-center gap-1.5 border border-black px-2.5 py-1 rounded-xl text-[9px] font-mono uppercase bg-white hover:bg-black hover:text-white transition-colors"
+                  >
+                    <RefreshCw size={10} className={loadingAdvice ? 'animate-spin' : ''} />
+                    Aggiorna Insight
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2">
+                <p className="text-xs font-mono text-gray-500 uppercase tracking-wide max-w-md">
+                  {apiKey 
+                    ? "Genera un consiglio nutrizionale su misura basato sui pasti loggati oggi e sul tuo piano carb cycling."
+                    : "Configura la chiave API Gemini nell'AI Companion per sbloccare i consigli alimentari in tempo reale."
+                  }
+                </p>
+                {apiKey && (
+                  <button
+                    onClick={fetchDietAIAdvice}
+                    disabled={loadingAdvice}
+                    className="flex items-center justify-center gap-1.5 border-2 border-black bg-black text-white hover:bg-offwhite-orange hover:border-offwhite-orange hover:text-black rounded-xl px-4 py-2 text-[10px] font-mono uppercase tracking-widest transition-all shrink-0 font-bold"
+                  >
+                    {loadingAdvice ? (
+                      <>
+                        <RefreshCw size={12} className="animate-spin" />
+                        Analisi...
+                      </>
+                    ) : (
+                      <>
+                        Chiedi all'IA
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+            {errorAdvice && (
+              <p className="mt-2 text-[10px] font-mono text-red-500 uppercase tracking-wider">{errorAdvice}</p>
+            )}
+          </div>
 
           {/* ── Ispirazioni del giorno ── */}
           <div>

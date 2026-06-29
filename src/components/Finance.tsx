@@ -23,6 +23,8 @@ import {
   Scissors,
   Tv,
   WalletCards,
+  Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -390,6 +392,83 @@ export const Finance: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>(() => parseTransactions());
   const [expenseCategories] = useState<string[]>(() => parseExpenseCategories());
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>(() => parseSubscriptions());
+
+  // Finance AI Advisor States
+  const [apiKey] = useState<string>(() => {
+    const local = localStorage.getItem('betterme_gemini_api_key');
+    if (local) return local;
+    try { return (process.env.GEMINI_API_KEY as string) || ''; } catch { return ''; }
+  });
+
+  const [aiAdvice, setAiAdvice] = useState<string>(() => {
+    const todayKey = new Date().toISOString().split('T')[0];
+    return localStorage.getItem(`betterme_finance_ai_advice_${todayKey}`) || '';
+  });
+  const [loadingAdvice, setLoadingAdvice] = useState(false);
+  const [errorAdvice, setErrorAdvice] = useState('');
+
+  const fetchFinanceAIAdvice = async () => {
+    if (!apiKey) return;
+    setLoadingAdvice(true);
+    setErrorAdvice('');
+
+    const todayKey = new Date().toISOString().split('T')[0];
+    const monthKey = todayKey.substring(0, 7);
+
+    const monthlyExpenses = transactions
+      .filter((t) => t.type === 'expense' && typeof t.date === 'string' && t.date.startsWith(monthKey))
+      .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+
+    const monthlyIncome = transactions
+      .filter((t) => t.type === 'income' && typeof t.date === 'string' && t.date.startsWith(monthKey))
+      .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+
+    const totalActiveSubscriptions = subscriptions
+      .filter((s) => s.active)
+      .reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
+
+    const promptText = `Fornisci un consiglio finanziario personalizzato ed estremamente conciso in italiano basandoti sui dati reali di questo mese (${monthKey}):
+- Entrate registrate questo mese: ${monthlyIncome}€.
+- Spese registrate questo mese: ${monthlyExpenses}€.
+- Totale abbonamenti attivi mensili: ${totalActiveSubscriptions}€ (Abbonamenti: ${subscriptions.filter(s => s.active).map(s => `${s.name}: ${s.amount}€`).join(', ') || 'Nessuno'}).
+- Transazioni recenti di questo mese: ${transactions.slice(0, 10).map((t) => `${t.description || 'Spesa'}: ${t.amount}€ (${t.type})`).join(', ') || 'Nessuna transazione'}.
+
+Fornisci una proiezione o un suggerimento pratico per ottimizzare le spese o tagliare abbonamenti inutili. Massimo 3 frasi, stile minimalista ed elegante (off-white design).`;
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: promptText }]
+            }
+          ],
+          generationConfig: {
+            maxOutputTokens: 250,
+            temperature: 0.7,
+          }
+        })
+      });
+
+      if (!response.ok) throw new Error("Errore API");
+      const data = await response.json();
+      const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!answer) throw new Error("Nessuna risposta");
+
+      setAiAdvice(answer);
+      localStorage.setItem(`betterme_finance_ai_advice_${todayKey}`, answer);
+    } catch (e) {
+      console.error(e);
+      setErrorAdvice("Impossibile caricare l'analisi. Riprova.");
+    } finally {
+      setLoadingAdvice(false);
+    }
+  };
 
   const [totalAmount, setTotalAmount] = useState('');
   const [movementAmount, setMovementAmount] = useState('');
@@ -944,6 +1023,65 @@ export const Finance: React.FC = () => {
               </motion.div>
             </div>
           </motion.section>
+
+          {/* AI CONTEXTUAL ADVISOR CARD */}
+          <div className="border-2 border-black rounded-3xl p-5 bg-gradient-to-br from-white via-blue-50/10 to-indigo-50/10 relative overflow-hidden shadow-sm mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles size={18} className="text-offwhite-orange animate-pulse" />
+              <div>
+                <span className="font-mono text-[9px] uppercase tracking-widest text-offwhite-orange block">FINANCE_AI_ADVISOR</span>
+                <h3 className="text-xs font-bold uppercase tracking-tight">Analista Finanziario IA</h3>
+              </div>
+            </div>
+
+            {aiAdvice ? (
+              <div className="space-y-3">
+                <p className="text-sm font-mono leading-relaxed bg-black/5 p-3 rounded-2xl border border-black/5 text-black/80">
+                  {aiAdvice}
+                </p>
+                <div className="flex justify-end">
+                  <button 
+                    onClick={fetchFinanceAIAdvice}
+                    disabled={loadingAdvice || !apiKey}
+                    className="flex items-center gap-1.5 border border-black px-2.5 py-1 rounded-xl text-[9px] font-mono uppercase bg-white hover:bg-black hover:text-white transition-colors"
+                  >
+                    <RefreshCw size={10} className={loadingAdvice ? 'animate-spin' : ''} />
+                    Aggiorna Insight
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2">
+                <p className="text-xs font-mono text-gray-500 uppercase tracking-wide max-w-md">
+                  {apiKey 
+                    ? "Ottieni un'analisi e proiezione di spesa a fine mese basata sul tuo budget e abbonamenti attivi."
+                    : "Configura la chiave API Gemini nell'AI Companion per sbloccare l'analisi finanziaria in tempo reale."
+                  }
+                </p>
+                {apiKey && (
+                  <button
+                    onClick={fetchFinanceAIAdvice}
+                    disabled={loadingAdvice}
+                    className="flex items-center justify-center gap-1.5 border-2 border-black bg-black text-white hover:bg-offwhite-orange hover:border-offwhite-orange hover:text-black rounded-xl px-4 py-2 text-[10px] font-mono uppercase tracking-widest transition-all shrink-0 font-bold"
+                  >
+                    {loadingAdvice ? (
+                      <>
+                        <RefreshCw size={12} className="animate-spin" />
+                        Analisi...
+                      </>
+                    ) : (
+                      <>
+                        Chiedi all'IA
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+            {errorAdvice && (
+              <p className="mt-2 text-[10px] font-mono text-red-500 uppercase tracking-wider">{errorAdvice}</p>
+            )}
+          </div>
 
           <section className="finance-ios-history">
             <div className="finance-ios-history-head">

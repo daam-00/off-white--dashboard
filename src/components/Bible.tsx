@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, ChevronLeft, ChevronRight, Mic, MicOff, MoreHorizontal, Pause, Play, Search, SkipBack, SkipForward, Square, Volume2, X } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, Mic, MicOff, MoreHorizontal, Pause, Play, Search, SkipBack, SkipForward, Square, Volume2, X, Sparkles, RefreshCw } from 'lucide-react';
 import { BibleChapter, bibleLibrary } from '../data/bibleLibrary';
 import { useSpeechSynthesis } from '../lib/useSpeechSynthesis';
 
@@ -177,6 +177,70 @@ export const Bible: React.FC = () => {
       isMounted = false;
     };
   }, []);
+
+  // Bible AI Advisor States
+  const [apiKey] = useState<string>(() => {
+    const local = localStorage.getItem('betterme_gemini_api_key');
+    if (local) return local;
+    try { return (process.env.GEMINI_API_KEY as string) || ''; } catch { return ''; }
+  });
+
+  const todayKey = new Date().toISOString().split('T')[0];
+
+  const [aiAdvice, setAiAdvice] = useState<string>(() => {
+    return localStorage.getItem(`betterme_bible_ai_advice_${todayKey}`) || '';
+  });
+  const [loadingAdvice, setLoadingAdvice] = useState(false);
+  const [errorAdvice, setErrorAdvice] = useState('');
+
+  const fetchBibleAIAdvice = async () => {
+    if (!apiKey) return;
+    setLoadingAdvice(true);
+    setErrorAdvice('');
+
+    const selectedChapter = chapters.find(c => c.id === selectedChapterId);
+    const contextText = selectedChapter 
+      ? `Capitolo attivo: ${selectedChapter.book} ${selectedChapter.chapterNumber}`
+      : 'Nessun capitolo selezionato';
+
+    const promptText = `Fornisci una breve riflessione spirituale o suggerimento di lettura in italiano per la giornata di oggi:
+- Capitolo della Bibbia attualmente aperto: ${contextText}.
+- Fornisci una breve spiegazione spirituale pratica (1-2 frasi) o suggerisci un versetto chiave associato a questo capitolo o alla crescita personale. Massimo 3 frasi totali, stile minimalista, poetico ed elegante (off-white design).`;
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: promptText }]
+            }
+          ],
+          generationConfig: {
+            maxOutputTokens: 250,
+            temperature: 0.7,
+          }
+        })
+      });
+
+      if (!response.ok) throw new Error("Errore API");
+      const data = await response.json();
+      const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!answer) throw new Error("Nessuna risposta");
+
+      setAiAdvice(answer);
+      localStorage.setItem(`betterme_bible_ai_advice_${todayKey}`, answer);
+    } catch (e) {
+      console.error(e);
+      setErrorAdvice("Impossibile caricare il suggerimento. Riprova.");
+    } finally {
+      setLoadingAdvice(false);
+    }
+  };
 
   const filteredChapters = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -374,6 +438,65 @@ export const Bible: React.FC = () => {
           </div>
         ) : null}
       </header>
+
+      {/* AI CONTEXTUAL ADVISOR CARD */}
+      <div className="border-2 border-black rounded-3xl p-5 bg-gradient-to-br from-white via-yellow-50/10 to-amber-50/10 relative overflow-hidden shadow-sm mb-6 mt-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles size={18} className="text-offwhite-orange animate-pulse" />
+          <div>
+            <span className="font-mono text-[9px] uppercase tracking-widest text-offwhite-orange block">BIBLE_AI_ADVISOR</span>
+            <h3 className="text-xs font-bold uppercase tracking-tight">Riflessione Biblica IA</h3>
+          </div>
+        </div>
+
+        {aiAdvice ? (
+          <div className="space-y-3">
+            <p className="text-sm font-mono leading-relaxed bg-black/5 p-3 rounded-2xl border border-black/5 text-black/80">
+              {aiAdvice}
+            </p>
+            <div className="flex justify-end">
+              <button 
+                onClick={fetchBibleAIAdvice}
+                disabled={loadingAdvice || !apiKey}
+                className="flex items-center gap-1.5 border border-black px-2.5 py-1 rounded-xl text-[9px] font-mono uppercase bg-white hover:bg-black hover:text-white transition-colors"
+              >
+                <RefreshCw size={10} className={loadingAdvice ? 'animate-spin' : ''} />
+                Aggiorna Insight
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2">
+            <p className="text-xs font-mono text-gray-500 uppercase tracking-wide max-w-md">
+              {apiKey 
+                ? "Ottieni una riflessione contestuale o spunto spirituale sul capitolo biblico attualmente aperto."
+                : "Configura la chiave API Gemini nell'AI Companion per sbloccare le riflessioni bibliche in tempo reale."
+              }
+            </p>
+            {apiKey && (
+              <button
+                onClick={fetchBibleAIAdvice}
+                disabled={loadingAdvice}
+                className="flex items-center justify-center gap-1.5 border-2 border-black bg-black text-white hover:bg-offwhite-orange hover:border-offwhite-orange hover:text-black rounded-xl px-4 py-2 text-[10px] font-mono uppercase tracking-widest transition-all shrink-0 font-bold"
+              >
+                {loadingAdvice ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin" />
+                    Rifletto...
+                  </>
+                ) : (
+                  <>
+                    Chiedi all'IA
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
+        {errorAdvice && (
+          <p className="mt-2 text-[10px] font-mono text-red-500 uppercase tracking-wider">{errorAdvice}</p>
+        )}
+      </div>
 
       {/* Voice Settings Panel */}
       {showVoiceSettings && (
